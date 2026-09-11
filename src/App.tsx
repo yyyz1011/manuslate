@@ -9,11 +9,13 @@ import {
   ChevronRight,
   CircleDot,
   Command,
+  Database,
   File,
   FileCheck2,
   FileClock,
   FileText,
   FolderOpen,
+  HardDrive,
   Inbox,
   LayoutDashboard,
   Library,
@@ -30,12 +32,20 @@ import {
   Sparkles,
   Tags,
   TriangleAlert,
+  Trash2,
   Unplug,
   X,
 } from "lucide-react";
 import { createDemoWorkspace } from "./data/demo";
 import { enrichWorkspaceIssues, matchesSearch, parseFrontmatter } from "./lib/markdown";
-import { openLocalWorkspace, saveRecord, supportsLocalWorkspace } from "./lib/workspace";
+import {
+  clearDesktopIndex,
+  openLocalWorkspace,
+  saveRecord,
+  scanDesktopWorkspace,
+  supportsDesktopIndex,
+  supportsLocalWorkspace,
+} from "./lib/workspace";
 import type {
   AiConnectionDraft,
   FileIssue,
@@ -76,6 +86,13 @@ const railItems: Array<{ view: ViewName; label: string; icon: typeof LayoutDashb
 
 function formatNumber(value: number): string {
   return new Intl.NumberFormat("zh-CN").format(value);
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) return `${value} B`;
+  if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+  if (value < 1024 * 1024 * 1024) return `${(value / 1024 / 1024).toFixed(1)} MB`;
+  return `${(value / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
 function formatRelativeTime(timestamp: number): string {
@@ -201,7 +218,9 @@ export default function App() {
       setWorkspace(snapshot);
       setSelectedId(snapshot.files[0]?.id ?? "");
       setView("overview");
-      setNotice(`已只读盘点 ${snapshot.files.length} 份 Markdown，扫描过程未写入文件。`);
+      setNotice(
+        `已只读盘点 ${snapshot.files.length} 份 Markdown${snapshot.index ? "，本地索引已更新" : ""}。${snapshot.warnings?.length ? `另有 ${snapshot.warnings.length} 项扫描提示。` : ""}`,
+      );
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       setScanError(error instanceof Error ? error.message : "打开资料库失败，原文件没有被修改。");
@@ -216,6 +235,37 @@ export default function App() {
     setSelectedId(snapshot.files[0]?.id ?? "");
     setView("overview");
     setNotice("示例资料库已重置。");
+  }
+
+  async function rebuildDesktopIndex() {
+    const currentWorkspace = workspace;
+    if (!currentWorkspace?.root || currentWorkspace.source !== "desktop") return;
+    setScanError("");
+    setScanProgress({ scanned: 0, currentPath: "正在重建本地索引…" });
+    try {
+      const snapshot = await scanDesktopWorkspace(currentWorkspace.root, setScanProgress);
+      setWorkspace(snapshot);
+      setSelectedId((current) => snapshot.files.some((file) => file.id === current) ? current : (snapshot.files[0]?.id ?? ""));
+      setNotice(`本地 SQLite 索引已重建，共 ${snapshot.files.length} 份 Markdown。`);
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "重建本地索引失败，Markdown 原文件没有被修改。");
+    } finally {
+      setScanProgress(null);
+    }
+  }
+
+  async function clearIndex() {
+    const currentWorkspace = workspace;
+    if (!currentWorkspace?.root || currentWorkspace.source !== "desktop") return;
+    const confirmed = window.confirm("只清空当前资料库的本地 SQLite 索引。Markdown 原文件不会被删除或修改，是否继续？");
+    if (!confirmed) return;
+    try {
+      const index = await clearDesktopIndex(currentWorkspace.root);
+      setWorkspace({ ...currentWorkspace, index });
+      setNotice("本地索引已清空，Markdown 原文件未改变。需要时可以重新建立。");
+    } catch (error) {
+      setScanError(error instanceof Error ? error.message : "清空本地索引失败。Markdown 原文件没有被修改。");
+    }
   }
 
   function openFile(file: MarkdownRecord) {
@@ -490,11 +540,14 @@ export default function App() {
             aiTestState={aiTestState}
             aiTestMessage={aiTestMessage}
             localSupported={supportsLocalWorkspace()}
+            desktopIndexSupported={supportsDesktopIndex()}
             workspace={workspace}
             onAiDraft={setAiDraft}
             onTest={testAiConnection}
             onOpenWorkspace={handleOpenWorkspace}
             onReloadDemo={reloadDemo}
+            onRebuildIndex={rebuildDesktopIndex}
+            onClearIndex={clearIndex}
           />
         )}
       </main>
@@ -878,21 +931,27 @@ function SettingsView({
   aiTestState,
   aiTestMessage,
   localSupported,
+  desktopIndexSupported,
   workspace,
   onAiDraft,
   onTest,
   onOpenWorkspace,
   onReloadDemo,
+  onRebuildIndex,
+  onClearIndex,
 }: {
   aiDraft: AiConnectionDraft;
   aiTestState: "idle" | "testing" | "ok" | "error";
   aiTestMessage: string;
   localSupported: boolean;
+  desktopIndexSupported: boolean;
   workspace: WorkspaceSnapshot;
   onAiDraft: (draft: AiConnectionDraft) => void;
   onTest: () => void;
   onOpenWorkspace: () => void;
   onReloadDemo: () => void;
+  onRebuildIndex: () => void;
+  onClearIndex: () => void;
 }) {
   return (
     <div className="page settings-page">
@@ -903,12 +962,36 @@ function SettingsView({
       <section className="settings-section">
         <div className="settings-copy"><FolderOpen size={21} /><div><h2>资料库</h2><p>扫描时只读；单文件保存前显示差异并检查外部冲突。</p></div></div>
         <div className="settings-card">
-          <div className="setting-line"><span>当前来源</span><strong>{workspace.source === "local" ? "本地目录" : "内置示例"}</strong></div>
+          <div className="setting-line"><span>当前来源</span><strong>{workspace.source === "demo" ? "内置示例" : workspace.source === "desktop" ? "Tauri 本地目录" : "浏览器本地目录"}</strong></div>
           <div className="setting-line"><span>浏览器目录能力</span><strong className={localSupported ? "ok-text" : "warning-text"}>{localSupported ? "可用" : "当前不可用"}</strong></div>
           <div className="button-row">
             <button className="button primary" onClick={onOpenWorkspace}><FolderOpen size={16} /> 打开文件夹</button>
             {workspace.source === "demo" && <button className="button secondary" onClick={onReloadDemo}><RefreshCw size={16} /> 重置示例</button>}
           </div>
+        </div>
+      </section>
+
+      <section className="settings-section">
+        <div className="settings-copy"><Database size={21} /><div><h2>本地 SQLite 索引</h2><p>保存在这台设备的应用数据目录，用于快速搜索和增量扫描；它不是 Markdown 正文仓库。</p></div></div>
+        <div className="settings-card index-card">
+          <div className="local-seal"><HardDrive size={18} /><span><strong>{desktopIndexSupported ? "只在这台设备" : "桌面版启用"}</strong><small>不需要数据库服务器，不会自动上传</small></span></div>
+          {workspace.index ? (
+            <>
+              <div className="setting-line"><span>已索引文档</span><strong>{formatNumber(workspace.index.fileCount)}</strong></div>
+              <div className="setting-line"><span>数据库大小</span><strong>{formatBytes(workspace.index.databaseBytes)}</strong></div>
+              <div className="setting-line"><span>全文索引</span><strong className="ok-text">{workspace.index.contentIndexed ? "FTS5 · 本地" : "未启用"}</strong></div>
+              <div className="index-path"><span>数据库文件</span><code>{workspace.index.databasePath}</code></div>
+              <div className="button-row">
+                <button className="button primary" onClick={onRebuildIndex}><RefreshCw size={16} /> 重建索引</button>
+                <button className="button danger" onClick={onClearIndex}><Trash2 size={16} /> 仅清空索引</button>
+              </div>
+            </>
+          ) : (
+            <div className="index-empty">
+              <Database size={22} />
+              <div><strong>{desktopIndexSupported ? "打开一个本地目录后建立索引" : "浏览器预览不创建 SQLite 文件"}</strong><p>安装版会显示数据库的真实路径、大小和最近更新时间。</p></div>
+            </div>
+          )}
         </div>
       </section>
 

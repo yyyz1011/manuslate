@@ -51,14 +51,31 @@ export interface MarkdownRecord {
   issues: FileIssue[];
   hash: string;
   handle?: FileSystemFileHandle;
-  source: "demo" | "local";
+  workspaceRoot?: string;
+  source: "demo" | "local" | "desktop";
+}
+
+export interface IndexStatus {
+  databasePath: string;
+  databaseBytes: number;
+  fileCount: number;
+  lastScannedAt?: number;
+  contentIndexed: boolean;
+}
+
+export interface ScanWarning {
+  path: string;
+  message: string;
 }
 
 export interface WorkspaceSnapshot {
   name: string;
   files: MarkdownRecord[];
-  source: "demo" | "local";
+  source: "demo" | "local" | "desktop";
   scannedAt: number;
+  root?: string;
+  index?: IndexStatus;
+  warnings?: ScanWarning[];
 }
 
 export interface ScanProgress {

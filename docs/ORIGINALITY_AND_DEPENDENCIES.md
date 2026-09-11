@@ -22,6 +22,9 @@ PatchMark 的产品实现采用功能研究、独立设计和独立编码的方�
 - diff：保存前的逐行差异计算。
 - lucide-react：通用界面图标。
 - IBM Plex Sans / Mono 字体包。
+- Tauri 2：跨平台桌面窗口、权限和前后端命令桥接。
+- rusqlite 与 bundled SQLite：设备内元数据和 FTS5 全文索引。
+- atomicwrites：保存 Markdown 时进行原子替换。
 
 这些依赖通过 npm 正常安装并记录在 `package.json` 与 `package-lock.json` 中。发布构建前需要自动生成第三方许可证清单，且不得删除依赖自身的版权与许可证声明。
 

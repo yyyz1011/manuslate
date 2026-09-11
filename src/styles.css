@@ -276,6 +276,8 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
 .button.primary:hover { background: var(--teal-dark); border-color: var(--teal-dark); }
 .button.secondary { color: var(--ink); background: white; border-color: var(--line-strong); }
 .button.secondary:hover { border-color: #9db2ae; background: #f9fbfa; }
+.button.danger { color: #9a4c32; background: white; border-color: #ddbbaa; }
+.button.danger:hover { color: #7f3823; background: var(--rust-pale); border-color: #cc8e73; }
 .button.small { min-height: 32px; padding: 0 11px; font-size: 11px; }
 
 .pulse-board { overflow: hidden; background: var(--navy); border: 1px solid #254952; border-radius: 8px; box-shadow: var(--shadow); }
@@ -460,6 +462,17 @@ button:disabled { cursor: not-allowed; opacity: 0.48; }
 .policy-list { display: grid; gap: 10px; }
 .policy-list p { display: flex; align-items: center; gap: 8px; margin: 0; color: var(--ink-soft); font-size: 10px; }
 .policy-list svg { color: var(--teal); }
+.index-card { display: grid; gap: 0; }
+.local-seal { display: flex; align-items: center; gap: 10px; margin: -2px 0 12px; padding: 11px 12px; color: var(--teal); background: var(--teal-pale); border-left: 3px solid var(--teal); }
+.local-seal strong, .local-seal small { display: block; }
+.local-seal strong { color: var(--ink); font-size: 10px; }
+.local-seal small { margin-top: 2px; color: var(--ink-soft); font-size: 8px; }
+.index-path { display: grid; gap: 6px; padding: 12px 0 2px; }
+.index-path > span { color: var(--muted); font-size: 9px; }
+.index-path code { padding: 8px 9px; overflow-x: auto; color: var(--teal-dark); font-family: "IBM Plex Mono"; font-size: 8px; white-space: nowrap; background: #f0f4f2; border: 1px solid #e0e8e5; }
+.index-empty { display: flex; align-items: flex-start; gap: 11px; padding: 13px; color: var(--teal); background: #f3f7f6; border: 1px dashed var(--line-strong); }
+.index-empty strong { color: var(--ink); font-size: 10px; }
+.index-empty p { margin: 4px 0 0; color: var(--muted); font-size: 9px; line-height: 1.5; }
 
 .modal-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 28px; background: rgba(15, 34, 39, 0.56); backdrop-filter: blur(3px); }
 .diff-modal { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; width: min(900px, 100%); max-height: min(760px, calc(100vh - 56px)); overflow: hidden; background: #f8faf9; border: 1px solid #cbd6d3; box-shadow: 0 22px 70px rgba(9, 28, 34, 0.32); }

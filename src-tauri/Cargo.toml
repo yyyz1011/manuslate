@@ -1,0 +1,27 @@
+[package]
+name = "patchmark"
+version = "0.2.0"
+description = "A local-first Markdown library workspace"
+authors = ["PatchMark contributors"]
+edition = "2021"
+
+[lib]
+name = "patchmark_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+atomicwrites = "0.4"
+hex = "0.4"
+rusqlite = { version = "0.37", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+walkdir = "2"
+
+[dev-dependencies]
+tempfile = "3"

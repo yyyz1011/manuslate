@@ -1,4 +1,12 @@
-import type { MarkdownRecord, ScanProgress, WorkspaceSnapshot } from "../types";
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
+import type {
+  IndexStatus,
+  MarkdownRecord,
+  ScanProgress,
+  ScanWarning,
+  WorkspaceSnapshot,
+} from "../types";
 import { buildRecord, enrichWorkspaceIssues, isMarkdownFile, sha256 } from "./markdown";
 
 const SKIPPED_DIRECTORIES = new Set([
@@ -10,6 +18,66 @@ const SKIPPED_DIRECTORIES = new Set([
   "dist",
   "build",
 ]);
+
+interface DesktopRawFile {
+  relativePath: string;
+  content: string;
+  updatedAt: number;
+  size: number;
+  hash: string;
+}
+
+interface DesktopScanResult {
+  name: string;
+  root: string;
+  files: DesktopRawFile[];
+  availablePaths: string[];
+  warnings: ScanWarning[];
+  scannedAt: number;
+  index: IndexStatus;
+}
+
+function isTauriRuntime(): boolean {
+  return "__TAURI_INTERNALS__" in window;
+}
+
+async function buildDesktopSnapshot(
+  result: DesktopScanResult,
+  onProgress?: (progress: ScanProgress) => void,
+): Promise<WorkspaceSnapshot> {
+  const files: MarkdownRecord[] = [];
+  for (const raw of result.files) {
+    files.push(
+      await buildRecord(
+        raw.relativePath,
+        raw.content,
+        raw.updatedAt,
+        "desktop",
+        undefined,
+        result.root,
+      ),
+    );
+    onProgress?.({ scanned: files.length, currentPath: raw.relativePath });
+  }
+  return {
+    name: result.name,
+    files: enrichWorkspaceIssues(files, new Set(result.availablePaths)),
+    source: "desktop",
+    scannedAt: result.scannedAt,
+    root: result.root,
+    index: result.index,
+    warnings: result.warnings,
+  };
+}
+
+export async function scanDesktopWorkspace(
+  root: string,
+  onProgress?: (progress: ScanProgress) => void,
+): Promise<WorkspaceSnapshot> {
+  onProgress?.({ scanned: 0, currentPath: "正在读取目录并建立本地 SQLite 索引…" });
+  const result = await invoke<DesktopScanResult>("scan_workspace", { root });
+  return buildDesktopSnapshot(result, onProgress);
+}
 
 async function walkDirectory(
   directory: FileSystemDirectoryHandle,
@@ -43,6 +111,11 @@ async function walkDirectory(
 export async function openLocalWorkspace(
   onProgress?: (progress: ScanProgress) => void,
 ): Promise<WorkspaceSnapshot> {
+  if (isTauriRuntime()) {
+    const selected = await open({ directory: true, multiple: false, title: "选择 Markdown 资料库" });
+    if (!selected) throw new DOMException("用户取消选择", "AbortError");
+    return scanDesktopWorkspace(selected, onProgress);
+  }
   if (!window.showDirectoryPicker) {
     throw new Error("当前浏览器不支持本地文件夹访问，请使用最新版 Chrome 或 Edge。\n也可以先体验示例资料库。");
   }
@@ -59,7 +132,15 @@ export async function openLocalWorkspace(
 }
 
 export async function saveRecord(record: MarkdownRecord, content: string): Promise<MarkdownRecord> {
-  if (record.source === "local") {
+  if (record.source === "desktop") {
+    if (!record.workspaceRoot) throw new Error("资料库根目录已失效，请重新打开。原文件没有被修改。");
+    await invoke("save_markdown", {
+      root: record.workspaceRoot,
+      relativePath: record.relativePath,
+      expectedHash: record.hash,
+      content,
+    });
+  } else if (record.source === "local") {
     if (!record.handle) throw new Error("文件句柄已失效，请重新打开资料库。\n原文件没有被修改。");
     const currentFile = await record.handle.getFile();
     const currentContent = await currentFile.text();
@@ -83,10 +164,19 @@ export async function saveRecord(record: MarkdownRecord, content: string): Promi
     Date.now(),
     record.source,
     record.handle,
+    record.workspaceRoot,
   );
   return { ...saved, originalContent: content };
 }
 
 export function supportsLocalWorkspace(): boolean {
-  return typeof window.showDirectoryPicker === "function";
+  return isTauriRuntime() || typeof window.showDirectoryPicker === "function";
+}
+
+export function supportsDesktopIndex(): boolean {
+  return isTauriRuntime();
+}
+
+export async function clearDesktopIndex(root: string): Promise<IndexStatus> {
+  return invoke<IndexStatus>("clear_workspace_index", { root });
 }

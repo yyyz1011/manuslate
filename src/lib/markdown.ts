@@ -118,8 +118,9 @@ export async function buildRecord(
   relativePath: string,
   content: string,
   updatedAt: number,
-  source: "demo" | "local",
+  source: "demo" | "local" | "desktop",
   handle?: FileSystemFileHandle,
+  workspaceRoot?: string,
 ): Promise<MarkdownRecord> {
   const frontmatterResult = parseFrontmatter(content);
   const outline = extractOutline(content);
@@ -174,6 +175,7 @@ export async function buildRecord(
     issues,
     hash: await sha256(content),
     handle,
+    workspaceRoot,
     source,
   };
 }
@@ -283,7 +285,14 @@ export function enrichWorkspaceIssues(
 }
 
 export function updateRecordContent(record: MarkdownRecord, content: string): Promise<MarkdownRecord> {
-  return buildRecord(record.relativePath, content, Date.now(), record.source, record.handle);
+  return buildRecord(
+    record.relativePath,
+    content,
+    Date.now(),
+    record.source,
+    record.handle,
+    record.workspaceRoot,
+  );
 }
 
 export function matchesSearch(record: MarkdownRecord, query: string): boolean {

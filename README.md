@@ -23,14 +23,15 @@
 
 ## 当前阶段
 
-- 阶段：`0.1.0` 可运行原型
-- 已完成浏览器本地版的第一条纵向闭环：只读扫描、资料总览、搜索筛选、健康检查、阅读编辑、保存前差异和写入冲突保护
+- 阶段：`0.2.0` 桌面开发版
+- 已完成 Tauri 2 桌面壳、Rust 文件后端与本地 SQLite/FTS5 索引；浏览器预览仍然可用
+- 已完成第一条纵向闭环：只读扫描、资料总览、搜索筛选、健康检查、阅读编辑、保存前差异、原子写入和冲突保护
 - 当前仍使用内部代号 PatchMark；正式名称、许可证和发布渠道会在首轮用户验证后决定
 - 下一阶段：后台索引、反向链接、Frontmatter 批量编辑、AI 分类建议和事务回滚
 
 ## 本地运行
 
-要求：Node.js 20 或更高版本，推荐最新版 Chrome 或 Edge。
+浏览器预览要求 Node.js 20 或更高版本：
 
 ```bash
 npm install
@@ -38,6 +39,15 @@ npm run dev
 ```
 
 打开 `http://127.0.0.1:4173/`。应用默认载入内置示例资料库；点击“打开本地文件夹”后，会通过浏览器 File System Access API 直接读取用户选择的目录。
+
+桌面开发还需要 Rust stable：
+
+```bash
+npm run desktop:dev
+npm run desktop:build
+```
+
+macOS 开发包生成在 `src-tauri/target/release/bundle/macos/PatchMark.app`。当前包未签名、未公证，只用于本地开发验收。
 
 ```bash
 npm test
@@ -52,6 +62,8 @@ npm run build
 - 写入前重新校验文件哈希；若被其他程序修改则拒绝覆盖。
 - AI API Key 只保留在当前页面会话，不写入 localStorage 或项目文件。
 - 浏览器版本目前不持久化目录授权，刷新页面后需要重新选择目录。
+- 桌面版 SQLite 位于操作系统分配给 `app.patchmark.desktop` 的本地应用数据目录。
+- SQLite 只保存可删除的目录元数据和 FTS5 全文检索副本；Markdown 原文件仍是唯一真源。
 
 ## 文档
 
