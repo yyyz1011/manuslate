@@ -1,308 +1,336 @@
 ---
 name: "PatchMark Core"
-description: "A document-first Markdown workspace shaped like a quiet native reading desk."
+description: "A document-first desktop Markdown workspace with first-party editorial restraint."
 colors:
-  cool-ground-light: "#f4f5f7"
-  rail-mist-light: "#eef0f3"
+  system-ground-light: "#f2f2f7"
+  grouped-sidebar-light: "#ececf1"
   paper-light: "#ffffff"
-  paper-subtle-light: "#fafbfc"
-  graphite-light: "#202329"
-  graphite-strong-light: "#15171a"
-  muted-light: "#626b75"
-  faint-light: "#626b75"
-  hairline-light: "#dde1e6"
-  hairline-strong-light: "#cfd4da"
-  quiet-blue-light: "#0878e6"
-  quiet-blue-soft-light: "#dceeff"
-  quiet-blue-ink-light: "#075aa8"
-  selection-light: "#cae4ff"
-  danger-light: "#cf3f37"
-  shelf-light: "#25282d"
-  shelf-ink-light: "#f4f5f6"
-  cool-ground-dark: "#15171a"
-  rail-mist-dark: "#1c1e22"
-  paper-dark: "#202328"
-  paper-subtle-dark: "#1b1d21"
-  graphite-dark: "#e5e7ea"
-  graphite-strong-dark: "#f7f8f9"
-  muted-dark: "#9ba1aa"
-  faint-dark: "#a1a8b1"
-  hairline-dark: "#30343a"
-  hairline-strong-dark: "#3a3f46"
-  quiet-blue-dark: "#5aa7f8"
-  quiet-blue-soft-dark: "#173e64"
-  quiet-blue-ink-dark: "#9bcbff"
-  selection-dark: "#1f4b75"
-  danger-dark: "#ff7c73"
-  shelf-dark: "#f0f1f3"
-  shelf-ink-dark: "#202328"
+  chrome-light: "rgba(251, 251, 253, 0.78)"
+  elevated-light: "rgba(255, 255, 255, 0.88)"
+  graphite-light: "#1d1d1f"
+  graphite-soft-light: "#3a3a3c"
+  secondary-light: "#636366"
+  tertiary-light: "#68686d"
+  separator-light: "rgba(60, 60, 67, 0.13)"
+  separator-strong-light: "rgba(60, 60, 67, 0.21)"
+  fill-light: "rgba(120, 120, 128, 0.12)"
+  fill-strong-light: "rgba(120, 120, 128, 0.2)"
+  quiet-blue: "#0a84ff"
+  quiet-blue-soft-light: "rgba(10, 132, 255, 0.14)"
+  quiet-blue-ink-light: "#0070dc"
+  selection-light: "rgba(10, 132, 255, 0.22)"
+  danger-light: "#ff3b30"
+  system-ground-dark: "#111113"
+  grouped-sidebar-dark: "#1b1b1e"
+  paper-dark: "#202023"
+  chrome-dark: "rgba(31, 31, 34, 0.8)"
+  elevated-dark: "rgba(44, 44, 47, 0.9)"
+  graphite-dark: "#f5f5f7"
+  graphite-soft-dark: "#e2e2e7"
+  secondary-dark: "#aeaeb2"
+  tertiary-dark: "#98989d"
+  separator-dark: "rgba(235, 235, 245, 0.13)"
+  separator-strong-dark: "rgba(235, 235, 245, 0.21)"
+  fill-dark: "rgba(118, 118, 128, 0.24)"
+  fill-strong-dark: "rgba(118, 118, 128, 0.34)"
+  quiet-blue-soft-dark: "rgba(10, 132, 255, 0.2)"
+  quiet-blue-ink-dark: "#64adff"
+  selection-dark: "rgba(10, 132, 255, 0.32)"
+  danger-dark: "#ff453a"
 typography:
   display:
-    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif"
-    fontSize: "2.25em"
-    fontWeight: 720
-    lineHeight: 1.24
+    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
+    fontSize: "32px"
+    fontWeight: 760
+    lineHeight: 1.1
     letterSpacing: "-0.035em"
   headline:
-    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Display, Segoe UI, sans-serif"
-    fontSize: "1.5em"
-    fontWeight: 720
+    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
+    fontSize: "2.15em"
+    fontWeight: 730
     lineHeight: 1.24
-    letterSpacing: "-0.025em"
+    letterSpacing: "-0.028em"
   body:
-    fontFamily: "Charter, Iowan Old Style, Palatino Linotype, ui-serif, Georgia, serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
     fontSize: "17px"
     fontWeight: 400
-    lineHeight: 1.78
+    lineHeight: 1.75
     letterSpacing: "normal"
-  editor:
+  live-editor:
+    fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
+    fontSize: "17px"
+    fontWeight: 400
+    lineHeight: 1.72
+    letterSpacing: "normal"
+  source-editor:
     fontFamily: "SFMono-Regular, SF Mono, ui-monospace, Menlo, Consolas, monospace"
-    fontSize: "16px"
+    fontSize: "15px"
     fontWeight: 400
     lineHeight: 1.82
     letterSpacing: "normal"
   ui:
     fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
-    fontSize: "13px"
-    fontWeight: 530
+    fontSize: "14px"
+    fontWeight: 650
     lineHeight: 1.35
     letterSpacing: "normal"
   label:
     fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
     fontSize: "11px"
-    fontWeight: 650
+    fontWeight: 660
     lineHeight: 1.35
-    letterSpacing: "normal"
+    letterSpacing: "0.02em"
 rounded:
   inline: "5px"
   compact: "7px"
-  native: "8px"
-  field: "9px"
-  control: "10px"
-  content: "12px"
-  shelf: "13px"
-  overlay: "14px"
-  circular: "999px"
+  tab: "9px"
+  field: "10px"
+  control: "11px"
+  group: "12px"
+  popover: "14px"
+  dock: "16px"
+  circular: "50%"
 spacing:
   hairline: "1px"
   xxs: "2px"
-  xs: "5px"
-  sm: "8px"
+  xs: "6px"
+  sm: "9px"
   control: "10px"
   md: "14px"
+  section: "18px"
   lg: "24px"
-  document-gutter: "34px"
+  manuscript-gutter: "42px"
 components:
-  button-save:
-    backgroundColor: "{colors.graphite-strong-light}"
+  button-primary:
+    backgroundColor: "{colors.quiet-blue}"
     textColor: "{colors.paper-light}"
-    typography: "{typography.label}"
-    rounded: "{rounded.field}"
-    padding: "0 12px"
-    height: "32px"
+    typography: "{typography.ui}"
+    rounded: "{rounded.control}"
+    padding: "0 15px"
+    height: "42px"
   button-icon:
     backgroundColor: "transparent"
-    textColor: "{colors.muted-light}"
+    textColor: "{colors.secondary-light}"
     rounded: "{rounded.control}"
     padding: "0"
-    size: "34px"
+    size: "40px"
   button-icon-active:
     backgroundColor: "{colors.quiet-blue-soft-light}"
     textColor: "{colors.quiet-blue-ink-light}"
     rounded: "{rounded.control}"
     padding: "0"
-    size: "34px"
-  tab-active:
-    backgroundColor: "{colors.paper-light}"
-    textColor: "{colors.graphite-strong-light}"
-    typography: "{typography.label}"
-    rounded: "{rounded.compact}"
+    size: "40px"
+  view-button:
+    backgroundColor: "transparent"
+    textColor: "{colors.secondary-light}"
+    typography: "{typography.ui}"
+    rounded: "{rounded.field}"
     padding: "0 10px"
-    height: "26px"
+    height: "36px"
   search-field:
-    backgroundColor: "{colors.paper-subtle-light}"
+    backgroundColor: "{colors.fill-light}"
     textColor: "{colors.graphite-light}"
     typography: "{typography.ui}"
     rounded: "{rounded.field}"
-    padding: "0 7px 0 9px"
-    height: "34px"
+    padding: "0 8px 0 10px"
+    height: "36px"
   document-row-active:
-    backgroundColor: "{colors.paper-light}"
-    textColor: "{colors.graphite-strong-light}"
+    backgroundColor: "{colors.quiet-blue-soft-light}"
+    textColor: "{colors.quiet-blue-ink-light}"
     typography: "{typography.ui}"
-    rounded: "{rounded.control}"
-    padding: "9px"
-  formatting-shelf:
-    backgroundColor: "{colors.shelf-light}"
-    textColor: "{colors.shelf-ink-light}"
-    rounded: "{rounded.shelf}"
-    padding: "5px"
-  command-palette:
+    rounded: "{rounded.group}"
+    padding: "11px 11px 10px 13px"
+    height: "78px"
+  inspector-tab-active:
     backgroundColor: "{colors.paper-light}"
     textColor: "{colors.graphite-light}"
-    rounded: "{rounded.overlay}"
-    width: "min(540px, calc(100vw - 30px))"
+    typography: "{typography.label}"
+    rounded: "{rounded.compact}"
+    padding: "0 9px"
+    height: "29px"
+  format-dock:
+    backgroundColor: "{colors.elevated-light}"
+    textColor: "{colors.secondary-light}"
+    rounded: "{rounded.dock}"
+    padding: "6px"
+  command-palette:
+    backgroundColor: "{colors.elevated-light}"
+    textColor: "{colors.graphite-light}"
+    rounded: "{rounded.dock}"
+    width: "min(560px, calc(100vw - 30px))"
 ---
 
 # Design System: PatchMark Core
 
 ## Overview
 
-**Creative North Star: "The Quiet Document"**
+**Creative North Star: "The Native Editorial Window"**
 
-PatchMark should feel less like opening software and more like returning to a finished page on a cool, carefully lit writing desk. The document is the visual center of gravity: chrome is compact, rails are tonal rather than boxed, and controls wait at the edges until the writer needs them.
+PatchMark is a macOS- and Windows-PC document tool shaped with the quiet confidence of a first-party desktop editor. The window opens inside the work: a grouped library, a centered live manuscript, a restrained toolbar, and an optional inspector share one continuous document environment rather than a dashboard or mode wall.
 
-The system combines cool paper surfaces, graphite text, hairline structure, quiet blue state feedback, and familiar native proportions. Restraint is functional rather than empty: reading receives an editorial serif voice, editing receives a precise mono voice, and the surrounding interface stays in a quiet system sans.
+The visual system uses system typography, paper white, grouped gray rails, hairline separators, quiet blue state, and contextual translucent materials. Its signature is live Markdown typesetting: punctuation and syntax stay out of the way until the caret enters the current line, while formatting and insertion actions live in a contextual dock instead of a permanent ribbon. Mouse precision and dense keyboard navigation define interaction density; narrow behavior is only a safety mechanism for resized desktop windows.
 
 **Key Characteristics:**
 
-- One continuous writing plane, never a dashboard or card grid.
-- Cool neutral surfaces with graphite ink and a single quiet-blue interaction voice.
-- Native-radius controls, dense desktop chrome, and generous document breathing room.
-- Serif reading, monospaced source editing, and sans-serif interface chrome.
-- Progressive disclosure through rails, a command palette, focus mode, and the floating formatting shelf.
+- A first-party desktop document window for macOS and Windows PC.
+- One continuous `760px` manuscript plane with syntax revealed only on the current line.
+- A `286px` grouped library, centered `62px` toolbar, and optional `286px` inspector.
+- System sans throughout rendered content and interface chrome; mono only for explicit source mode and code.
+- Quiet blue for state, paper white for the manuscript, grouped gray for supporting rails.
+- Contextual material popovers and format dock, controlled by keyboard and mouse.
 
 ## Colors
 
-The palette is a cool-paper neutral system with one restrained blue accent and a complete dark counterpart; state is communicated through tonal shifts before saturation.
+The palette follows desktop system materials: paper and grouped neutrals carry structure, graphite carries content, and quiet blue is the single interaction voice across light and dark appearances.
 
 ### Primary
 
-- **Quiet Blue:** `quiet-blue-light` and `quiet-blue-dark` mark the caret, current document, dirty state, checkbox accent, and focus affordances.
-- **Quiet Blue Wash:** `quiet-blue-soft-light` and `quiet-blue-soft-dark` carry selected-control and suggested-command backgrounds without turning the interface into a blue surface.
-- **Quiet Blue Ink:** `quiet-blue-ink-light` and `quiet-blue-ink-dark` carry links and foreground content on blue washes.
+- **Quiet Blue:** `quiet-blue` marks the caret, compose/save actions, current mode cues, checked tasks, focus, and other immediate interactive state.
+- **Quiet Blue Wash:** `quiet-blue-soft-light` and `quiet-blue-soft-dark` carry selected rows, hovered commands, and active controls without becoming large decorative panels.
+- **Quiet Blue Ink:** `quiet-blue-ink-light` and `quiet-blue-ink-dark` keep active text and icons legible on the wash.
 
 ### Secondary
 
-- **Signal Red:** `danger-light` and `danger-dark` are reserved for destructive or error states; they are not general emphasis colors.
+- **System Danger:** `danger-light` and `danger-dark` are reserved for errors or destructive state, never general emphasis.
 
 ### Neutral
 
-- **Cool Ground:** `cool-ground-light` and `cool-ground-dark` separate the application frame from the document.
-- **Rail Mist:** `rail-mist-light` and `rail-mist-dark` identify auxiliary rails without card boundaries.
-- **Paper:** `paper-light` and `paper-dark` are the uninterrupted writing and reading plane.
-- **Subtle Paper:** `paper-subtle-light` and `paper-subtle-dark` support the title bar, fields, and quiet inset surfaces.
-- **Graphite:** `graphite-light`, `graphite-dark`, `graphite-strong-light`, and `graphite-strong-dark` establish readable text hierarchy without pure-black glare.
-- **Muted and Faint:** the `muted-*` and `faint-*` pairs carry secondary labels, metadata, and dormant controls.
-- **Hairlines:** the `hairline-*` and `hairline-strong-*` pairs divide structural regions and strengthen only at overlays or mobile drawers.
-- **Shelf Reversal:** `shelf-light`, `shelf-dark`, `shelf-ink-light`, and `shelf-ink-dark` invert the floating formatting shelf against the document.
-- **Selection Wash:** `selection-light` and `selection-dark` keep selected text unmistakable but calm.
+- **System Ground:** `system-ground-light` and `system-ground-dark` frame the document window and ground code blocks.
+- **Grouped Sidebar:** `grouped-sidebar-light` and `grouped-sidebar-dark` distinguish library and inspector rails from the manuscript without card chrome.
+- **Paper:** `paper-light` and `paper-dark` are the uninterrupted manuscript surface.
+- **Toolbar Material:** `chrome-light` and `chrome-dark` support the translucent toolbar and status strip.
+- **Elevated Material:** `elevated-light` and `elevated-dark` belong to popovers, the format dock, and the command palette.
+- **Graphite:** the `graphite-*`, `secondary-*`, and `tertiary-*` pairs create primary, secondary, and metadata hierarchy without hard black/white contrast.
+- **Separators:** `separator-*` and `separator-strong-*` divide structural regions and strengthen at elevated edges.
+- **System Fills:** `fill-*` and `fill-strong-*` provide hover, field, and pressed feedback within neutral chrome.
+- **Selection:** `selection-light` and `selection-dark` keep text selection visible while staying in the quiet-blue family.
 
 ### Named Rules
 
-**The Quiet Blue Rule.** Blue appears only for current, selected, focused, linked, or unsaved state; it never becomes a large decorative field.
+**The Quiet Blue Rule.** Blue communicates current, selected, focused, linked, save, or compose state; it never becomes background decoration.
 
-**The Paper Hierarchy Rule.** Separate regions with cool neutral tone and hairlines before introducing containers, cards, or shadow.
+**The Material Hierarchy Rule.** Use grouped gray for rails, paper for the manuscript, translucent chrome for fixed bars, and elevated material only for content that physically floats.
 
 ## Typography
 
-**Display Font:** system display sans with SF Pro Display and Segoe UI fallbacks  
-**Body Font:** Charter with Iowan Old Style, Palatino, and Georgia fallbacks  
-**Label/Mono Font:** system text sans for chrome; SF Mono with Menlo and Consolas fallbacks for Markdown source
+**Display Font:** the operating-system UI family, led by SF Pro Text on macOS and Segoe UI on Windows
 
-**Character:** The reading surface is bookish and unhurried, while the editor is precise and tool-like. Native sans-serif chrome binds both modes together without competing for attention.
+**Body Font:** the same system UI family for live and rendered manuscripts
+**Label/Mono Font:** system UI family for chrome; SF Mono, Menlo, or Consolas for source mode and code
+
+**Character:** A single system type family makes the document and window feel immediate, familiar, and natively dense on both desktop platforms. Weight, measure, and spacing establish hierarchy; serif styling is not part of this system.
 
 ### Hierarchy
 
-- **Display** (720, `2.25em`, 1.24): rendered level-one document headings.
-- **Headline** (720, `1.5em`, 1.24): rendered level-two headings and major content divisions.
-- **Body** (400, `17px`, 1.78): rendered Markdown prose inside the centered document measure.
-- **Editor** (400, `16px`, 1.82): Markdown source with line wrapping and no visible gutters.
-- **UI** (530, `13px`, 1.35): file names, search text, and document-title chrome.
-- **Label** (650, `11px`, 1.35): compact actions, mode controls, counts, and status information.
+- **Display** (760, `32px`, 1.1): the library title and rare top-level window landmarks.
+- **Headline** (730, `2.15em`, 1.24): level-one rendered manuscript headings; lower heading levels step down within the same family.
+- **Body** (400, `17px`, 1.75): rendered reading and export preview within the `760px` manuscript measure.
+- **Live Editor** (400, `17px`, 1.72): in-place Markdown writing with formatted blocks and contextual syntax.
+- **Source Editor** (400, `15px`, 1.82): explicit Markdown source mode and code-oriented inspection.
+- **UI** (650, `14px`, 1.35): document titles and principal row labels.
+- **Label** (660, `11px`, `0.02em`): section labels, metadata, counters, and compact navigation.
 
 ### Named Rules
 
-**The Three Voices Rule.** Serif belongs to rendered prose, mono belongs to source editing, and system sans belongs to interface chrome and rendered headings.
+**The System Voice Rule.** Use the platform UI family for manuscript and chrome; switch to mono only when the user explicitly asks to see source or code.
 
-**The Reading Rhythm Rule.** Long-form content keeps a relaxed line height and a centered measure; compact UI type must not leak into the document.
+**The Caret Reveals Syntax Rule.** Live mode hides Markdown punctuation away from the current line and restores literal marks wherever the caret is editing.
 
 ## Layout
 
-The application is a full-height three-column shell: a collapsible document rail at `248px`, a flexible document workspace, and an optional outline rail at `236px`. Both reading and editing center their content at a maximum `720px` measure with a `34px` desktop gutter. A `54px` title bar and `30px` status strip frame the page without becoming a permanent tool ribbon.
+At a `1440px` desktop window, the shell is a three-column document workspace: a collapsible `286px` library, a flexible center workspace containing a `760px` manuscript, and an optional `286px` inspector. The centered `62px` toolbar keeps the document title physically central while actions stay at the window edges. A `28px` status strip provides quiet document state without becoming a second toolbar.
 
-At `1120px`, visible rails tighten to `226px` and `210px`. Below `860px`, the shell becomes a single document plane, the library becomes an overlay drawer, the outline disappears, split view resolves to reading, and primary touch targets grow to at least `44px`. Below `520px`, mode labels disappear and rendered prose steps down to `16px`.
+The manuscript uses `42px` desktop gutters and generous top/bottom breathing room. At `1180px`, the library tightens to `252px` and the inspector overlays rather than shrinking the manuscript. At `900px`, both rails become desktop-window overlays and split view resolves to reading. The `520px` rules are emergency clipping protection for an unusually narrow resized desktop window, not a phone layout or a separate product surface.
 
-**The Document Is the Surface Rule.** Start every composition from the continuous writing plane; rails and controls support it but never replace it with dashboard scaffolding.
+**The Document Is the Window Rule.** The manuscript remains the center of the application; library, toolbar, inspector, dock, and popovers exist only to support it.
 
-**The 720 Measure Rule.** Keep reading and source content centered within the implemented `720px` measure; use split view to divide work modes, not to stretch prose.
+**The 760 Measure Rule.** Keep live, source, rendered, empty, loading, print, and export content aligned to the same `760px` maximum measure.
+
+**The Collapse Before Crush Rule.** When a desktop window narrows, collapse or overlay auxiliary rails before reducing the manuscript to an unreadable column.
 
 ## Elevation & Depth
 
-The system is flat by default. Tonal layers and one-pixel separators define the shell; a tiny shadow confirms selected tabs and the active document row. The stronger ambient shadow is reserved for elements that truly float above the document: the formatting shelf, command palette, toast, and compact-screen drawer.
+The base window is flat and structured by material changes and one-pixel separators. Elevation appears only when content crosses a plane: popovers, the format dock, command palette, toast, and overlaid rails. Translucency is functional, preserving context beneath fixed chrome and temporary controls.
 
 ### Shadow Vocabulary
 
-- **Selected Surface** (`0 1px 2px rgba(20, 26, 32, 0.045)`): the active document row.
-- **Selected Control** (`0 1px 3px rgba(20, 26, 33, 0.12)`): the active Read/Edit/Split tab.
-- **Floating Light** (`0 14px 36px rgba(21, 27, 34, 0.16), 0 2px 7px rgba(21, 27, 34, 0.1)`): shelf, palette, and toast in light appearance.
-- **Floating Dark** (`0 18px 42px rgba(0, 0, 0, 0.36), 0 2px 9px rgba(0, 0, 0, 0.24)`): the same floating elements in dark appearance.
-- **Drawer** (`18px 0 42px rgba(15, 20, 26, 0.2)`): the compact-screen document drawer only.
+- **Floating Light** (`0 18px 46px rgba(22, 27, 34, 0.16), 0 3px 12px rgba(22, 27, 34, 0.09)`): all elevated light-appearance controls.
+- **Floating Dark** (`0 22px 56px rgba(0, 0, 0, 0.48), 0 4px 14px rgba(0, 0, 0, 0.3)`): the corresponding dark-appearance lift.
+- **Selected Segment** (`0 1px 3px rgba(0, 0, 0, 0.12)`): the active inspector tab only.
+- **Overlay Rail** (`±18px 0 48px rgba(0, 0, 0, 0.18–0.22)`): a library or inspector temporarily crossing above the manuscript in a narrow desktop window.
 
 ### Named Rules
 
-**The Earned Elevation Rule.** A shadow must correspond to selected state or physical overlay; static content and structural rails stay flat.
+**The Earned Elevation Rule.** Static manuscript and rails remain flat; shadow and blur belong only to overlays, transient feedback, or a selected inset segment.
+
+**The Context Through Material Rule.** Toolbar, status, dock, and popovers may blur the plane behind them so long as content remains readable and the hierarchy stays quiet.
 
 ## Shapes
 
-Controls use gently curved native rectangles: compact internals at `7–8px`, fields and primary actions at `9px`, common hit targets and rows at `10px`, content blocks at `12px`, the floating shelf at `13px`, and the command palette at `14px`. Hairline borders remain crisp and unornamented. Circles are limited to true circular indicators such as the unsaved dot.
+The form language uses compact desktop radii rather than pills: inline details at `5–7px`, fields and menu rows at `9–10px`, toolbar controls at `11px`, grouped document/info surfaces at `12px`, popovers at `14px`, and the format dock and command palette at `16px`. Circles are reserved for literal circular affordances such as the search clear control and unsaved dot.
 
-**The Native Radius Rule.** Radius follows scale and function; never round every surface into a capsule, and never use cards merely to create corners.
+**The Native Radius Rule.** Radius follows component scale and material level; do not turn labels, toolbar groups, or arbitrary content into capsules.
 
 ## Components
 
 ### Buttons
 
-- **Shape:** compact icon controls use the common native curve (`10px`); text actions use `9–10px`.
-- **Primary:** the Save and empty-document actions reverse strong graphite against paper, with compact horizontal padding and clear saved/unsaved icon feedback.
-- **Hover / Focus:** hover changes tone or opacity; press scales to `0.94–0.96`; keyboard focus uses a three-pixel quiet-blue mixed outline with a two-pixel offset.
-- **Icon / Ghost:** neutral at rest, a faint tonal fill on hover, and a quiet-blue wash only when active.
+- **Shape:** toolbar icon buttons are precise `40px` mouse targets with `11px` corners; primary manuscript actions are `42px` high with the same radius.
+- **Primary:** compose/save and first-document actions use quiet blue with white text; secondary toolbar controls remain transparent and graphite-muted.
+- **Hover / Focus:** neutral controls gain system fill, active controls gain quiet-blue wash, press scales to `0.90–0.985`, and keyboard focus uses a three-pixel quiet-blue outline with a two-pixel offset.
+- **Disabled:** menu actions may reduce opacity to `0.38` while retaining shape and label context.
 
 ### Chips
 
-- **Style:** the Read/Edit/Split switcher is the system's segmented chip group: cool ground container, hairline border, compact `7px` inner segments.
-- **State:** the selected segment becomes paper with strong graphite text and a small selected-control shadow; unselected segments remain transparent and muted.
+- **Style:** inspector tabs form a compact grouped-gray segmented control with `7px` inner segments inside a `9px` group.
+- **State:** the active segment becomes paper, graphite, and lightly elevated; inactive segments remain transparent and secondary.
 
 ### Cards / Containers
 
-- **Corner Style:** ordinary content avoids cards; overlays use the larger `14px` curve.
-- **Background:** paper for the command palette and active row, rail mist for auxiliary navigation, subtle paper for inset chrome.
-- **Shadow Strategy:** see the Earned Elevation Rule.
-- **Border:** one strong hairline around overlays; ordinary structure uses the standard hairline.
-- **Internal Padding:** compact UI uses the `5–14px` rhythm; the document keeps the `34px` gutter.
+- **Corner Style:** ordinary manuscript content stays uncarded; document-info groups use `12px`, popovers use `14px`, and high-level floating controls use `16px`.
+- **Background:** paper belongs to manuscript and grouped info; elevated translucent material belongs to temporary controls.
+- **Shadow Strategy:** follow the Earned Elevation Rule.
+- **Border:** elevated menus use the strong separator; shell divisions use the standard separator.
+- **Internal Padding:** dense controls use `6–14px`; manuscript content uses the `42px` gutter.
 
 ### Inputs / Fields
 
-- **Style:** search fields use subtle paper, a one-pixel hairline, `9px` corners, and `34px` height.
-- **Focus:** focus strengthens the border toward quiet blue and adds a soft three-pixel halo.
-- **Error / Disabled:** danger tokens are reserved for real failures; no decorative red or opacity-only error treatment.
+- **Style:** library search is a borderless `36px` system-fill field with `10px` corners; title editing is a centered `26px` fill field with `7px` corners.
+- **Focus:** search gains an inset quiet-blue stroke plus a three-pixel blue wash; text inputs retain a visible keyboard focus outline.
+- **Error / Disabled:** system danger is reserved for real failure; disabling never depends on color alone.
 
 ### Navigation
 
-The library rail and outline are tonal extensions of the shell. Rows are transparent by default, gain a faint neutral hover, and use paper plus stronger typography for the current document. On compact screens, the library becomes a left drawer over a dimmed scrim; the outline is removed rather than compressed.
+The `286px` library is a grouped neutral rail with 78px document rows, title/snippet/time hierarchy, and a quiet-blue selected state. The optional `286px` inspector uses keyboard-navigable tabs and indented outline rows. Both are mouse-precise, keyboard reachable, and may overlay only as a narrow desktop-window fallback.
 
-### Formatting Shelf
+### Live Manuscript
 
-The signature formatting shelf appears only while editing. It floats at the lower edge of the document, reverses shelf ink against the shelf surface, groups icon commands with hairline dividers, and expands each action to a `44px` touch target on compact screens.
+Live mode is the default expression of the product. Headings, quotes, lists, task markers, tables, math, footnotes, and code take on rendered hierarchy while Markdown punctuation is removed away from the caret line. The current line always exposes literal source so editing remains trustworthy; source mode reveals all syntax, reading mode removes editing chrome, and split mode pairs source with rendered output on sufficiently wide windows.
 
-### Command Palette
+### Format Dock
 
-The command palette is a restrained paper overlay with a strong hairline, the shared floating shadow, a `52px` search row, and suggestion rows that use the quiet-blue wash. It traps focus, restores focus on close, and treats motion as a short spatial confirmation rather than spectacle.
+The contextual format dock floats above the bottom status strip only while an editable mode is active. It uses elevated material, a strong separator, `16px` corners, `36px` icon actions, and grouped dividers; its insertion menu expands upward without becoming a permanent ribbon.
+
+### Popovers and Command Palette
+
+View, share, insert, and command surfaces use elevated translucent material, strong separators, and the shared floating shadow. Menu rows support arrow-key navigation; the command palette traps focus, restores it on close, and preserves keyboard hints with tabular numerals.
 
 ## Do's and Don'ts
 
 ### Do:
 
-- **Do** begin with a readable document and reveal navigation or formatting controls only when the task calls for them.
-- **Do** use quiet blue exclusively for interaction state, selection, links, caret, and trustworthy save feedback.
-- **Do** preserve the serif/mono/sans division between reading, source editing, and chrome.
-- **Do** keep desktop controls compact while expanding interactive targets to at least `44px` below the compact breakpoint.
-- **Do** honor reduced-motion preferences by collapsing animations and transitions to effectively instantaneous feedback.
+- **Do** open into a usable manuscript rather than a dashboard, setup screen, or mobile-style landing state.
+- **Do** align all document representations to the implemented `760px` manuscript measure.
+- **Do** reveal Markdown syntax only on the current line in live mode and provide explicit source mode for complete literal access.
+- **Do** reserve quiet blue for interaction state, compose/save actions, selection, focus, links, and current context.
+- **Do** keep library and inspector controls dense, mouse-precise, and fully keyboard navigable.
+- **Do** collapse or overlay rails when a desktop window becomes too narrow, and honor reduced-motion preferences.
 
 ### Don't:
 
-- **Don't** turn the home surface into a dashboard, permanent toolbar, card grid, or configuration gate.
-- **Don't** stretch prose beyond the centered `720px` measure or use wide lines to fill available space.
-- **Don't** introduce extra accent hues, decorative gradients, or broad blue panels.
-- **Don't** apply strong shadow to static rails, document content, or ordinary controls.
-- **Don't** compress split view or the outline into narrow screens; resolve to the simpler reading plane.
+- **Don't** describe or design PatchMark as an iPadOS, phone, mobile-browser, or touch-first product.
+- **Don't** reintroduce serif manuscript typography; the implemented reading and live-editing voice is the system UI family.
+- **Don't** add a permanent formatting ribbon, dashboard card grid, or separate preview wall between writing and the finished page.
+- **Don't** stretch prose beyond the `760px` measure or let rails crush the manuscript.
+- **Don't** use large blue surfaces, decorative gradients, or extra accent families.
+- **Don't** use narrow-window safety rules as evidence for a separate mobile design system.

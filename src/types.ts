@@ -1,4 +1,4 @@
-export type ViewMode = "write" | "preview" | "split";
+export type ViewMode = "live" | "source" | "preview" | "split";
 export type ThemeMode = "system" | "light" | "dark";
 
 export interface MarkdownDocument {

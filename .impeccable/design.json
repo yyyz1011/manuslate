@@ -1,171 +1,791 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-11T15:27:13Z",
+  "generatedAt": "2026-09-11T16:32:03.553Z",
   "title": "Design System: PatchMark Core",
   "extensions": {
     "colorMeta": {
-      "cool-ground-light": { "role": "neutral", "displayName": "Cool Ground Light", "canonical": "#f4f5f7", "tonalRamp": ["oklch(15% 0.003 264.5)", "oklch(26% 0.003 264.5)", "oklch(38% 0.003 264.5)", "oklch(50% 0.003 264.5)", "oklch(62% 0.003 264.5)", "oklch(74% 0.003 264.5)", "oklch(86% 0.003 264.5)", "oklch(95% 0.003 264.5)"] },
-      "rail-mist-light": { "role": "neutral", "displayName": "Rail Mist Light", "canonical": "#eef0f3", "tonalRamp": ["oklch(15% 0.005 258.3)", "oklch(26% 0.005 258.3)", "oklch(38% 0.005 258.3)", "oklch(50% 0.005 258.3)", "oklch(62% 0.005 258.3)", "oklch(74% 0.005 258.3)", "oklch(86% 0.005 258.3)", "oklch(95% 0.005 258.3)"] },
-      "paper-light": { "role": "neutral", "displayName": "Paper Light", "canonical": "#ffffff", "tonalRamp": ["oklch(15% 0 0)", "oklch(26% 0 0)", "oklch(38% 0 0)", "oklch(50% 0 0)", "oklch(62% 0 0)", "oklch(74% 0 0)", "oklch(86% 0 0)", "oklch(95% 0 0)"] },
-      "paper-subtle-light": { "role": "neutral", "displayName": "Subtle Paper Light", "canonical": "#fafbfc", "tonalRamp": ["oklch(15% 0.002 247.8)", "oklch(26% 0.002 247.8)", "oklch(38% 0.002 247.8)", "oklch(50% 0.002 247.8)", "oklch(62% 0.002 247.8)", "oklch(74% 0.002 247.8)", "oklch(86% 0.002 247.8)", "oklch(95% 0.002 247.8)"] },
-      "graphite-light": { "role": "neutral", "displayName": "Graphite Light", "canonical": "#202329", "tonalRamp": ["oklch(15% 0.012 264.3)", "oklch(26% 0.012 264.3)", "oklch(38% 0.012 264.3)", "oklch(50% 0.012 264.3)", "oklch(62% 0.012 264.3)", "oklch(74% 0.012 264.3)", "oklch(86% 0.012 264.3)", "oklch(95% 0.012 264.3)"] },
-      "graphite-strong-light": { "role": "neutral", "displayName": "Strong Graphite Light", "canonical": "#15171a", "tonalRamp": ["oklch(15% 0.007 258.4)", "oklch(26% 0.007 258.4)", "oklch(38% 0.007 258.4)", "oklch(50% 0.007 258.4)", "oklch(62% 0.007 258.4)", "oklch(74% 0.007 258.4)", "oklch(86% 0.007 258.4)", "oklch(95% 0.007 258.4)"] },
-      "muted-light": { "role": "neutral", "displayName": "Muted Graphite Light", "canonical": "#626b75", "tonalRamp": ["oklch(15% 0.019 251)", "oklch(26% 0.019 251)", "oklch(38% 0.019 251)", "oklch(50% 0.019 251)", "oklch(62% 0.019 251)", "oklch(74% 0.019 251)", "oklch(86% 0.019 251)", "oklch(95% 0.019 251)"] },
-      "faint-light": { "role": "neutral", "displayName": "Faint Graphite Light", "canonical": "#626b75", "tonalRamp": ["oklch(15% 0.019 251)", "oklch(26% 0.019 251)", "oklch(38% 0.019 251)", "oklch(50% 0.019 251)", "oklch(62% 0.019 251)", "oklch(74% 0.019 251)", "oklch(86% 0.019 251)", "oklch(95% 0.019 251)"] },
-      "hairline-light": { "role": "neutral", "displayName": "Hairline Light", "canonical": "#dde1e6", "tonalRamp": ["oklch(15% 0.008 253.9)", "oklch(26% 0.008 253.9)", "oklch(38% 0.008 253.9)", "oklch(50% 0.008 253.9)", "oklch(62% 0.008 253.9)", "oklch(74% 0.008 253.9)", "oklch(86% 0.008 253.9)", "oklch(95% 0.008 253.9)"] },
-      "hairline-strong-light": { "role": "neutral", "displayName": "Strong Hairline Light", "canonical": "#cfd4da", "tonalRamp": ["oklch(15% 0.01 252.8)", "oklch(26% 0.01 252.8)", "oklch(38% 0.01 252.8)", "oklch(50% 0.01 252.8)", "oklch(62% 0.01 252.8)", "oklch(74% 0.01 252.8)", "oklch(86% 0.01 252.8)", "oklch(95% 0.01 252.8)"] },
-      "quiet-blue-light": { "role": "primary", "displayName": "Quiet Blue Light", "canonical": "#0878e6", "tonalRamp": ["oklch(15% 0.12 255)", "oklch(26% 0.12 255)", "oklch(38% 0.12 255)", "oklch(50% 0.12 255)", "oklch(62% 0.12 255)", "oklch(74% 0.12 255)", "oklch(86% 0.12 255)", "oklch(95% 0.12 255)"] },
-      "quiet-blue-soft-light": { "role": "primary", "displayName": "Quiet Blue Wash Light", "canonical": "#dceeff", "tonalRamp": ["oklch(15% 0.03 246.6)", "oklch(26% 0.03 246.6)", "oklch(38% 0.03 246.6)", "oklch(50% 0.03 246.6)", "oklch(62% 0.03 246.6)", "oklch(74% 0.03 246.6)", "oklch(86% 0.03 246.6)", "oklch(95% 0.03 246.6)"] },
-      "quiet-blue-ink-light": { "role": "primary", "displayName": "Quiet Blue Ink Light", "canonical": "#075aa8", "tonalRamp": ["oklch(15% 0.12 253.7)", "oklch(26% 0.12 253.7)", "oklch(38% 0.12 253.7)", "oklch(50% 0.12 253.7)", "oklch(62% 0.12 253.7)", "oklch(74% 0.12 253.7)", "oklch(86% 0.12 253.7)", "oklch(95% 0.12 253.7)"] },
-      "selection-light": { "role": "primary", "displayName": "Selection Wash Light", "canonical": "#cae4ff", "tonalRamp": ["oklch(15% 0.046 249.3)", "oklch(26% 0.046 249.3)", "oklch(38% 0.046 249.3)", "oklch(50% 0.046 249.3)", "oklch(62% 0.046 249.3)", "oklch(74% 0.046 249.3)", "oklch(86% 0.046 249.3)", "oklch(95% 0.046 249.3)"] },
-      "danger-light": { "role": "secondary", "displayName": "Signal Red Light", "canonical": "#cf3f37", "tonalRamp": ["oklch(15% 0.12 27.5)", "oklch(26% 0.12 27.5)", "oklch(38% 0.12 27.5)", "oklch(50% 0.12 27.5)", "oklch(62% 0.12 27.5)", "oklch(74% 0.12 27.5)", "oklch(86% 0.12 27.5)", "oklch(95% 0.12 27.5)"] },
-      "shelf-light": { "role": "neutral", "displayName": "Shelf Light", "canonical": "#25282d", "tonalRamp": ["oklch(15% 0.01 260.7)", "oklch(26% 0.01 260.7)", "oklch(38% 0.01 260.7)", "oklch(50% 0.01 260.7)", "oklch(62% 0.01 260.7)", "oklch(74% 0.01 260.7)", "oklch(86% 0.01 260.7)", "oklch(95% 0.01 260.7)"] },
-      "shelf-ink-light": { "role": "neutral", "displayName": "Shelf Ink Light", "canonical": "#f4f5f6", "tonalRamp": ["oklch(15% 0.002 247.8)", "oklch(26% 0.002 247.8)", "oklch(38% 0.002 247.8)", "oklch(50% 0.002 247.8)", "oklch(62% 0.002 247.8)", "oklch(74% 0.002 247.8)", "oklch(86% 0.002 247.8)", "oklch(95% 0.002 247.8)"] },
-      "cool-ground-dark": { "role": "neutral", "displayName": "Cool Ground Dark", "canonical": "#15171a", "tonalRamp": ["oklch(15% 0.007 258.4)", "oklch(26% 0.007 258.4)", "oklch(38% 0.007 258.4)", "oklch(50% 0.007 258.4)", "oklch(62% 0.007 258.4)", "oklch(74% 0.007 258.4)", "oklch(86% 0.007 258.4)", "oklch(95% 0.007 258.4)"] },
-      "rail-mist-dark": { "role": "neutral", "displayName": "Rail Mist Dark", "canonical": "#1c1e22", "tonalRamp": ["oklch(15% 0.008 264.4)", "oklch(26% 0.008 264.4)", "oklch(38% 0.008 264.4)", "oklch(50% 0.008 264.4)", "oklch(62% 0.008 264.4)", "oklch(74% 0.008 264.4)", "oklch(86% 0.008 264.4)", "oklch(95% 0.008 264.4)"] },
-      "paper-dark": { "role": "neutral", "displayName": "Paper Dark", "canonical": "#202328", "tonalRamp": ["oklch(15% 0.01 260.7)", "oklch(26% 0.01 260.7)", "oklch(38% 0.01 260.7)", "oklch(50% 0.01 260.7)", "oklch(62% 0.01 260.7)", "oklch(74% 0.01 260.7)", "oklch(86% 0.01 260.7)", "oklch(95% 0.01 260.7)"] },
-      "paper-subtle-dark": { "role": "neutral", "displayName": "Subtle Paper Dark", "canonical": "#1b1d21", "tonalRamp": ["oklch(15% 0.008 264.4)", "oklch(26% 0.008 264.4)", "oklch(38% 0.008 264.4)", "oklch(50% 0.008 264.4)", "oklch(62% 0.008 264.4)", "oklch(74% 0.008 264.4)", "oklch(86% 0.008 264.4)", "oklch(95% 0.008 264.4)"] },
-      "graphite-dark": { "role": "neutral", "displayName": "Graphite Dark", "canonical": "#e5e7ea", "tonalRamp": ["oklch(15% 0.005 258.3)", "oklch(26% 0.005 258.3)", "oklch(38% 0.005 258.3)", "oklch(50% 0.005 258.3)", "oklch(62% 0.005 258.3)", "oklch(74% 0.005 258.3)", "oklch(86% 0.005 258.3)", "oklch(95% 0.005 258.3)"] },
-      "graphite-strong-dark": { "role": "neutral", "displayName": "Strong Graphite Dark", "canonical": "#f7f8f9", "tonalRamp": ["oklch(15% 0.002 247.8)", "oklch(26% 0.002 247.8)", "oklch(38% 0.002 247.8)", "oklch(50% 0.002 247.8)", "oklch(62% 0.002 247.8)", "oklch(74% 0.002 247.8)", "oklch(86% 0.002 247.8)", "oklch(95% 0.002 247.8)"] },
-      "muted-dark": { "role": "neutral", "displayName": "Muted Graphite Dark", "canonical": "#9ba1aa", "tonalRamp": ["oklch(15% 0.015 258.4)", "oklch(26% 0.015 258.4)", "oklch(38% 0.015 258.4)", "oklch(50% 0.015 258.4)", "oklch(62% 0.015 258.4)", "oklch(74% 0.015 258.4)", "oklch(86% 0.015 258.4)", "oklch(95% 0.015 258.4)"] },
-      "faint-dark": { "role": "neutral", "displayName": "Faint Graphite Dark", "canonical": "#a1a8b1", "tonalRamp": ["oklch(15% 0.015 254.6)", "oklch(26% 0.015 254.6)", "oklch(38% 0.015 254.6)", "oklch(50% 0.015 254.6)", "oklch(62% 0.015 254.6)", "oklch(74% 0.015 254.6)", "oklch(86% 0.015 254.6)", "oklch(95% 0.015 254.6)"] },
-      "hairline-dark": { "role": "neutral", "displayName": "Hairline Dark", "canonical": "#30343a", "tonalRamp": ["oklch(15% 0.012 258.4)", "oklch(26% 0.012 258.4)", "oklch(38% 0.012 258.4)", "oklch(50% 0.012 258.4)", "oklch(62% 0.012 258.4)", "oklch(74% 0.012 258.4)", "oklch(86% 0.012 258.4)", "oklch(95% 0.012 258.4)"] },
-      "hairline-strong-dark": { "role": "neutral", "displayName": "Strong Hairline Dark", "canonical": "#3a3f46", "tonalRamp": ["oklch(15% 0.014 256.8)", "oklch(26% 0.014 256.8)", "oklch(38% 0.014 256.8)", "oklch(50% 0.014 256.8)", "oklch(62% 0.014 256.8)", "oklch(74% 0.014 256.8)", "oklch(86% 0.014 256.8)", "oklch(95% 0.014 256.8)"] },
-      "quiet-blue-dark": { "role": "primary", "displayName": "Quiet Blue Dark", "canonical": "#5aa7f8", "tonalRamp": ["oklch(15% 0.12 251.5)", "oklch(26% 0.12 251.5)", "oklch(38% 0.12 251.5)", "oklch(50% 0.12 251.5)", "oklch(62% 0.12 251.5)", "oklch(74% 0.12 251.5)", "oklch(86% 0.12 251.5)", "oklch(95% 0.12 251.5)"] },
-      "quiet-blue-soft-dark": { "role": "primary", "displayName": "Quiet Blue Wash Dark", "canonical": "#173e64", "tonalRamp": ["oklch(15% 0.079 250.6)", "oklch(26% 0.079 250.6)", "oklch(38% 0.079 250.6)", "oklch(50% 0.079 250.6)", "oklch(62% 0.079 250.6)", "oklch(74% 0.079 250.6)", "oklch(86% 0.079 250.6)", "oklch(95% 0.079 250.6)"] },
-      "quiet-blue-ink-dark": { "role": "primary", "displayName": "Quiet Blue Ink Dark", "canonical": "#9bcbff", "tonalRamp": ["oklch(15% 0.089 250.9)", "oklch(26% 0.089 250.9)", "oklch(38% 0.089 250.9)", "oklch(50% 0.089 250.9)", "oklch(62% 0.089 250.9)", "oklch(74% 0.089 250.9)", "oklch(86% 0.089 250.9)", "oklch(95% 0.089 250.9)"] },
-      "selection-dark": { "role": "primary", "displayName": "Selection Wash Dark", "canonical": "#1f4b75", "tonalRamp": ["oklch(15% 0.086 249.9)", "oklch(26% 0.086 249.9)", "oklch(38% 0.086 249.9)", "oklch(50% 0.086 249.9)", "oklch(62% 0.086 249.9)", "oklch(74% 0.086 249.9)", "oklch(86% 0.086 249.9)", "oklch(95% 0.086 249.9)"] },
-      "danger-dark": { "role": "secondary", "displayName": "Signal Red Dark", "canonical": "#ff7c73", "tonalRamp": ["oklch(15% 0.12 25.8)", "oklch(26% 0.12 25.8)", "oklch(38% 0.12 25.8)", "oklch(50% 0.12 25.8)", "oklch(62% 0.12 25.8)", "oklch(74% 0.12 25.8)", "oklch(86% 0.12 25.8)", "oklch(95% 0.12 25.8)"] },
-      "shelf-dark": { "role": "neutral", "displayName": "Shelf Dark", "canonical": "#f0f1f3", "tonalRamp": ["oklch(15% 0.003 264.5)", "oklch(26% 0.003 264.5)", "oklch(38% 0.003 264.5)", "oklch(50% 0.003 264.5)", "oklch(62% 0.003 264.5)", "oklch(74% 0.003 264.5)", "oklch(86% 0.003 264.5)", "oklch(95% 0.003 264.5)"] },
-      "shelf-ink-dark": { "role": "neutral", "displayName": "Shelf Ink Dark", "canonical": "#202328", "tonalRamp": ["oklch(15% 0.01 260.7)", "oklch(26% 0.01 260.7)", "oklch(38% 0.01 260.7)", "oklch(50% 0.01 260.7)", "oklch(62% 0.01 260.7)", "oklch(74% 0.01 260.7)", "oklch(86% 0.01 260.7)", "oklch(95% 0.01 260.7)"] }
+      "system-ground-light": {
+        "role": "neutral",
+        "displayName": "System Ground Light",
+        "canonical": "#f2f2f7",
+        "tonalRamp": [
+          "oklch(15% 0.007 286.3)",
+          "oklch(26% 0.007 286.3)",
+          "oklch(38% 0.007 286.3)",
+          "oklch(50% 0.007 286.3)",
+          "oklch(62% 0.007 286.3)",
+          "oklch(74% 0.007 286.3)",
+          "oklch(86% 0.007 286.3)",
+          "oklch(95% 0.007 286.3)"
+        ]
+      },
+      "grouped-sidebar-light": {
+        "role": "neutral",
+        "displayName": "Grouped Sidebar Light",
+        "canonical": "#ececf1",
+        "tonalRamp": [
+          "oklch(15% 0.007 286.3)",
+          "oklch(26% 0.007 286.3)",
+          "oklch(38% 0.007 286.3)",
+          "oklch(50% 0.007 286.3)",
+          "oklch(62% 0.007 286.3)",
+          "oklch(74% 0.007 286.3)",
+          "oklch(86% 0.007 286.3)",
+          "oklch(95% 0.007 286.3)"
+        ]
+      },
+      "paper-light": {
+        "role": "neutral",
+        "displayName": "Paper Light",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 0.0)",
+          "oklch(26% 0.000 0.0)",
+          "oklch(38% 0.000 0.0)",
+          "oklch(50% 0.000 0.0)",
+          "oklch(62% 0.000 0.0)",
+          "oklch(74% 0.000 0.0)",
+          "oklch(86% 0.000 0.0)",
+          "oklch(95% 0.000 0.0)"
+        ]
+      },
+      "chrome-light": {
+        "role": "neutral",
+        "displayName": "Toolbar Material Light",
+        "canonical": "rgba(251, 251, 253, 0.78)",
+        "tonalRamp": [
+          "oklch(15% 0.003 286.4 / 0.78)",
+          "oklch(26% 0.003 286.4 / 0.78)",
+          "oklch(38% 0.003 286.4 / 0.78)",
+          "oklch(50% 0.003 286.4 / 0.78)",
+          "oklch(62% 0.003 286.4 / 0.78)",
+          "oklch(74% 0.003 286.4 / 0.78)",
+          "oklch(86% 0.003 286.4 / 0.78)",
+          "oklch(95% 0.003 286.4 / 0.78)"
+        ]
+      },
+      "elevated-light": {
+        "role": "neutral",
+        "displayName": "Elevated Material Light",
+        "canonical": "rgba(255, 255, 255, 0.88)",
+        "tonalRamp": [
+          "oklch(15% 0.000 0.0 / 0.88)",
+          "oklch(26% 0.000 0.0 / 0.88)",
+          "oklch(38% 0.000 0.0 / 0.88)",
+          "oklch(50% 0.000 0.0 / 0.88)",
+          "oklch(62% 0.000 0.0 / 0.88)",
+          "oklch(74% 0.000 0.0 / 0.88)",
+          "oklch(86% 0.000 0.0 / 0.88)",
+          "oklch(95% 0.000 0.0 / 0.88)"
+        ]
+      },
+      "graphite-light": {
+        "role": "neutral",
+        "displayName": "Graphite Light",
+        "canonical": "#1d1d1f",
+        "tonalRamp": [
+          "oklch(15% 0.004 286.1)",
+          "oklch(26% 0.004 286.1)",
+          "oklch(38% 0.004 286.1)",
+          "oklch(50% 0.004 286.1)",
+          "oklch(62% 0.004 286.1)",
+          "oklch(74% 0.004 286.1)",
+          "oklch(86% 0.004 286.1)",
+          "oklch(95% 0.004 286.1)"
+        ]
+      },
+      "graphite-soft-light": {
+        "role": "neutral",
+        "displayName": "Soft Graphite Light",
+        "canonical": "#3a3a3c",
+        "tonalRamp": [
+          "oklch(15% 0.003 286.2)",
+          "oklch(26% 0.003 286.2)",
+          "oklch(38% 0.003 286.2)",
+          "oklch(50% 0.003 286.2)",
+          "oklch(62% 0.003 286.2)",
+          "oklch(74% 0.003 286.2)",
+          "oklch(86% 0.003 286.2)",
+          "oklch(95% 0.003 286.2)"
+        ]
+      },
+      "secondary-light": {
+        "role": "neutral",
+        "displayName": "Secondary Text Light",
+        "canonical": "#636366",
+        "tonalRamp": [
+          "oklch(15% 0.005 286.2)",
+          "oklch(26% 0.005 286.2)",
+          "oklch(38% 0.005 286.2)",
+          "oklch(50% 0.005 286.2)",
+          "oklch(62% 0.005 286.2)",
+          "oklch(74% 0.005 286.2)",
+          "oklch(86% 0.005 286.2)",
+          "oklch(95% 0.005 286.2)"
+        ]
+      },
+      "tertiary-light": {
+        "role": "neutral",
+        "displayName": "Tertiary Text Light",
+        "canonical": "#68686d",
+        "tonalRamp": [
+          "oklch(15% 0.008 286.1)",
+          "oklch(26% 0.008 286.1)",
+          "oklch(38% 0.008 286.1)",
+          "oklch(50% 0.008 286.1)",
+          "oklch(62% 0.008 286.1)",
+          "oklch(74% 0.008 286.1)",
+          "oklch(86% 0.008 286.1)",
+          "oklch(95% 0.008 286.1)"
+        ]
+      },
+      "separator-light": {
+        "role": "neutral",
+        "displayName": "Separator Light",
+        "canonical": "rgba(60, 60, 67, 0.13)",
+        "tonalRamp": [
+          "oklch(15% 0.012 285.8 / 0.13)",
+          "oklch(26% 0.012 285.8 / 0.13)",
+          "oklch(38% 0.012 285.8 / 0.13)",
+          "oklch(50% 0.012 285.8 / 0.13)",
+          "oklch(62% 0.012 285.8 / 0.13)",
+          "oklch(74% 0.012 285.8 / 0.13)",
+          "oklch(86% 0.012 285.8 / 0.13)",
+          "oklch(95% 0.012 285.8 / 0.13)"
+        ]
+      },
+      "separator-strong-light": {
+        "role": "neutral",
+        "displayName": "Strong Separator Light",
+        "canonical": "rgba(60, 60, 67, 0.21)",
+        "tonalRamp": [
+          "oklch(15% 0.012 285.8 / 0.21)",
+          "oklch(26% 0.012 285.8 / 0.21)",
+          "oklch(38% 0.012 285.8 / 0.21)",
+          "oklch(50% 0.012 285.8 / 0.21)",
+          "oklch(62% 0.012 285.8 / 0.21)",
+          "oklch(74% 0.012 285.8 / 0.21)",
+          "oklch(86% 0.012 285.8 / 0.21)",
+          "oklch(95% 0.012 285.8 / 0.21)"
+        ]
+      },
+      "fill-light": {
+        "role": "neutral",
+        "displayName": "System Fill Light",
+        "canonical": "rgba(120, 120, 128, 0.12)",
+        "tonalRamp": [
+          "oklch(15% 0.012 286.0 / 0.12)",
+          "oklch(26% 0.012 286.0 / 0.12)",
+          "oklch(38% 0.012 286.0 / 0.12)",
+          "oklch(50% 0.012 286.0 / 0.12)",
+          "oklch(62% 0.012 286.0 / 0.12)",
+          "oklch(74% 0.012 286.0 / 0.12)",
+          "oklch(86% 0.012 286.0 / 0.12)",
+          "oklch(95% 0.012 286.0 / 0.12)"
+        ]
+      },
+      "fill-strong-light": {
+        "role": "neutral",
+        "displayName": "Strong System Fill Light",
+        "canonical": "rgba(120, 120, 128, 0.2)",
+        "tonalRamp": [
+          "oklch(15% 0.012 286.0 / 0.2)",
+          "oklch(26% 0.012 286.0 / 0.2)",
+          "oklch(38% 0.012 286.0 / 0.2)",
+          "oklch(50% 0.012 286.0 / 0.2)",
+          "oklch(62% 0.012 286.0 / 0.2)",
+          "oklch(74% 0.012 286.0 / 0.2)",
+          "oklch(86% 0.012 286.0 / 0.2)",
+          "oklch(95% 0.012 286.0 / 0.2)"
+        ]
+      },
+      "quiet-blue": {
+        "role": "primary",
+        "displayName": "Quiet Blue",
+        "canonical": "#0a84ff",
+        "tonalRamp": [
+          "oklch(15% 0.206 255.5)",
+          "oklch(26% 0.206 255.5)",
+          "oklch(38% 0.206 255.5)",
+          "oklch(50% 0.206 255.5)",
+          "oklch(62% 0.206 255.5)",
+          "oklch(74% 0.206 255.5)",
+          "oklch(86% 0.206 255.5)",
+          "oklch(95% 0.206 255.5)"
+        ]
+      },
+      "quiet-blue-soft-light": {
+        "role": "primary",
+        "displayName": "Quiet Blue Wash Light",
+        "canonical": "rgba(10, 132, 255, 0.14)",
+        "tonalRamp": [
+          "oklch(15% 0.206 255.5 / 0.14)",
+          "oklch(26% 0.206 255.5 / 0.14)",
+          "oklch(38% 0.206 255.5 / 0.14)",
+          "oklch(50% 0.206 255.5 / 0.14)",
+          "oklch(62% 0.206 255.5 / 0.14)",
+          "oklch(74% 0.206 255.5 / 0.14)",
+          "oklch(86% 0.206 255.5 / 0.14)",
+          "oklch(95% 0.206 255.5 / 0.14)"
+        ]
+      },
+      "quiet-blue-ink-light": {
+        "role": "primary",
+        "displayName": "Quiet Blue Ink Light",
+        "canonical": "#0070dc",
+        "tonalRamp": [
+          "oklch(15% 0.186 255.4)",
+          "oklch(26% 0.186 255.4)",
+          "oklch(38% 0.186 255.4)",
+          "oklch(50% 0.186 255.4)",
+          "oklch(62% 0.186 255.4)",
+          "oklch(74% 0.186 255.4)",
+          "oklch(86% 0.186 255.4)",
+          "oklch(95% 0.186 255.4)"
+        ]
+      },
+      "selection-light": {
+        "role": "primary",
+        "displayName": "Selection Wash Light",
+        "canonical": "rgba(10, 132, 255, 0.22)",
+        "tonalRamp": [
+          "oklch(15% 0.206 255.5 / 0.22)",
+          "oklch(26% 0.206 255.5 / 0.22)",
+          "oklch(38% 0.206 255.5 / 0.22)",
+          "oklch(50% 0.206 255.5 / 0.22)",
+          "oklch(62% 0.206 255.5 / 0.22)",
+          "oklch(74% 0.206 255.5 / 0.22)",
+          "oklch(86% 0.206 255.5 / 0.22)",
+          "oklch(95% 0.206 255.5 / 0.22)"
+        ]
+      },
+      "danger-light": {
+        "role": "secondary",
+        "displayName": "System Danger Light",
+        "canonical": "#ff3b30",
+        "tonalRamp": [
+          "oklch(15% 0.232 28.7)",
+          "oklch(26% 0.232 28.7)",
+          "oklch(38% 0.232 28.7)",
+          "oklch(50% 0.232 28.7)",
+          "oklch(62% 0.232 28.7)",
+          "oklch(74% 0.232 28.7)",
+          "oklch(86% 0.232 28.7)",
+          "oklch(95% 0.232 28.7)"
+        ]
+      },
+      "system-ground-dark": {
+        "role": "neutral",
+        "displayName": "System Ground Dark",
+        "canonical": "#111113",
+        "tonalRamp": [
+          "oklch(15% 0.004 286.0)",
+          "oklch(26% 0.004 286.0)",
+          "oklch(38% 0.004 286.0)",
+          "oklch(50% 0.004 286.0)",
+          "oklch(62% 0.004 286.0)",
+          "oklch(74% 0.004 286.0)",
+          "oklch(86% 0.004 286.0)",
+          "oklch(95% 0.004 286.0)"
+        ]
+      },
+      "grouped-sidebar-dark": {
+        "role": "neutral",
+        "displayName": "Grouped Sidebar Dark",
+        "canonical": "#1b1b1e",
+        "tonalRamp": [
+          "oklch(15% 0.006 285.9)",
+          "oklch(26% 0.006 285.9)",
+          "oklch(38% 0.006 285.9)",
+          "oklch(50% 0.006 285.9)",
+          "oklch(62% 0.006 285.9)",
+          "oklch(74% 0.006 285.9)",
+          "oklch(86% 0.006 285.9)",
+          "oklch(95% 0.006 285.9)"
+        ]
+      },
+      "paper-dark": {
+        "role": "neutral",
+        "displayName": "Paper Dark",
+        "canonical": "#202023",
+        "tonalRamp": [
+          "oklch(15% 0.006 286.0)",
+          "oklch(26% 0.006 286.0)",
+          "oklch(38% 0.006 286.0)",
+          "oklch(50% 0.006 286.0)",
+          "oklch(62% 0.006 286.0)",
+          "oklch(74% 0.006 286.0)",
+          "oklch(86% 0.006 286.0)",
+          "oklch(95% 0.006 286.0)"
+        ]
+      },
+      "chrome-dark": {
+        "role": "neutral",
+        "displayName": "Toolbar Material Dark",
+        "canonical": "rgba(31, 31, 34, 0.8)",
+        "tonalRamp": [
+          "oklch(15% 0.006 286.0 / 0.8)",
+          "oklch(26% 0.006 286.0 / 0.8)",
+          "oklch(38% 0.006 286.0 / 0.8)",
+          "oklch(50% 0.006 286.0 / 0.8)",
+          "oklch(62% 0.006 286.0 / 0.8)",
+          "oklch(74% 0.006 286.0 / 0.8)",
+          "oklch(86% 0.006 286.0 / 0.8)",
+          "oklch(95% 0.006 286.0 / 0.8)"
+        ]
+      },
+      "elevated-dark": {
+        "role": "neutral",
+        "displayName": "Elevated Material Dark",
+        "canonical": "rgba(44, 44, 47, 0.9)",
+        "tonalRamp": [
+          "oklch(15% 0.005 286.1 / 0.9)",
+          "oklch(26% 0.005 286.1 / 0.9)",
+          "oklch(38% 0.005 286.1 / 0.9)",
+          "oklch(50% 0.005 286.1 / 0.9)",
+          "oklch(62% 0.005 286.1 / 0.9)",
+          "oklch(74% 0.005 286.1 / 0.9)",
+          "oklch(86% 0.005 286.1 / 0.9)",
+          "oklch(95% 0.005 286.1 / 0.9)"
+        ]
+      },
+      "graphite-dark": {
+        "role": "neutral",
+        "displayName": "Graphite Dark",
+        "canonical": "#f5f5f7",
+        "tonalRamp": [
+          "oklch(15% 0.003 286.4)",
+          "oklch(26% 0.003 286.4)",
+          "oklch(38% 0.003 286.4)",
+          "oklch(50% 0.003 286.4)",
+          "oklch(62% 0.003 286.4)",
+          "oklch(74% 0.003 286.4)",
+          "oklch(86% 0.003 286.4)",
+          "oklch(95% 0.003 286.4)"
+        ]
+      },
+      "graphite-soft-dark": {
+        "role": "neutral",
+        "displayName": "Soft Graphite Dark",
+        "canonical": "#e2e2e7",
+        "tonalRamp": [
+          "oklch(15% 0.007 286.3)",
+          "oklch(26% 0.007 286.3)",
+          "oklch(38% 0.007 286.3)",
+          "oklch(50% 0.007 286.3)",
+          "oklch(62% 0.007 286.3)",
+          "oklch(74% 0.007 286.3)",
+          "oklch(86% 0.007 286.3)",
+          "oklch(95% 0.007 286.3)"
+        ]
+      },
+      "secondary-dark": {
+        "role": "neutral",
+        "displayName": "Secondary Text Dark",
+        "canonical": "#aeaeb2",
+        "tonalRamp": [
+          "oklch(15% 0.006 286.3)",
+          "oklch(26% 0.006 286.3)",
+          "oklch(38% 0.006 286.3)",
+          "oklch(50% 0.006 286.3)",
+          "oklch(62% 0.006 286.3)",
+          "oklch(74% 0.006 286.3)",
+          "oklch(86% 0.006 286.3)",
+          "oklch(95% 0.006 286.3)"
+        ]
+      },
+      "tertiary-dark": {
+        "role": "neutral",
+        "displayName": "Tertiary Text Dark",
+        "canonical": "#98989d",
+        "tonalRamp": [
+          "oklch(15% 0.007 286.2)",
+          "oklch(26% 0.007 286.2)",
+          "oklch(38% 0.007 286.2)",
+          "oklch(50% 0.007 286.2)",
+          "oklch(62% 0.007 286.2)",
+          "oklch(74% 0.007 286.2)",
+          "oklch(86% 0.007 286.2)",
+          "oklch(95% 0.007 286.2)"
+        ]
+      },
+      "separator-dark": {
+        "role": "neutral",
+        "displayName": "Separator Dark",
+        "canonical": "rgba(235, 235, 245, 0.13)",
+        "tonalRamp": [
+          "oklch(15% 0.013 286.1 / 0.13)",
+          "oklch(26% 0.013 286.1 / 0.13)",
+          "oklch(38% 0.013 286.1 / 0.13)",
+          "oklch(50% 0.013 286.1 / 0.13)",
+          "oklch(62% 0.013 286.1 / 0.13)",
+          "oklch(74% 0.013 286.1 / 0.13)",
+          "oklch(86% 0.013 286.1 / 0.13)",
+          "oklch(95% 0.013 286.1 / 0.13)"
+        ]
+      },
+      "separator-strong-dark": {
+        "role": "neutral",
+        "displayName": "Strong Separator Dark",
+        "canonical": "rgba(235, 235, 245, 0.21)",
+        "tonalRamp": [
+          "oklch(15% 0.013 286.1 / 0.21)",
+          "oklch(26% 0.013 286.1 / 0.21)",
+          "oklch(38% 0.013 286.1 / 0.21)",
+          "oklch(50% 0.013 286.1 / 0.21)",
+          "oklch(62% 0.013 286.1 / 0.21)",
+          "oklch(74% 0.013 286.1 / 0.21)",
+          "oklch(86% 0.013 286.1 / 0.21)",
+          "oklch(95% 0.013 286.1 / 0.21)"
+        ]
+      },
+      "fill-dark": {
+        "role": "neutral",
+        "displayName": "System Fill Dark",
+        "canonical": "rgba(118, 118, 128, 0.24)",
+        "tonalRamp": [
+          "oklch(15% 0.015 285.9 / 0.24)",
+          "oklch(26% 0.015 285.9 / 0.24)",
+          "oklch(38% 0.015 285.9 / 0.24)",
+          "oklch(50% 0.015 285.9 / 0.24)",
+          "oklch(62% 0.015 285.9 / 0.24)",
+          "oklch(74% 0.015 285.9 / 0.24)",
+          "oklch(86% 0.015 285.9 / 0.24)",
+          "oklch(95% 0.015 285.9 / 0.24)"
+        ]
+      },
+      "fill-strong-dark": {
+        "role": "neutral",
+        "displayName": "Strong System Fill Dark",
+        "canonical": "rgba(118, 118, 128, 0.34)",
+        "tonalRamp": [
+          "oklch(15% 0.015 285.9 / 0.34)",
+          "oklch(26% 0.015 285.9 / 0.34)",
+          "oklch(38% 0.015 285.9 / 0.34)",
+          "oklch(50% 0.015 285.9 / 0.34)",
+          "oklch(62% 0.015 285.9 / 0.34)",
+          "oklch(74% 0.015 285.9 / 0.34)",
+          "oklch(86% 0.015 285.9 / 0.34)",
+          "oklch(95% 0.015 285.9 / 0.34)"
+        ]
+      },
+      "quiet-blue-soft-dark": {
+        "role": "primary",
+        "displayName": "Quiet Blue Wash Dark",
+        "canonical": "rgba(10, 132, 255, 0.2)",
+        "tonalRamp": [
+          "oklch(15% 0.206 255.5 / 0.2)",
+          "oklch(26% 0.206 255.5 / 0.2)",
+          "oklch(38% 0.206 255.5 / 0.2)",
+          "oklch(50% 0.206 255.5 / 0.2)",
+          "oklch(62% 0.206 255.5 / 0.2)",
+          "oklch(74% 0.206 255.5 / 0.2)",
+          "oklch(86% 0.206 255.5 / 0.2)",
+          "oklch(95% 0.206 255.5 / 0.2)"
+        ]
+      },
+      "quiet-blue-ink-dark": {
+        "role": "primary",
+        "displayName": "Quiet Blue Ink Dark",
+        "canonical": "#64adff",
+        "tonalRamp": [
+          "oklch(15% 0.140 252.7)",
+          "oklch(26% 0.140 252.7)",
+          "oklch(38% 0.140 252.7)",
+          "oklch(50% 0.140 252.7)",
+          "oklch(62% 0.140 252.7)",
+          "oklch(74% 0.140 252.7)",
+          "oklch(86% 0.140 252.7)",
+          "oklch(95% 0.140 252.7)"
+        ]
+      },
+      "selection-dark": {
+        "role": "primary",
+        "displayName": "Selection Wash Dark",
+        "canonical": "rgba(10, 132, 255, 0.32)",
+        "tonalRamp": [
+          "oklch(15% 0.206 255.5 / 0.32)",
+          "oklch(26% 0.206 255.5 / 0.32)",
+          "oklch(38% 0.206 255.5 / 0.32)",
+          "oklch(50% 0.206 255.5 / 0.32)",
+          "oklch(62% 0.206 255.5 / 0.32)",
+          "oklch(74% 0.206 255.5 / 0.32)",
+          "oklch(86% 0.206 255.5 / 0.32)",
+          "oklch(95% 0.206 255.5 / 0.32)"
+        ]
+      },
+      "danger-dark": {
+        "role": "secondary",
+        "displayName": "System Danger Dark",
+        "canonical": "#ff453a",
+        "tonalRamp": [
+          "oklch(15% 0.224 28.3)",
+          "oklch(26% 0.224 28.3)",
+          "oklch(38% 0.224 28.3)",
+          "oklch(50% 0.224 28.3)",
+          "oklch(62% 0.224 28.3)",
+          "oklch(74% 0.224 28.3)",
+          "oklch(86% 0.224 28.3)",
+          "oklch(95% 0.224 28.3)"
+        ]
+      }
     },
     "typographyMeta": {
-      "display": { "displayName": "Document Display", "purpose": "Rendered level-one Markdown headings." },
-      "headline": { "displayName": "Document Headline", "purpose": "Rendered section headings." },
-      "body": { "displayName": "Reading Body", "purpose": "Long-form rendered Markdown prose." },
-      "editor": { "displayName": "Markdown Source", "purpose": "CodeMirror source editing and inline code contexts." },
-      "ui": { "displayName": "Interface Text", "purpose": "Document names, search, and title-bar chrome." },
-      "label": { "displayName": "Compact Label", "purpose": "Controls, counts, metadata, and status text." }
+      "display": {
+        "displayName": "Library Display",
+        "purpose": "The library title and rare top-level window landmarks."
+      },
+      "headline": {
+        "displayName": "Manuscript Headline",
+        "purpose": "Rendered and live manuscript headings in the system family."
+      },
+      "body": {
+        "displayName": "Reading Body",
+        "purpose": "Rendered manuscript and export-preview prose."
+      },
+      "live-editor": {
+        "displayName": "Live Editor",
+        "purpose": "In-place formatted Markdown with syntax revealed at the caret line."
+      },
+      "source-editor": {
+        "displayName": "Source Editor",
+        "purpose": "Literal Markdown and code-oriented inspection."
+      },
+      "ui": {
+        "displayName": "Interface Text",
+        "purpose": "Document titles and principal row labels."
+      },
+      "label": {
+        "displayName": "Desktop Label",
+        "purpose": "Section labels, metadata, counters, and compact navigation."
+      }
     },
     "shadows": [
-      { "name": "selected-surface", "value": "0 1px 2px rgba(20, 26, 32, 0.045)", "purpose": "Confirms the active document row." },
-      { "name": "selected-control", "value": "0 1px 3px rgba(20, 26, 33, 0.12)", "purpose": "Confirms the active view-mode segment." },
-      { "name": "floating-light", "value": "0 14px 36px rgba(21, 27, 34, 0.16), 0 2px 7px rgba(21, 27, 34, 0.1)", "purpose": "Elevates the formatting shelf, command palette, and toast in light appearance." },
-      { "name": "floating-dark", "value": "0 18px 42px rgba(0, 0, 0, 0.36), 0 2px 9px rgba(0, 0, 0, 0.24)", "purpose": "Elevates the same floating affordances in dark appearance." },
-      { "name": "drawer", "value": "18px 0 42px rgba(15, 20, 26, 0.2)", "purpose": "Separates the compact-screen document drawer from its scrim." }
+      {
+        "name": "floating-light",
+        "value": "0 18px 46px rgba(22, 27, 34, 0.16), 0 3px 12px rgba(22, 27, 34, 0.09)",
+        "purpose": "Elevates popovers, format dock, command palette, and toast in light appearance."
+      },
+      {
+        "name": "floating-dark",
+        "value": "0 22px 56px rgba(0, 0, 0, 0.48), 0 4px 14px rgba(0, 0, 0, 0.3)",
+        "purpose": "Elevates the same transient surfaces in dark appearance."
+      },
+      {
+        "name": "selected-segment",
+        "value": "0 1px 3px rgba(0, 0, 0, 0.12)",
+        "purpose": "Confirms the active inspector tab."
+      },
+      {
+        "name": "overlay-rail-left",
+        "value": "18px 0 48px rgba(0, 0, 0, 0.22)",
+        "purpose": "Separates the library when it overlays a narrow desktop window."
+      },
+      {
+        "name": "overlay-rail-right",
+        "value": "-18px 0 48px rgba(0, 0, 0, 0.18)",
+        "purpose": "Separates the inspector when it overlays a narrow desktop window."
+      }
     ],
     "motion": [
-      { "name": "ease-out", "value": "cubic-bezier(0.2, 0.75, 0.18, 1)", "purpose": "Shared deceleration for shell, shelf, palette, toast, and drawer motion." },
-      { "name": "control", "value": "150ms ease", "purpose": "Hover, color, opacity, and press feedback on controls." },
-      { "name": "rail", "value": "240ms cubic-bezier(0.2, 0.75, 0.18, 1)", "purpose": "Desktop grid-column changes when rails open or close." },
-      { "name": "overlay-entry", "value": "190ms cubic-bezier(0.2, 0.75, 0.18, 1)", "purpose": "Command-palette entry from a small upward offset and scale." },
-      { "name": "reduced-motion", "value": "0.01ms", "purpose": "Effectively disables animation and transition when reduced motion is requested." }
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Shared desktop deceleration for shell, dock, popover, palette, and rail transitions."
+      },
+      {
+        "name": "control",
+        "value": "150ms ease",
+        "purpose": "Hover, fill, and mouse-press feedback."
+      },
+      {
+        "name": "shell-columns",
+        "value": "420ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Opening and closing desktop side rails."
+      },
+      {
+        "name": "overlay-rail",
+        "value": "350ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Narrow-window library and inspector overlays."
+      },
+      {
+        "name": "dock-entry",
+        "value": "300ms cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Contextual format dock entry."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "Effectively disables animation and transition when reduced motion is requested."
+      }
     ],
     "breakpoints": [
-      { "name": "rail-tight", "value": "1120px" },
-      { "name": "compact", "value": "860px" },
-      { "name": "phone", "value": "520px" }
+      {
+        "name": "rail-overlay",
+        "value": "1180px"
+      },
+      {
+        "name": "narrow-desktop",
+        "value": "900px"
+      },
+      {
+        "name": "emergency-window",
+        "value": "520px"
+      }
     ]
   },
   "components": [
     {
-      "name": "Save Button",
+      "name": "Primary Manuscript Action",
       "kind": "button",
-      "refersTo": "button-save",
-      "description": "Compact graphite primary action with saved and unsaved icon feedback.",
-      "html": "<button class=\"ds-save-button\" type=\"button\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M15.2 3a2 2 0 0 1 1.4.6l3.8 3.8a2 2 0 0 1 .6 1.4V19a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z\"/><path d=\"M17 21v-7a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v7\"/><path d=\"M7 3v4a1 1 0 0 0 1 1h7\"/></svg><span>保存</span></button>",
-      "css": ".ds-save-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 12px; border: 0; border-radius: 9px; background: var(--ink-strong, #15171a); color: var(--paper, #ffffff); font: 650 11px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; cursor: pointer; transition: transform 150ms ease, opacity 150ms ease; } .ds-save-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-save-button:hover { opacity: 0.88; } .ds-save-button:active { transform: scale(0.96); } .ds-save-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0878e6) 42%, transparent); outline-offset: 2px; }"
+      "refersTo": "button-primary",
+      "description": "Quiet-blue action used for compose, save, and first-document entry.",
+      "html": "<button class=\"ds-primary-action\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg><span>新建文稿</span></button>",
+      "css": ".ds-primary-action { display: inline-flex; align-items: center; gap: 7px; height: 42px; padding: 0 15px; border: 0; border-radius: 11px; background: var(--accent, #0a84ff); color: #fff; font: 650 13px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; cursor: pointer; transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1), opacity 150ms ease; } .ds-primary-action svg { width: 17px; height: 17px; } .ds-primary-action:hover { opacity: 0.9; } .ds-primary-action:active { transform: scale(0.96); } .ds-primary-action:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
     },
     {
-      "name": "Icon Button",
+      "name": "Toolbar Icon Button",
       "kind": "button",
       "refersTo": "button-icon",
-      "description": "Neutral native-radius utility control used throughout the shell.",
-      "html": "<button class=\"ds-icon-button\" type=\"button\" aria-label=\"打开菜单\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M4 5h16\"/><path d=\"M4 12h16\"/><path d=\"M4 19h16\"/></svg></button>",
-      "css": ".ds-icon-button { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: var(--muted, #626b75); cursor: pointer; transition: color 150ms ease, background-color 150ms ease, transform 150ms ease; } .ds-icon-button svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-icon-button:hover { background: var(--hover, rgba(30, 36, 44, 0.055)); color: var(--ink-strong, #15171a); } .ds-icon-button:active { background: var(--pressed, rgba(30, 36, 44, 0.09)); transform: scale(0.94); } .ds-icon-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0878e6) 42%, transparent); outline-offset: 2px; }"
+      "description": "Precise neutral desktop control shared by the toolbar and rail headers.",
+      "html": "<button class=\"ds-icon-button\" type=\"button\" aria-label=\"打开资料库\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M9 3v18\"/></svg></button>",
+      "css": ".ds-icon-button { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 11px; background: transparent; color: var(--secondary, #636366); cursor: pointer; transition: color 150ms ease, background-color 150ms ease, transform 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-icon-button svg { width: 18px; height: 18px; } .ds-icon-button:hover { background: var(--fill, rgba(120, 120, 128, 0.12)); color: var(--ink, #1d1d1f); } .ds-icon-button:active { transform: scale(0.91); background: var(--fill-strong, rgba(120, 120, 128, 0.2)); } .ds-icon-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
     },
     {
-      "name": "Active Icon Button",
+      "name": "Active Toolbar Icon",
       "kind": "button",
       "refersTo": "button-icon-active",
-      "description": "Selected utility control with the restrained quiet-blue state wash.",
-      "html": "<button class=\"ds-icon-button-active\" type=\"button\" aria-pressed=\"true\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M4 5h16\"/><path d=\"M4 12h16\"/><path d=\"M4 19h16\"/></svg></button>",
-      "css": ".ds-icon-button-active { display: inline-grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 0; border-radius: 10px; background: var(--accent-soft, #dceeff); color: var(--accent-ink, #075aa8); cursor: pointer; transition: color 150ms ease, background-color 150ms ease, transform 150ms ease; } .ds-icon-button-active svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-icon-button-active:hover { color: var(--ink-strong, #15171a); } .ds-icon-button-active:active { transform: scale(0.94); } .ds-icon-button-active:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0878e6) 42%, transparent); outline-offset: 2px; }"
+      "description": "Selected toolbar control using quiet-blue state rather than decorative emphasis.",
+      "html": "<button class=\"ds-icon-active\" type=\"button\" aria-pressed=\"true\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M15 3v18\"/></svg></button>",
+      "css": ".ds-icon-active { display: inline-grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 11px; background: var(--accent-soft, rgba(10, 132, 255, 0.14)); color: var(--accent-ink, #0070dc); cursor: pointer; transition: transform 150ms cubic-bezier(0.22, 1, 0.36, 1), background-color 150ms ease; } .ds-icon-active svg { width: 18px; height: 18px; } .ds-icon-active:hover { background: color-mix(in srgb, var(--accent-soft, rgba(10, 132, 255, 0.14)) 80%, var(--fill, transparent)); } .ds-icon-active:active { transform: scale(0.91); } .ds-icon-active:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
     },
     {
-      "name": "View Switcher",
-      "kind": "chip",
-      "refersTo": "tab-active",
-      "description": "Segmented Edit, Read, and Split modes with a paper-selected state.",
-      "html": "<div class=\"ds-view-switcher\" role=\"tablist\" aria-label=\"显示模式\"><button type=\"button\" role=\"tab\">编辑</button><button class=\"ds-active\" type=\"button\" role=\"tab\" aria-selected=\"true\">阅读</button><button type=\"button\" role=\"tab\">分栏</button></div>",
-      "css": ".ds-view-switcher { display: inline-flex; align-items: center; gap: 2px; height: 34px; padding: 3px; border: 1px solid var(--line, #dde1e6); border-radius: 10px; background: var(--app-ground, #f4f5f7); } .ds-view-switcher button { height: 26px; padding: 0 10px; border: 0; border-radius: 7px; background: transparent; color: var(--muted, #626b75); font: 400 11px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; cursor: pointer; } .ds-view-switcher button:hover { color: var(--ink, #202329); } .ds-view-switcher button.ds-active { background: var(--paper, #ffffff); color: var(--ink-strong, #15171a); box-shadow: 0 1px 3px rgba(20, 26, 33, 0.12); font-weight: 620; } .ds-view-switcher button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0878e6) 42%, transparent); outline-offset: 2px; }"
+      "name": "View Menu Button",
+      "kind": "button",
+      "refersTo": "view-button",
+      "description": "Compact toolbar menu that exposes live, reading, source, and split modes.",
+      "html": "<button class=\"ds-view-button\" type=\"button\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M2.06 12.35a1 1 0 0 1 0-.7C3.79 7.6 7.76 5 12 5c4.24 0 8.21 2.6 9.94 6.65a1 1 0 0 1 0 .7C20.21 16.4 16.24 19 12 19c-4.24 0-8.21-2.6-9.94-6.65Z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg><span>实时排版</span><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m6 9 6 6 6-6\"/></svg></button>",
+      "css": ".ds-view-button { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 10px; border: 0; border-radius: 10px; background: transparent; color: var(--secondary, #636366); font: 590 12px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; cursor: pointer; } .ds-view-button svg { width: 16px; height: 16px; } .ds-view-button svg:last-child { width: 13px; height: 13px; } .ds-view-button:hover, .ds-view-button[aria-expanded='true'] { background: var(--fill, rgba(120, 120, 128, 0.12)); color: var(--ink, #1d1d1f); } .ds-view-button:active { transform: scale(0.96); } .ds-view-button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
     },
     {
       "name": "Library Search",
       "kind": "input",
       "refersTo": "search-field",
-      "description": "Quiet inset search field for filtering local Markdown documents.",
-      "html": "<label class=\"ds-library-search\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.34-4.34\"/></svg><input type=\"search\" placeholder=\"搜索\" aria-label=\"搜索文稿\" /></label>",
-      "css": ".ds-library-search { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; width: 224px; height: 34px; padding: 0 7px 0 9px; border: 1px solid var(--line, #dde1e6); border-radius: 9px; background: var(--paper-subtle, #fafbfc); color: var(--muted, #626b75); } .ds-library-search svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-library-search input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink, #202329); font: 400 13px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; } .ds-library-search input::placeholder { color: var(--faint, #626b75); } .ds-library-search:focus-within { border-color: color-mix(in srgb, var(--accent, #0878e6) 62%, var(--line, #dde1e6)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent, #0878e6) 15%, transparent); }"
+      "description": "Borderless grouped-fill search for filtering local Markdown documents.",
+      "html": "<label class=\"ds-library-search\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.34-4.34\"/></svg><input type=\"search\" placeholder=\"搜索文稿\" aria-label=\"搜索文稿\"/></label>",
+      "css": ".ds-library-search { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: center; width: 258px; height: 36px; padding: 0 8px 0 10px; border: 0; border-radius: 10px; background: var(--fill, rgba(120, 120, 128, 0.12)); color: var(--secondary, #636366); } .ds-library-search svg { width: 15px; height: 15px; } .ds-library-search input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink, #1d1d1f); font: 400 14px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; } .ds-library-search input::placeholder { color: var(--tertiary, #68686d); } .ds-library-search:focus-within { box-shadow: inset 0 0 0 1px var(--accent, #0a84ff), 0 0 0 3px var(--accent-soft, rgba(10, 132, 255, 0.14)); }"
     },
     {
       "name": "Active Document Row",
       "kind": "nav",
       "refersTo": "document-row-active",
-      "description": "Current-document navigation row with restrained paper lift and strong naming.",
-      "html": "<button class=\"ds-document-row\" type=\"button\"><span class=\"ds-file-mark\" aria-hidden=\"true\">M↓</span><span><strong>README</strong><small>刚刚</small></span><span aria-hidden=\"true\">›</span></button>",
-      "css": ".ds-document-row { display: grid; grid-template-columns: 18px minmax(0, 1fr) 14px; align-items: center; gap: 8px; width: 232px; padding: 9px; border: 0; border-radius: 10px; background: var(--paper, #ffffff); color: var(--accent, #0878e6); box-shadow: 0 1px 2px rgba(20, 26, 32, 0.045); text-align: left; cursor: pointer; } .ds-document-row > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; gap: 3px; } .ds-document-row strong { overflow: hidden; color: var(--ink-strong, #15171a); font: 630 13px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; text-overflow: ellipsis; white-space: nowrap; } .ds-document-row small { color: var(--faint, #626b75); font: 400 10px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; } .ds-document-row:hover { background: var(--paper, #ffffff); } .ds-document-row:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0878e6) 42%, transparent); outline-offset: 2px; }"
+      "description": "Selected 78px library row with title, snippet, time, and quiet-blue state.",
+      "html": "<button class=\"ds-document-row\" type=\"button\"><span><strong>README</strong><span>项目说明与写作约定</span><small>刚刚</small></span><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></button>",
+      "css": ".ds-document-row { display: grid; grid-template-columns: minmax(0, 1fr) 18px; align-items: center; width: 260px; min-height: 78px; padding: 11px 11px 10px 13px; border: 0; border-radius: 12px; background: var(--accent-soft, rgba(10, 132, 255, 0.14)); color: var(--accent-ink, #0070dc); text-align: left; cursor: pointer; transition: background-color 150ms ease, transform 150ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-document-row > span { display: flex; min-width: 0; flex-direction: column; } .ds-document-row strong { color: var(--accent-ink, #0070dc); font: 650 14px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; } .ds-document-row span span { margin-top: 3px; color: var(--secondary, #636366); font: 400 12px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; } .ds-document-row small { margin-top: 5px; color: var(--tertiary, #68686d); font: 400 11px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; font-variant-numeric: tabular-nums; } .ds-document-row svg { width: 15px; height: 15px; } .ds-document-row:hover { background: color-mix(in srgb, var(--accent-soft, rgba(10, 132, 255, 0.14)) 82%, var(--fill, transparent)); } .ds-document-row:active { transform: scale(0.985); } .ds-document-row:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
     },
     {
-      "name": "Formatting Shelf",
+      "name": "Inspector Tabs",
+      "kind": "chip",
+      "refersTo": "inspector-tab-active",
+      "description": "Keyboard-navigable segmented switch between outline and manuscript information.",
+      "html": "<div class=\"ds-inspector-tabs\" role=\"tablist\" aria-label=\"检查器页面\"><button class=\"ds-active\" type=\"button\" role=\"tab\" aria-selected=\"true\">大纲</button><button type=\"button\" role=\"tab\">文稿</button></div>",
+      "css": ".ds-inspector-tabs { display: inline-flex; padding: 3px; border-radius: 9px; background: var(--fill, rgba(120, 120, 128, 0.12)); } .ds-inspector-tabs button { min-width: 78px; height: 29px; padding: 0 9px; border: 0; border-radius: 7px; background: transparent; color: var(--secondary, #636366); font: 400 11px/1.35 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; cursor: pointer; } .ds-inspector-tabs button:hover { color: var(--ink, #1d1d1f); } .ds-inspector-tabs button.ds-active { background: var(--paper, #fff); color: var(--ink, #1d1d1f); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); font-weight: 630; } .ds-inspector-tabs button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
+    },
+    {
+      "name": "Format Dock",
       "kind": "custom",
-      "refersTo": "formatting-shelf",
-      "description": "Signature edit-only floating shelf for contextual Markdown formatting.",
-      "html": "<div class=\"ds-format-shelf\" role=\"toolbar\" aria-label=\"Markdown 格式\"><button type=\"button\" aria-label=\"一级标题\">H1</button><button type=\"button\" aria-label=\"二级标题\">H2</button><span></span><button type=\"button\" aria-label=\"粗体\"><strong>B</strong></button><button type=\"button\" aria-label=\"斜体\"><em>I</em></button><button type=\"button\" aria-label=\"链接\">↗</button></div>",
-      "css": ".ds-format-shelf { display: inline-flex; align-items: center; gap: 2px; padding: 5px; border-radius: 13px; background: var(--shelf, #25282d); color: var(--shelf-ink, #f4f5f6); box-shadow: var(--shadow, 0 14px 36px rgba(21, 27, 34, 0.16), 0 2px 7px rgba(21, 27, 34, 0.1)); } .ds-format-shelf button { display: inline-grid; place-items: center; width: 31px; height: 31px; padding: 0; border: 0; border-radius: 8px; background: transparent; color: inherit; font: 600 12px/1 -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; cursor: pointer; } .ds-format-shelf > span { width: 1px; height: 18px; margin: 0 3px; background: color-mix(in srgb, var(--shelf-ink, #f4f5f6) 18%, transparent); } .ds-format-shelf button:hover { background: color-mix(in srgb, var(--shelf-ink, #f4f5f6) 12%, transparent); } .ds-format-shelf button:active { transform: scale(0.9); } .ds-format-shelf button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0878e6) 42%, transparent); outline-offset: 2px; }"
+      "refersTo": "format-dock",
+      "description": "Signature contextual material dock for formatting and insertion in editable modes.",
+      "html": "<div class=\"ds-format-dock\" role=\"toolbar\" aria-label=\"Markdown 格式\"><button class=\"ds-add\" type=\"button\" aria-label=\"插入\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M12 5v14\"/><path d=\"M5 12h14\"/></svg></button><span></span><button type=\"button\" aria-label=\"粗体\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M6 4h8a4 4 0 0 1 0 8H6z\"/><path d=\"M6 12h9a4 4 0 0 1 0 8H6z\"/></svg></button><button type=\"button\" aria-label=\"列表\"><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M8 6h13\"/><path d=\"M8 12h13\"/><path d=\"M8 18h13\"/><path d=\"M3 6h.01\"/><path d=\"M3 12h.01\"/><path d=\"M3 18h.01\"/></svg></button></div>",
+      "css": ".ds-format-dock { display: inline-flex; align-items: center; gap: 2px; padding: 6px; border: 1px solid var(--line-strong, rgba(60, 60, 67, 0.21)); border-radius: 16px; background: var(--elevated, rgba(255, 255, 255, 0.88)); color: var(--secondary, #636366); box-shadow: var(--shadow-float, 0 18px 46px rgba(22, 27, 34, 0.16), 0 3px 12px rgba(22, 27, 34, 0.09)); backdrop-filter: saturate(180%) blur(28px); } .ds-format-dock button { display: inline-grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: 10px; background: transparent; color: inherit; cursor: pointer; } .ds-format-dock button.ds-add { color: var(--accent, #0a84ff); } .ds-format-dock button svg { width: 18px; height: 18px; } .ds-format-dock > span { width: 1px; height: 22px; margin: 0 4px; background: var(--line, rgba(60, 60, 67, 0.13)); } .ds-format-dock button:hover { background: var(--fill, rgba(120, 120, 128, 0.12)); color: var(--ink, #1d1d1f); } .ds-format-dock button:active { transform: scale(0.9); } .ds-format-dock button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
     },
     {
       "name": "Command Palette",
       "kind": "custom",
       "refersTo": "command-palette",
-      "description": "Keyboard-first paper overlay for progressively disclosed commands.",
-      "html": "<section class=\"ds-command-palette\" role=\"dialog\" aria-label=\"命令面板\"><label><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.34-4.34\"/></svg><input placeholder=\"输入命令…\" /><kbd>esc</kbd></label><div><button class=\"ds-suggested\" type=\"button\">新建文档 <kbd>⌘N</kbd></button><button type=\"button\">打开 Markdown <kbd>⌘O</kbd></button></div></section>",
-      "css": ".ds-command-palette { width: min(540px, calc(100vw - 30px)); overflow: hidden; border: 1px solid var(--line-strong, #cfd4da); border-radius: 14px; background: var(--paper, #ffffff); color: var(--ink, #202329); box-shadow: var(--shadow, 0 14px 36px rgba(21, 27, 34, 0.16), 0 2px 7px rgba(21, 27, 34, 0.1)); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; } .ds-command-palette > label { display: grid; grid-template-columns: 23px minmax(0, 1fr) auto; align-items: center; gap: 8px; height: 52px; padding: 0 14px; border-bottom: 1px solid var(--line, #dde1e6); color: var(--muted, #626b75); } .ds-command-palette svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; } .ds-command-palette input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink-strong, #15171a); font: inherit; font-size: 14px; } .ds-command-palette kbd { color: var(--faint, #626b75); font: 400 10px/1.35 inherit; } .ds-command-palette > div { padding: 7px; } .ds-command-palette button { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; width: 100%; height: 40px; padding: 0 10px; border: 0; border-radius: 9px; background: transparent; color: var(--muted, #626b75); font: 400 12px/1.35 inherit; text-align: left; cursor: pointer; } .ds-command-palette button:hover, .ds-command-palette button.ds-suggested { background: var(--accent-soft, #dceeff); color: var(--accent-ink, #075aa8); } .ds-command-palette button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0878e6) 42%, transparent); outline-offset: 2px; }"
+      "description": "Keyboard-first elevated command surface for the desktop window.",
+      "html": "<section class=\"ds-command-palette\" role=\"dialog\" aria-label=\"命令面板\"><label><svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.34-4.34\"/></svg><input placeholder=\"搜索命令与操作\"/><kbd>esc</kbd></label><div><button class=\"ds-suggested\" type=\"button\">新建文稿 <kbd>⌘N</kbd></button><button type=\"button\">打开 Markdown <kbd>⌘O</kbd></button></div></section>",
+      "css": ".ds-command-palette { width: min(560px, calc(100vw - 30px)); overflow: hidden; border: 1px solid var(--line-strong, rgba(60, 60, 67, 0.21)); border-radius: 16px; background: var(--elevated, rgba(255, 255, 255, 0.88)); color: var(--ink, #1d1d1f); box-shadow: var(--shadow-float, 0 18px 46px rgba(22, 27, 34, 0.16), 0 3px 12px rgba(22, 27, 34, 0.09)); backdrop-filter: saturate(180%) blur(28px); font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif; } .ds-command-palette > label { display: grid; grid-template-columns: 24px minmax(0, 1fr) auto; align-items: center; gap: 9px; height: 58px; padding: 0 16px; border-bottom: 1px solid var(--line, rgba(60, 60, 67, 0.13)); color: var(--secondary, #636366); } .ds-command-palette svg { width: 18px; height: 18px; } .ds-command-palette input { min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink, #1d1d1f); font: 400 16px/1.35 inherit; } .ds-command-palette kbd { color: var(--tertiary, #68686d); font: 400 10px/1.35 inherit; font-variant-numeric: tabular-nums; } .ds-command-palette > div { padding: 7px; } .ds-command-palette button { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; width: 100%; height: 44px; padding: 0 11px; border: 0; border-radius: 10px; background: transparent; color: var(--secondary, #636366); font: 400 13px/1.35 inherit; text-align: left; cursor: pointer; } .ds-command-palette button:hover, .ds-command-palette button.ds-suggested { background: var(--accent-soft, rgba(10, 132, 255, 0.14)); color: var(--accent-ink, #0070dc); } .ds-command-palette button:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent, #0a84ff) 38%, transparent); outline-offset: 2px; }"
     }
   ],
   "narrative": {
-    "northStar": "The Quiet Document",
-    "overview": "PatchMark should feel less like opening software and more like returning to a finished page on a cool, carefully lit writing desk. The document is the visual center of gravity: chrome is compact, rails are tonal rather than boxed, and controls wait at the edges until the writer needs them.\n\nThe system combines cool paper surfaces, graphite text, hairline structure, quiet blue state feedback, and familiar native proportions. Restraint is functional rather than empty: reading receives an editorial serif voice, editing receives a precise mono voice, and the surrounding interface stays in a quiet system sans.",
+    "northStar": "The Native Editorial Window",
+    "overview": "PatchMark is a macOS- and Windows-PC document tool shaped with the quiet confidence of a first-party desktop editor. The window opens inside the work: a grouped library, a centered live manuscript, a restrained toolbar, and an optional inspector share one continuous document environment rather than a dashboard or mode wall.\n\nThe visual system uses system typography, paper white, grouped gray rails, hairline separators, quiet blue state, and contextual translucent materials. Its signature is live Markdown typesetting: punctuation and syntax stay out of the way until the caret enters the current line, while formatting and insertion actions live in a contextual dock instead of a permanent ribbon. Mouse precision and dense keyboard navigation define interaction density; narrow behavior is only a safety mechanism for resized desktop windows.",
     "keyCharacteristics": [
-      "One continuous writing plane, never a dashboard or card grid.",
-      "Cool neutral surfaces with graphite ink and a single quiet-blue interaction voice.",
-      "Native-radius controls, dense desktop chrome, and generous document breathing room.",
-      "Serif reading, monospaced source editing, and sans-serif interface chrome.",
-      "Progressive disclosure through rails, a command palette, focus mode, and the floating formatting shelf."
+      "A first-party desktop document window for macOS and Windows PC.",
+      "One continuous `760px` manuscript plane with syntax revealed only on the current line.",
+      "A `286px` grouped library, centered `62px` toolbar, and optional `286px` inspector.",
+      "System sans throughout rendered content and interface chrome; mono only for explicit source mode and code.",
+      "Quiet blue for state, paper white for the manuscript, grouped gray for supporting rails.",
+      "Contextual material popovers and format dock, controlled by keyboard and mouse."
     ],
     "rules": [
-      { "name": "The Quiet Blue Rule", "body": "Blue appears only for current, selected, focused, linked, or unsaved state; it never becomes a large decorative field.", "section": "colors" },
-      { "name": "The Paper Hierarchy Rule", "body": "Separate regions with cool neutral tone and hairlines before introducing containers, cards, or shadow.", "section": "colors" },
-      { "name": "The Three Voices Rule", "body": "Serif belongs to rendered prose, mono belongs to source editing, and system sans belongs to interface chrome and rendered headings.", "section": "typography" },
-      { "name": "The Reading Rhythm Rule", "body": "Long-form content keeps a relaxed line height and a centered measure; compact UI type must not leak into the document.", "section": "typography" },
-      { "name": "The Document Is the Surface Rule", "body": "Start every composition from the continuous writing plane; rails and controls support it but never replace it with dashboard scaffolding.", "section": "layout" },
-      { "name": "The 720 Measure Rule", "body": "Keep reading and source content centered within the implemented 720px measure; use split view to divide work modes, not to stretch prose.", "section": "layout" },
-      { "name": "The Earned Elevation Rule", "body": "A shadow must correspond to selected state or physical overlay; static content and structural rails stay flat.", "section": "elevation" },
-      { "name": "The Native Radius Rule", "body": "Radius follows scale and function; never round every surface into a capsule, and never use cards merely to create corners.", "section": "shapes" }
+      {
+        "name": "The Quiet Blue Rule",
+        "body": "Blue communicates current, selected, focused, linked, save, or compose state; it never becomes background decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Material Hierarchy Rule",
+        "body": "Use grouped gray for rails, paper for the manuscript, translucent chrome for fixed bars, and elevated material only for content that physically floats.",
+        "section": "colors"
+      },
+      {
+        "name": "The System Voice Rule",
+        "body": "Use the platform UI family for manuscript and chrome; switch to mono only when the user explicitly asks to see source or code.",
+        "section": "typography"
+      },
+      {
+        "name": "The Caret Reveals Syntax Rule",
+        "body": "Live mode hides Markdown punctuation away from the current line and restores literal marks wherever the caret is editing.",
+        "section": "typography"
+      },
+      {
+        "name": "The Document Is the Window Rule",
+        "body": "The manuscript remains the center of the application; library, toolbar, inspector, dock, and popovers exist only to support it.",
+        "section": "layout"
+      },
+      {
+        "name": "The 760 Measure Rule",
+        "body": "Keep live, source, rendered, empty, loading, print, and export content aligned to the same `760px` maximum measure.",
+        "section": "layout"
+      },
+      {
+        "name": "The Collapse Before Crush Rule",
+        "body": "When a desktop window narrows, collapse or overlay auxiliary rails before reducing the manuscript to an unreadable column.",
+        "section": "layout"
+      },
+      {
+        "name": "The Earned Elevation Rule",
+        "body": "Static manuscript and rails remain flat; shadow and blur belong only to overlays, transient feedback, or a selected inset segment.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Context Through Material Rule",
+        "body": "Toolbar, status, dock, and popovers may blur the plane behind them so long as content remains readable and the hierarchy stays quiet.",
+        "section": "elevation"
+      },
+      {
+        "name": "The Native Radius Rule",
+        "body": "Radius follows component scale and material level; do not turn labels, toolbar groups, or arbitrary content into capsules.",
+        "section": "shapes"
+      }
     ],
     "dos": [
-      "Do begin with a readable document and reveal navigation or formatting controls only when the task calls for them.",
-      "Do use quiet blue exclusively for interaction state, selection, links, caret, and trustworthy save feedback.",
-      "Do preserve the serif/mono/sans division between reading, source editing, and chrome.",
-      "Do keep desktop controls compact while expanding interactive targets to at least 44px below the compact breakpoint.",
-      "Do honor reduced-motion preferences by collapsing animations and transitions to effectively instantaneous feedback."
+      "Do open into a usable manuscript rather than a dashboard, setup screen, or mobile-style landing state.",
+      "Do align all document representations to the implemented `760px` manuscript measure.",
+      "Do reveal Markdown syntax only on the current line in live mode and provide explicit source mode for complete literal access.",
+      "Do reserve quiet blue for interaction state, compose/save actions, selection, focus, links, and current context.",
+      "Do keep library and inspector controls dense, mouse-precise, and fully keyboard navigable.",
+      "Do collapse or overlay rails when a desktop window becomes too narrow, and honor reduced-motion preferences."
     ],
     "donts": [
-      "Don't turn the home surface into a dashboard, permanent toolbar, card grid, or configuration gate.",
-      "Don't stretch prose beyond the centered 720px measure or use wide lines to fill available space.",
-      "Don't introduce extra accent hues, decorative gradients, or broad blue panels.",
-      "Don't apply strong shadow to static rails, document content, or ordinary controls.",
-      "Don't compress split view or the outline into narrow screens; resolve to the simpler reading plane."
+      "Don't describe or design PatchMark as an iPadOS, phone, mobile-browser, or touch-first product.",
+      "Don't reintroduce serif manuscript typography; the implemented reading and live-editing voice is the system UI family.",
+      "Don't add a permanent formatting ribbon, dashboard card grid, or separate preview wall between writing and the finished page.",
+      "Don't stretch prose beyond the `760px` measure or let rails crush the manuscript.",
+      "Don't use large blue surfaces, decorative gradients, or extra accent families.",
+      "Don't use narrow-window safety rules as evidence for a separate mobile design system."
     ]
   }
 }

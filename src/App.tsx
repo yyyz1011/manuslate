@@ -1,56 +1,45 @@
 import {
-  Bold,
-  Check,
-  ChevronRight,
-  Code2,
-  Columns2,
-  Command,
-  Eye,
-  FilePlus2,
-  FileText,
-  Focus,
-  FolderOpen,
-  Heading1,
-  Heading2,
-  Italic,
-  Link,
-  List,
-  ListChecks,
-  Menu,
-  PanelRight,
-  Pencil,
-  Quote,
-  Save,
-  Search,
-  SunMoon,
-  X,
+  Bold, BookOpen, Check, ChevronDown, ChevronRight, Code2, Columns2, Copy, Download, Eye,
+  FileCode2, FilePlus2, Focus, FolderOpen, Heading1, Heading2, Info, Italic, Link, List,
+  ListChecks, ListOrdered, Menu, MoreHorizontal, PanelRight, Pencil, Plus, Printer, Quote,
+  Save, Search, Share, Sparkles, SunMoon, Table2, TextCursorInput, X,
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MarkdownEditorHandle } from "./editor/MarkdownEditor";
-import { getOutline, getWordStats, renderMarkdown } from "./lib/markdown";
+import { getOutline, getWordStats } from "./lib/document";
 import {
-  loadActiveDocumentId,
-  loadDocuments,
-  loadTheme,
-  loadViewMode,
-  saveActiveDocumentId,
-  saveDocuments,
-  saveTheme,
-  saveViewMode,
+  loadActiveDocumentId, loadDocuments, loadTheme, loadViewMode, saveActiveDocumentId,
+  saveDocuments, saveTheme, saveViewMode,
 } from "./lib/storage";
 import type { MarkdownDocument, ThemeMode, ViewMode } from "./types";
 
 const MarkdownEditor = lazy(() => import("./editor/MarkdownEditor"));
+const MarkdownPreview = lazy(() => import("./editor/MarkdownPreview"));
 
-const markdownFileTypes = [
-  {
-    description: "Markdown",
-    accept: { "text/markdown": [".md", ".markdown", ".mdown"], "text/plain": [".txt"] },
-  },
+const markdownFileTypes = [{
+  description: "Markdown",
+  accept: { "text/markdown": [".md", ".markdown", ".mdown"], "text/plain": [".txt"] },
+}];
+
+const viewOptions: Array<{ mode: ViewMode; label: string; detail: string; icon: typeof Pencil }> = [
+  { mode: "live", label: "实时排版", detail: "边写边看到成稿", icon: TextCursorInput },
+  { mode: "preview", label: "阅读", detail: "沉浸校对成稿", icon: BookOpen },
+  { mode: "source", label: "Markdown 源码", detail: "显示全部标记", icon: FileCode2 },
+  { mode: "split", label: "对照", detail: "源码与成稿并排", icon: Columns2 },
 ];
 
 function uniqueId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `document-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function withoutExtension(name: string): string {
+  return name.replace(/\.(md|markdown|mdown|txt)$/i, "");
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;",
+  })[character] ?? character);
 }
 
 function relativeTime(timestamp: number): string {
@@ -61,15 +50,18 @@ function relativeTime(timestamp: number): string {
   return new Intl.DateTimeFormat("zh-CN", { month: "short", day: "numeric" }).format(timestamp);
 }
 
+function documentSnippet(content: string): string {
+  const line = content.split("\n")
+    .map((item) => item.replace(/^#{1,6}\s+/, "").replace(/[*_`>[\]()!-]/g, " ").trim())
+    .find(Boolean);
+  return line || "还没有内容";
+}
+
 function createUntitled(index: number): MarkdownDocument {
   const now = Date.now();
   return {
-    id: uniqueId(),
-    name: index === 1 ? "未命名.md" : `未命名 ${index}.md`,
-    content: "",
-    source: "draft",
-    createdAt: now,
-    updatedAt: now,
+    id: uniqueId(), name: index === 1 ? "未命名.md" : `未命名 ${index}.md`, content: "",
+    source: "draft", createdAt: now, updatedAt: now,
   };
 }
 
@@ -78,118 +70,141 @@ function App() {
   const [documents, setDocuments] = useState<MarkdownDocument[]>(initialDocuments);
   const [activeId, setActiveId] = useState(() => {
     const stored = loadActiveDocumentId();
-    return initialDocuments.some((document) => document.id === stored) ? stored! : initialDocuments[0].id;
+    return initialDocuments.some((item) => item.id === stored) ? stored! : initialDocuments[0].id;
   });
   const [viewMode, setViewModeState] = useState<ViewMode>(loadViewMode);
   const [theme, setThemeState] = useState<ThemeMode>(loadTheme);
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
-  const [isCompact, setIsCompact] = useState(() => window.innerWidth < 860);
-  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 860);
-  const [outlineOpen, setOutlineOpen] = useState(false);
+  const [isCompact, setIsCompact] = useState(() => window.innerWidth < 900);
+  const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 900);
+  const [inspectorOpen, setInspectorOpen] = useState(false);
+  const [inspectorTab, setInspectorTab] = useState<"outline" | "info">("outline");
   const [focusMode, setFocusMode] = useState(false);
   const [documentSearch, setDocumentSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteSearch, setPaletteSearch] = useState("");
+  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [shareMenuOpen, setShareMenuOpen] = useState(false);
+  const [insertMenuOpen, setInsertMenuOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState("");
   const [toast, setToast] = useState<string | null>(null);
-  const [draftState, setDraftState] = useState<"idle" | "saving" | "saved">("saved");
+  const [draftState, setDraftState] = useState<"saving" | "saved">("saved");
   const editorRef = useRef<MarkdownEditorHandle>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const paletteRef = useRef<HTMLElement>(null);
   const paletteReturnFocusRef = useRef<HTMLElement | null>(null);
   const handlesRef = useRef(new Map<string, FileSystemFileHandle>());
-  const savedSnapshotsRef = useRef(new Map(initialDocuments.map((document) => [document.id, document.content])));
+  const savedSnapshotsRef = useRef(new Map(initialDocuments.map((item) => [item.id, item.content])));
 
-  const activeDocument = documents.find((document) => document.id === activeId) ?? documents[0];
-  const rendered = useMemo(() => renderMarkdown(activeDocument?.content ?? ""), [activeDocument?.content]);
+  const activeDocument = documents.find((item) => item.id === activeId) ?? documents[0];
   const outline = useMemo(() => getOutline(activeDocument?.content ?? ""), [activeDocument?.content]);
   const stats = useMemo(() => getWordStats(activeDocument?.content ?? ""), [activeDocument?.content]);
   const dark = theme === "dark" || (theme === "system" && systemDark);
-  const isDiskDirty = activeDocument
-    ? savedSnapshotsRef.current.get(activeDocument.id) !== activeDocument.content
-    : false;
+  const isDiskDirty = activeDocument ? savedSnapshotsRef.current.get(activeDocument.id) !== activeDocument.content : false;
+  const activeHandleName = activeDocument ? handlesRef.current.get(activeDocument.id)?.name : undefined;
+  const hasDisplayName = Boolean(activeHandleName && activeHandleName !== activeDocument?.name);
+  const activeView = viewOptions.find((item) => item.mode === viewMode) ?? viewOptions[0];
+  const ActiveViewIcon = activeView.icon;
+
+  const saveStateLabel = draftState === "saving"
+    ? "正在存入恢复草稿…"
+    : activeDocument?.source === "sample"
+      ? "示例文稿 · 已存入恢复草稿"
+      : activeDocument?.source === "local" && activeHandleName
+        ? isDiskDirty
+          ? `尚未写入 ${activeHandleName}`
+          : hasDisplayName
+            ? `已写入 ${activeHandleName} · 当前为显示名`
+            : `已写入 ${activeHandleName}`
+        : activeDocument?.source === "local"
+          ? "恢复副本 · 保存时重新选择文件"
+          : isDiskDirty
+            ? "已自动恢复 · 尚未导出文件"
+            : "已存入恢复草稿";
 
   const notify = useCallback((message: string) => {
     setToast(message);
-    window.setTimeout(() => setToast((current) => (current === message ? null : current)), 2200);
+    window.setTimeout(() => setToast((current) => current === message ? null : current), 2200);
+  }, []);
+
+  const dismissMenus = useCallback(() => {
+    setViewMenuOpen(false); setShareMenuOpen(false); setInsertMenuOpen(false);
+  }, []);
+
+  const navigateMenu = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+    const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+    if (!items.length) return;
+    const current = items.indexOf(document.activeElement as HTMLButtonElement);
+    let next = current;
+    if (event.key === "ArrowDown") next = (current + 1 + items.length) % items.length;
+    else if (event.key === "ArrowUp") next = (current - 1 + items.length) % items.length;
+    else if (event.key === "Home") next = 0;
+    else if (event.key === "End") next = items.length - 1;
+    else if (event.key === "Escape") { event.preventDefault(); dismissMenus(); return; }
+    else return;
+    event.preventDefault(); items[next]?.focus();
+  }, [dismissMenus]);
+
+  const navigateInspectorTabs = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home" && event.key !== "End") return;
+    event.preventDefault();
+    const next = event.key === "ArrowLeft" || event.key === "Home" ? "outline" : "info";
+    setInspectorTab(next);
+    window.setTimeout(() => document.getElementById(`${next}-tab`)?.focus(), 0);
   }, []);
 
   const openPalette = useCallback(() => {
     paletteReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    setPaletteSearch("");
-    setPaletteOpen(true);
-  }, []);
-
-  const closePalette = useCallback(() => {
-    setPaletteOpen(false);
-  }, []);
+    dismissMenus(); setPaletteSearch(""); setPaletteOpen(true);
+  }, [dismissMenus]);
 
   const setViewMode = useCallback((mode: ViewMode) => {
     const effectiveMode = mode === "split" && isCompact ? "preview" : mode;
-    if (mode === "split" && isCompact) notify("分栏适合宽屏，已进入阅读");
-    setViewModeState(effectiveMode);
-    saveViewMode(effectiveMode);
+    if (mode === "split" && isCompact) notify("对照视图适合宽屏，已切换到阅读");
+    setViewModeState(effectiveMode); saveViewMode(effectiveMode);
     if (effectiveMode === "preview") setFocusMode(false);
-  }, [isCompact, notify]);
+    dismissMenus();
+  }, [dismissMenus, isCompact, notify]);
 
   const updateActiveContent = useCallback((content: string) => {
     setDraftState("saving");
-    setDocuments((current) =>
-      current.map((document) =>
-        document.id === activeId
-          ? {
-              ...document,
-              content,
-              source: document.source === "sample" ? "draft" : document.source,
-              updatedAt: Date.now(),
-            }
-          : document,
-      ),
-    );
+    setDocuments((current) => current.map((item) => item.id === activeId ? {
+      ...item, content, source: item.source === "sample" ? "draft" : item.source, updatedAt: Date.now(),
+    } : item));
   }, [activeId]);
 
   const selectDocument = useCallback((id: string) => {
-    setActiveId(id);
-    saveActiveDocumentId(id);
-    if (window.innerWidth < 860) setSidebarOpen(false);
-  }, []);
+    setActiveId(id); saveActiveDocumentId(id); dismissMenus();
+    if (window.innerWidth < 900) setSidebarOpen(false);
+  }, [dismissMenus]);
 
   const createDocument = useCallback(() => {
-    const untitledCount = documents.filter((document) => document.name.startsWith("未命名")).length + 1;
-    const document = createUntitled(untitledCount);
-    savedSnapshotsRef.current.set(document.id, document.content);
-    setDocuments((current) => [document, ...current]);
-    setActiveId(document.id);
-    saveActiveDocumentId(document.id);
-    setViewMode("write");
-    setSidebarOpen(window.innerWidth >= 860);
+    const count = documents.filter((item) => item.name.startsWith("未命名")).length + 1;
+    const item = createUntitled(count);
+    savedSnapshotsRef.current.set(item.id, item.content);
+    setDocuments((current) => [item, ...current]); setActiveId(item.id); saveActiveDocumentId(item.id);
+    setViewMode("live"); setSidebarOpen(window.innerWidth >= 900);
     window.setTimeout(() => editorRef.current?.focus(), 0);
   }, [documents, setViewMode]);
 
   const addFiles = useCallback((files: Array<{ file: File; handle?: FileSystemFileHandle }>) => {
     if (!files.length) return;
-    Promise.all(
-      files.map(async ({ file, handle }) => {
-        const content = await file.text();
-        const document: MarkdownDocument = {
-          id: uniqueId(),
-          name: file.name,
-          content,
-          source: "local",
-          createdAt: file.lastModified || Date.now(),
-          updatedAt: file.lastModified || Date.now(),
-        };
-        if (handle) handlesRef.current.set(document.id, handle);
-        savedSnapshotsRef.current.set(document.id, content);
-        return document;
-      }),
-    ).then((opened) => {
+    Promise.all(files.map(async ({ file, handle }) => {
+      const content = await file.text();
+      const item: MarkdownDocument = {
+        id: uniqueId(), name: file.name, content, source: "local",
+        createdAt: file.lastModified || Date.now(), updatedAt: file.lastModified || Date.now(),
+      };
+      if (handle) handlesRef.current.set(item.id, handle);
+      savedSnapshotsRef.current.set(item.id, content);
+      return item;
+    })).then((opened) => {
       setDocuments((current) => {
-        const names = new Set(opened.map((document) => document.name));
-        return [...opened, ...current.filter((document) => !names.has(document.name))];
+        const names = new Set(opened.map((item) => item.name));
+        return [...opened, ...current.filter((item) => !names.has(item.name))];
       });
-      setActiveId(opened[0].id);
-      saveActiveDocumentId(opened[0].id);
-      setViewMode("preview");
+      setActiveId(opened[0].id); saveActiveDocumentId(opened[0].id); setViewMode("live");
       notify(opened.length === 1 ? `已打开 ${opened[0].name}` : `已打开 ${opened.length} 个文档`);
     });
   }, [notify, setViewMode]);
@@ -199,8 +214,7 @@ function App() {
       try {
         const handles = await window.showOpenFilePicker({ multiple: true, types: markdownFileTypes });
         const files = await Promise.all(handles.map(async (handle) => ({ file: await handle.getFile(), handle })));
-        addFiles(files);
-        return;
+        addFiles(files); return;
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") return;
       }
@@ -212,6 +226,7 @@ function App() {
     if (!activeDocument) return;
     try {
       let handle = handlesRef.current.get(activeDocument.id);
+      const hadHandle = Boolean(handle);
       if (!handle && window.showSaveFilePicker) {
         handle = await window.showSaveFilePicker({
           suggestedName: activeDocument.name.endsWith(".md") ? activeDocument.name : `${activeDocument.name}.md`,
@@ -219,390 +234,205 @@ function App() {
         });
         handlesRef.current.set(activeDocument.id, handle);
       }
-
       if (handle) {
-        const writable = await handle.createWritable();
-        await writable.write(activeDocument.content);
-        await writable.close();
-        setDocuments((current) =>
-          current.map((document) =>
-            document.id === activeDocument.id ? { ...document, name: handle!.name, source: "local" } : document,
-          ),
-        );
+        const writable = await handle.createWritable(); await writable.write(activeDocument.content); await writable.close();
+        setDocuments((current) => current.map((item) => item.id === activeDocument.id ? { ...item, name: hadHandle ? item.name : handle!.name, source: "local" } : item));
       } else {
-        const blob = new Blob([activeDocument.content], { type: "text/markdown;charset=utf-8" });
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
+        const url = URL.createObjectURL(new Blob([activeDocument.content], { type: "text/markdown;charset=utf-8" }));
+        const link = document.createElement("a"); link.href = url;
         link.download = activeDocument.name.endsWith(".md") ? activeDocument.name : `${activeDocument.name}.md`;
-        link.click();
-        URL.revokeObjectURL(url);
+        link.click(); URL.revokeObjectURL(url);
       }
-
-      savedSnapshotsRef.current.set(activeDocument.id, activeDocument.content);
-      notify("已保存到本地");
+      savedSnapshotsRef.current.set(activeDocument.id, activeDocument.content); notify("已写入本地文件");
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") return;
       notify("保存失败，请重试");
     }
   }, [activeDocument, notify]);
 
+  const renameActive = useCallback(() => {
+    const next = renameValue.trim();
+    if (!next || !activeDocument) { setRenaming(false); return; }
+    const suffix = /\.(md|markdown|mdown|txt)$/i.test(next) ? "" : ".md";
+    setDocuments((current) => current.map((item) => item.id === activeDocument.id ? { ...item, name: `${next}${suffix}`, updatedAt: Date.now() } : item));
+    setRenaming(false);
+  }, [activeDocument, renameValue]);
+
+  const exportHtml = useCallback(async () => {
+    if (!activeDocument) return;
+    const { renderMarkdown } = await import("./lib/markdown");
+    const rendered = renderMarkdown(activeDocument.content);
+    const title = withoutExtension(activeDocument.name);
+    const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${escapeHtml(title)}</title><style>body{max-width:760px;margin:64px auto;padding:0 28px;color:#1d1d1f;font:17px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}h1,h2,h3{line-height:1.25;letter-spacing:-.025em}pre{overflow:auto;padding:18px;background:#f5f5f7;border-radius:12px}code{font-family:ui-monospace,Menlo,monospace}img{max-width:100%}table{border-collapse:collapse;width:100%}th,td{padding:8px;border-bottom:1px solid #d2d2d7;text-align:left}blockquote{margin-left:0;padding-left:18px;border-left:1px solid #d2d2d7;color:#636366}.katex-html{display:none}.katex-mathml{display:inline}.katex-display{display:block;margin:1em 0;text-align:center}.katex-display .katex-mathml{display:block}math{font-family:STIX Two Math,Cambria Math,serif}</style></head><body>${rendered}</body></html>`;
+    const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" }));
+    const link = document.createElement("a"); link.href = url; link.download = `${title}.html`; link.click();
+    URL.revokeObjectURL(url); dismissMenus(); notify("HTML 已导出");
+  }, [activeDocument, dismissMenus, notify]);
+
+  const copyRich = useCallback(async () => {
+    if (!activeDocument) return;
+    try {
+      const { renderMarkdown } = await import("./lib/markdown");
+      const rendered = renderMarkdown(activeDocument.content);
+      if (typeof ClipboardItem !== "undefined" && navigator.clipboard.write) {
+        await navigator.clipboard.write([new ClipboardItem({
+          "text/html": new Blob([rendered], { type: "text/html" }),
+          "text/plain": new Blob([activeDocument.content], { type: "text/plain" }),
+        })]);
+      } else await navigator.clipboard.writeText(activeDocument.content);
+      notify("已复制富文本与 Markdown");
+    } catch { notify("复制失败，请检查浏览器权限"); }
+    dismissMenus();
+  }, [activeDocument, dismissMenus, notify]);
+
+  const printDocument = useCallback(() => {
+    setViewMode("preview"); window.setTimeout(() => window.print(), 80); dismissMenus();
+  }, [dismissMenus, setViewMode]);
+
   const cycleTheme = useCallback(() => {
     const next: ThemeMode = theme === "system" ? "light" : theme === "light" ? "dark" : "system";
-    setThemeState(next);
-    saveTheme(next);
+    setThemeState(next); saveTheme(next);
     notify(next === "system" ? "外观跟随系统" : next === "light" ? "已切换浅色外观" : "已切换深色外观");
   }, [notify, theme]);
 
   useEffect(() => {
     const media = window.matchMedia("(prefers-color-scheme: dark)");
     const listener = (event: MediaQueryListEvent) => setSystemDark(event.matches);
-    media.addEventListener("change", listener);
-    return () => media.removeEventListener("change", listener);
+    media.addEventListener("change", listener); return () => media.removeEventListener("change", listener);
   }, []);
-
   useEffect(() => {
-    const onResize = () => setIsCompact(window.innerWidth < 860);
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
+    const onResize = () => setIsCompact(window.innerWidth < 900);
+    window.addEventListener("resize", onResize); return () => window.removeEventListener("resize", onResize);
   }, []);
-
-  useEffect(() => {
-    if (isCompact && viewMode === "split") {
-      setViewModeState("preview");
-      saveViewMode("preview");
-    }
-  }, [isCompact, viewMode]);
-
-  useEffect(() => {
-    if (!paletteOpen) return;
-
-    const containFocus = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closePalette();
-        return;
-      }
-      if (event.key !== "Tab" || !paletteRef.current) return;
-      const focusable = Array.from(
-        paletteRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'),
-      );
-      if (!focusable.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener("keydown", containFocus);
-    return () => {
-      document.removeEventListener("keydown", containFocus);
-      paletteReturnFocusRef.current?.focus();
-    };
-  }, [closePalette, paletteOpen]);
-
+  useEffect(() => { if (isCompact && viewMode === "split") setViewMode("preview"); }, [isCompact, setViewMode, viewMode]);
   useEffect(() => {
     document.documentElement.dataset.theme = dark ? "dark" : "light";
     document.documentElement.style.colorScheme = dark ? "dark" : "light";
   }, [dark]);
-
   useEffect(() => {
-    const timeout = window.setTimeout(() => {
-      saveDocuments(documents);
-      setDraftState("saved");
-    }, 420);
+    const timeout = window.setTimeout(() => { saveDocuments(documents); setDraftState("saved"); }, 380);
     return () => window.clearTimeout(timeout);
   }, [documents]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      const mod = event.metaKey || event.ctrlKey;
-      if (!mod) return;
-      if (event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        openPalette();
-      } else if (event.key.toLowerCase() === "s") {
-        event.preventDefault();
-        void saveActive();
-      } else if (event.key.toLowerCase() === "o") {
-        event.preventDefault();
-        void openFiles();
-      } else if (event.key.toLowerCase() === "n") {
-        event.preventDefault();
-        createDocument();
-      } else if (event.key === "1") {
-        event.preventDefault();
-        setViewMode("write");
-      } else if (event.key === "2") {
-        event.preventDefault();
-        setViewMode("preview");
-      } else if (event.key === "3") {
-        event.preventDefault();
-        setViewMode("split");
-      } else if (event.shiftKey && event.key.toLowerCase() === "f") {
-        event.preventDefault();
-        setFocusMode((current) => !current);
-        setViewMode("write");
-      }
+    if (!paletteOpen) return;
+    const containFocus = (event: KeyboardEvent) => {
+      if (event.key === "Escape") { event.preventDefault(); setPaletteOpen(false); return; }
+      if (event.key !== "Tab" || !paletteRef.current) return;
+      const focusable = Array.from(paletteRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
+      const first = focusable[0]; const last = focusable.at(-1); if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
     };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [createDocument, openFiles, openPalette, saveActive, setViewMode]);
+    document.addEventListener("keydown", containFocus);
+    return () => { document.removeEventListener("keydown", containFocus); paletteReturnFocusRef.current?.focus(); };
+  }, [paletteOpen]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") dismissMenus();
+      const mod = event.metaKey || event.ctrlKey; if (!mod) return;
+      if (event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
+      else if (event.key.toLowerCase() === "s") { event.preventDefault(); void saveActive(); }
+      else if (event.key.toLowerCase() === "o") { event.preventDefault(); void openFiles(); }
+      else if (event.key.toLowerCase() === "n") { event.preventDefault(); createDocument(); }
+      else if (event.key === "1") { event.preventDefault(); setViewMode("live"); }
+      else if (event.key === "2") { event.preventDefault(); setViewMode("preview"); }
+      else if (event.key === "3") { event.preventDefault(); setViewMode("source"); }
+      else if (event.key === "4") { event.preventDefault(); setViewMode("split"); }
+      else if (event.shiftKey && event.key.toLowerCase() === "f") { event.preventDefault(); setViewMode("live"); setFocusMode((current) => !current); }
+    };
+    window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown);
+  }, [createDocument, dismissMenus, openFiles, openPalette, saveActive, setViewMode]);
 
   const filteredDocuments = useMemo(() => {
     const query = documentSearch.trim().toLocaleLowerCase();
-    return [...documents]
-      .filter((document) => !query || document.name.toLocaleLowerCase().includes(query) || document.content.toLocaleLowerCase().includes(query))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
+    return [...documents].filter((item) => !query || item.name.toLocaleLowerCase().includes(query) || item.content.toLocaleLowerCase().includes(query)).sort((a, b) => b.updatedAt - a.updatedAt);
   }, [documentSearch, documents]);
 
   const commands = [
-    { label: "新建文档", hint: "⌘N", icon: FilePlus2, run: createDocument },
+    { label: "新建文稿", hint: "⌘N", icon: FilePlus2, run: createDocument },
     { label: "打开 Markdown", hint: "⌘O", icon: FolderOpen, run: () => void openFiles() },
-    { label: "保存到本地", hint: "⌘S", icon: Save, run: () => void saveActive() },
-    { label: "进入编辑", hint: "⌘1", icon: Pencil, run: () => setViewMode("write") },
-    { label: "进入阅读", hint: "⌘2", icon: Eye, run: () => setViewMode("preview") },
-    ...(!isCompact ? [{ label: "打开分栏", hint: "⌘3", icon: Columns2, run: () => setViewMode("split") }] : []),
-    { label: focusMode ? "退出专注模式" : "进入专注模式", hint: "⌘⇧F", icon: Focus, run: () => { setViewMode("write"); setFocusMode((current) => !current); } },
-    { label: outlineOpen ? "关闭大纲" : "打开大纲", hint: "", icon: PanelRight, run: () => setOutlineOpen((current) => !current) },
+    { label: "写入本地文件", hint: "⌘S", icon: Save, run: () => void saveActive() },
+    { label: "实时排版", hint: "⌘1", icon: TextCursorInput, run: () => setViewMode("live") },
+    { label: "阅读视图", hint: "⌘2", icon: Eye, run: () => setViewMode("preview") },
+    { label: "Markdown 源码", hint: "⌘3", icon: FileCode2, run: () => setViewMode("source") },
+    ...(!isCompact ? [{ label: "并排对照", hint: "⌘4", icon: Columns2, run: () => setViewMode("split") }] : []),
+    { label: focusMode ? "退出专注模式" : "进入专注模式", hint: "⌘⇧F", icon: Focus, run: () => { setViewMode("live"); setFocusMode((current) => !current); } },
+    { label: inspectorOpen ? "关闭检查器" : "打开检查器", hint: "", icon: PanelRight, run: () => setInspectorOpen((current) => !current) },
     { label: "切换外观", hint: "", icon: SunMoon, run: cycleTheme },
-  ].filter((command) => command.label.toLocaleLowerCase().includes(paletteSearch.trim().toLocaleLowerCase()));
+    { label: "导出 HTML", hint: "", icon: Download, run: exportHtml },
+  ].filter((item) => item.label.toLocaleLowerCase().includes(paletteSearch.trim().toLocaleLowerCase()));
 
-  const runPaletteCommand = (run: () => void) => {
-    closePalette();
-    window.setTimeout(run, 0);
-  };
+  const insertActions = [
+    { label: "一级标题", icon: Heading1, run: () => editorRef.current?.prefixLine("# ") },
+    { label: "二级标题", icon: Heading2, run: () => editorRef.current?.prefixLine("## ") },
+    { label: "引用", icon: Quote, run: () => editorRef.current?.prefixLine("> ") },
+    { label: "任务", icon: ListChecks, run: () => editorRef.current?.prefixLine("- [ ] ") },
+    { label: "有序列表", icon: ListOrdered, run: () => editorRef.current?.prefixLine("1. ") },
+    { label: "表格", icon: Table2, run: () => editorRef.current?.insert("| 列 1 | 列 2 |\n| --- | --- |\n| 内容 | 内容 |") },
+    { label: "代码块", icon: Code2, run: () => editorRef.current?.insert("```\n\n```") },
+    { label: "数学公式", icon: Sparkles, run: () => editorRef.current?.insert("$$\nE = mc^2\n$$") },
+  ];
 
   if (!activeDocument) return null;
 
   return (
-    <div className={`app-shell${sidebarOpen ? " has-sidebar" : ""}${outlineOpen ? " has-outline" : ""}`}>
-      <input
-        ref={inputRef}
-        className="visually-hidden"
-        type="file"
-        accept=".md,.markdown,.mdown,.txt,text/markdown,text/plain"
-        multiple
-        onChange={(event) => {
-          addFiles(Array.from(event.target.files ?? []).map((file) => ({ file })));
-          event.currentTarget.value = "";
-        }}
-      />
-
+    <div className={`app-shell${sidebarOpen ? " has-sidebar" : ""}${inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
+      if ((event.target as HTMLElement).closest("[data-popover-root]")) return;
+      dismissMenus();
+    }}>
+      <input ref={inputRef} className="visually-hidden" type="file" accept=".md,.markdown,.mdown,.txt,text/markdown,text/plain" multiple onChange={(event) => {
+        addFiles(Array.from(event.target.files ?? []).map((file) => ({ file }))); event.currentTarget.value = "";
+      }} />
       {sidebarOpen && <button className="mobile-scrim" aria-label="关闭文稿列表" onClick={() => setSidebarOpen(false)} />}
 
       <aside className="library-rail" aria-label="文稿列表">
-        <div className="library-brand">
-          <span className="brand-mark" aria-hidden="true">P</span>
-          <span className="brand-name">PatchMark</span>
-          <button className="icon-button quiet" type="button" onClick={createDocument} aria-label="新建文档" title="新建文档 ⌘N">
-            <FilePlus2 size={18} />
-          </button>
-        </div>
-
-        <label className="library-search">
-          <Search size={15} aria-hidden="true" />
-          <span className="visually-hidden">搜索文稿</span>
-          <input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />
-          {documentSearch && (
-            <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>
-          )}
-        </label>
-
-        <div className="rail-heading">
-          <span>文稿</span>
-          <span>{filteredDocuments.length}</span>
-        </div>
-
+        <div className="library-nav"><button className="icon-button compose-button" type="button" onClick={createDocument} aria-label="新建文稿" title="新建文稿 ⌘N"><FilePlus2 size={19} /></button></div>
+        <div className="library-heading"><h1>文稿</h1><p>本机草稿与打开的文件</p></div>
+        <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
+        <div className="rail-heading"><span>最近</span><span>{filteredDocuments.length}</span></div>
         <div className="document-list">
-          {filteredDocuments.map((document) => (
-            <div className={`document-row${document.id === activeDocument.id ? " active" : ""}`} key={document.id}>
-              <button className="document-select" type="button" onClick={() => selectDocument(document.id)}>
-                <FileText size={16} aria-hidden="true" />
-                <span className="document-copy">
-                  <span className="document-name">{document.name.replace(/\.(md|markdown|mdown|txt)$/i, "")}</span>
-                  <span className="document-meta">{relativeTime(document.updatedAt)}</span>
-                </span>
-                {document.id === activeDocument.id && <ChevronRight className="row-chevron" size={14} aria-hidden="true" />}
-              </button>
-            </div>
-          ))}
-          {!filteredDocuments.length && (
-            <div className="rail-empty">没有匹配的文稿</div>
-          )}
+          {filteredDocuments.map((item) => <button className={`document-row${item.id === activeDocument.id ? " active" : ""}`} type="button" key={item.id} onClick={() => selectDocument(item.id)}><span className="document-copy"><span className="document-name">{withoutExtension(item.name)}</span><span className="document-snippet">{documentSnippet(item.content)}</span><span className="document-meta">{relativeTime(item.updatedAt)}</span></span>{item.id === activeDocument.id && <ChevronRight size={15} aria-hidden="true" />}</button>)}
+          {!filteredDocuments.length && <div className="rail-empty">没有匹配的文稿</div>}
         </div>
-
-        <div className="library-footer">
-          <button type="button" onClick={() => void openFiles()}>
-            <FolderOpen size={17} />
-            <span>打开 Markdown</span>
-            <kbd>⌘O</kbd>
-          </button>
-        </div>
+        <div className="library-footer"><button type="button" onClick={() => void openFiles()}><FolderOpen size={18} /><span>打开文件</span><kbd>⌘O</kbd></button></div>
       </aside>
 
       <section className="workspace">
         <header className="titlebar">
-          <div className="titlebar-left">
-            <button className="icon-button" type="button" onClick={() => setSidebarOpen((current) => !current)} aria-label={sidebarOpen ? "隐藏文稿列表" : "显示文稿列表"} title="文稿列表">
-              <Menu size={19} />
-            </button>
-            <div className="document-title-block">
-              <div className="document-title-line">
-                <span className="document-title">{activeDocument.name.replace(/\.(md|markdown|mdown|txt)$/i, "")}</span>
-                {isDiskDirty && <span className="dirty-dot" title="有尚未写入文件的更改" />}
-              </div>
-              <span className="save-state">
-                {draftState === "saving" ? "正在保存草稿…" : isDiskDirty ? "草稿已恢复 · 尚未写入文件" : "已保存"}
-              </span>
-            </div>
+          <div className="titlebar-left"><button className="icon-button" type="button" onClick={() => setSidebarOpen((current) => !current)} aria-label={sidebarOpen ? "隐藏文稿列表" : "显示文稿列表"} title="文稿列表"><Menu size={20} /></button></div>
+          <div className="document-title-block">
+            {renaming ? <input autoFocus className="title-input" aria-label={activeDocument.source === "local" ? "修改列表显示名，不重命名原文件" : "重命名文稿"} value={renameValue} onChange={(event) => setRenameValue(event.target.value)} onBlur={renameActive} onKeyDown={(event) => { if (event.key === "Enter") renameActive(); if (event.key === "Escape") setRenaming(false); }} /> : <button className="document-title-button" type="button" onClick={() => { setRenameValue(withoutExtension(activeDocument.name)); setRenaming(true); }} aria-label={activeDocument.source === "local" ? "修改列表显示名，不重命名原文件" : "重命名文稿"} title={activeDocument.source === "local" ? "修改列表显示名（不会重命名原文件）" : "重命名文稿"}><span>{withoutExtension(activeDocument.name)}</span>{isDiskDirty && <span className="dirty-dot" title="尚未写入文件" />}</button>}
+            <span className="save-state">{saveStateLabel}</span>
           </div>
-
-          <div className="view-switcher" role="tablist" aria-label="显示模式">
-            <button role="tab" aria-selected={viewMode === "write"} className={viewMode === "write" ? "active" : ""} type="button" onClick={() => setViewMode("write")} title="编辑 ⌘1">
-              <Pencil size={14} /><span>编辑</span>
-            </button>
-            <button role="tab" aria-selected={viewMode === "preview"} className={viewMode === "preview" ? "active" : ""} type="button" onClick={() => setViewMode("preview")} title="阅读 ⌘2">
-              <Eye size={14} /><span>阅读</span>
-            </button>
-            <button role="tab" aria-selected={viewMode === "split"} className={viewMode === "split" ? "active" : ""} type="button" onClick={() => setViewMode("split")} title="分栏 ⌘3">
-              <Columns2 size={14} /><span>分栏</span>
-            </button>
-          </div>
-
           <div className="titlebar-actions">
-            <button className={`icon-button${focusMode ? " active" : ""}`} type="button" onClick={() => { setViewMode("write"); setFocusMode((current) => !current); }} aria-label={focusMode ? "退出专注模式" : "进入专注模式"} title="专注模式 ⌘⇧F">
-              <Focus size={18} />
-            </button>
-            <button className={`icon-button${outlineOpen ? " active" : ""}`} type="button" onClick={() => setOutlineOpen((current) => !current)} aria-label={outlineOpen ? "关闭大纲" : "打开大纲"} title="文档大纲">
-              <PanelRight size={18} />
-            </button>
-            <button className="icon-button" type="button" onClick={cycleTheme} aria-label="切换外观" title={`外观：${theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}`}>
-              <SunMoon size={18} />
-            </button>
-            <button className="save-button" type="button" onClick={() => void saveActive()}>
-              {isDiskDirty ? <Save size={16} /> : <Check size={16} />}
-              <span>{isDiskDirty ? "保存" : "已保存"}</span>
-            </button>
-            <button className="icon-button command-button" type="button" onClick={openPalette} aria-label="打开命令面板" title="命令 ⌘K">
-              <Command size={17} />
-            </button>
+            {isDiskDirty && <button className="icon-button save-now" type="button" onClick={() => void saveActive()} aria-label="写入本地文件" title="写入本地文件 ⌘S"><Save size={18} /></button>}
+            <div className="popover-anchor" data-popover-root>
+              <button className={`view-button${viewMenuOpen ? " active" : ""}`} type="button" onClick={() => { setViewMenuOpen((current) => !current); setShareMenuOpen(false); }} aria-expanded={viewMenuOpen}><ActiveViewIcon size={16} /><span>{activeView.label}</span><ChevronDown size={14} /></button>
+              {viewMenuOpen && <div className="popover-menu view-menu" role="menu" aria-label="显示方式" onKeyDown={navigateMenu}><div className="popover-label">显示方式</div>{viewOptions.map((item, index) => { const Icon = item.icon; return <button type="button" role="menuitemradio" aria-checked={viewMode === item.mode} key={item.mode} onClick={() => setViewMode(item.mode)} disabled={item.mode === "split" && isCompact}><Icon size={18} /><span><strong>{item.label}</strong><small>{item.detail}</small></span><kbd>⌘{index + 1}</kbd>{viewMode === item.mode && <Check className="menu-check" size={15} />}</button>; })}<div className="menu-separator" /><button type="button" role="menuitemcheckbox" aria-checked={focusMode} onClick={() => { setViewMode("live"); setFocusMode((current) => !current); }}><Focus size={18} /><span><strong>专注当前段落</strong><small>弱化其余内容</small></span>{focusMode && <Check className="menu-check" size={15} />}</button></div>}
+            </div>
+            <button className={`icon-button${inspectorOpen ? " active" : ""}`} type="button" onClick={() => setInspectorOpen((current) => !current)} aria-label={inspectorOpen ? "关闭检查器" : "打开检查器"} title="检查器"><PanelRight size={19} /></button>
+            <div className="popover-anchor" data-popover-root>
+              <button className={`icon-button${shareMenuOpen ? " active" : ""}`} type="button" onClick={() => { setShareMenuOpen((current) => !current); setViewMenuOpen(false); }} aria-label="分享与导出" aria-expanded={shareMenuOpen}><Share size={18} /></button>
+              {shareMenuOpen && <div className="popover-menu share-menu" role="menu" aria-label="分享与导出" onKeyDown={navigateMenu}><button type="button" role="menuitem" onClick={() => void saveActive()}><Save size={18} /><span><strong>保存 Markdown</strong><small>写入本地 .md 文件</small></span></button><button type="button" role="menuitem" onClick={() => void copyRich()}><Copy size={18} /><span><strong>复制富文本</strong><small>同时保留 Markdown</small></span></button><button type="button" role="menuitem" onClick={() => void exportHtml()}><Download size={18} /><span><strong>导出 HTML</strong><small>独立网页，数学使用原生 MathML</small></span></button><button type="button" role="menuitem" onClick={printDocument}><Printer size={18} /><span><strong>打印或导出 PDF</strong><small>使用系统打印面板</small></span></button></div>}
+            </div>
+            <button className="icon-button command-button" type="button" onClick={openPalette} aria-label="打开命令面板" title="命令 ⌘K"><MoreHorizontal size={20} /></button>
           </div>
         </header>
 
         <main className={`document-stage mode-${viewMode}`}>
-          {(viewMode === "write" || viewMode === "split") && (
-            <section className="editor-pane" aria-label="编辑视图">
-              <Suspense fallback={<div className="editor-loading" aria-label="正在准备编辑器"><span /><span /><span /></div>}>
-                <MarkdownEditor
-                  key={activeDocument.id}
-                  ref={editorRef}
-                  value={activeDocument.content}
-                  onChange={updateActiveContent}
-                  dark={dark}
-                  focusMode={focusMode}
-                />
-              </Suspense>
-            </section>
-          )}
-
-          {(viewMode === "preview" || viewMode === "split") && (
-            <section className="preview-pane" aria-label="阅读视图" onDoubleClick={() => setViewMode("write")}>
-              {activeDocument.content.trim() ? (
-                <article className="markdown-preview" dangerouslySetInnerHTML={{ __html: rendered }} />
-              ) : (
-                <div className="empty-document">
-                  <div className="empty-caret" aria-hidden="true" />
-                  <h1>空白页</h1>
-                  <p>切换到编辑，写下第一行。</p>
-                  <button type="button" onClick={() => setViewMode("write")}><Pencil size={16} />开始写作</button>
-                </div>
-              )}
-            </section>
-          )}
-
-          {(viewMode === "write" || viewMode === "split") && (
-            <div className="format-shelf" role="toolbar" aria-label="Markdown 格式">
-              <button type="button" onClick={() => editorRef.current?.prefixLine("# ")} aria-label="一级标题" title="一级标题"><Heading1 size={17} /></button>
-              <button type="button" onClick={() => editorRef.current?.prefixLine("## ")} aria-label="二级标题" title="二级标题"><Heading2 size={17} /></button>
-              <span className="shelf-divider" />
-              <button type="button" onClick={() => editorRef.current?.surround("**", "**", "粗体文字")} aria-label="粗体" title="粗体"><Bold size={17} /></button>
-              <button type="button" onClick={() => editorRef.current?.surround("*", "*", "斜体文字")} aria-label="斜体" title="斜体"><Italic size={17} /></button>
-              <button type="button" onClick={() => editorRef.current?.surround("[", "](https://)", "链接文字")} aria-label="链接" title="链接"><Link size={17} /></button>
-              <button type="button" onClick={() => editorRef.current?.surround("`", "`", "code")} aria-label="行内代码" title="行内代码"><Code2 size={17} /></button>
-              <span className="shelf-divider" />
-              <button type="button" onClick={() => editorRef.current?.prefixLine("> ")} aria-label="引用" title="引用"><Quote size={17} /></button>
-              <button type="button" onClick={() => editorRef.current?.prefixLine("- ")} aria-label="无序列表" title="无序列表"><List size={17} /></button>
-              <button type="button" onClick={() => editorRef.current?.prefixLine("- [ ] ")} aria-label="任务列表" title="任务列表"><ListChecks size={17} /></button>
-            </div>
-          )}
-
-          <footer className="document-status" aria-label="文档统计">
-            <span>{stats.words.toLocaleString("zh-CN")} 字词</span>
-            <span>{stats.characters.toLocaleString("zh-CN")} 字符</span>
-            <span>约 {stats.minutes} 分钟阅读</span>
-            <span className="status-spacer" />
-            <span>Markdown · UTF-8</span>
-          </footer>
+          {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <section className="editor-pane" aria-label={viewMode === "live" ? "实时排版编辑器" : "Markdown 源码编辑器"}><Suspense fallback={<div className="editor-loading" aria-label="正在准备编辑器"><span /><span /><span /></div>}><MarkdownEditor key={activeDocument.id} ref={editorRef} value={activeDocument.content} onChange={updateActiveContent} dark={dark} focusMode={focusMode} livePreview={viewMode === "live"} /></Suspense></section>}
+          {(viewMode === "preview" || viewMode === "split") && <section className="preview-pane" aria-label="阅读视图" onDoubleClick={() => setViewMode("live")}>{activeDocument.content.trim() ? <Suspense fallback={<div className="preview-loading">正在排版…</div>}><MarkdownPreview content={activeDocument.content} /></Suspense> : <div className="empty-document"><div className="empty-caret" aria-hidden="true" /><h1>开始一篇文稿</h1><p>标题会自动成为文件的名字，也可以稍后修改。</p><button type="button" onClick={() => setViewMode("live")}><Pencil size={17} />开始写作</button></div>}</section>}
+          {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <div className="format-dock" role="toolbar" aria-label="Markdown 格式"><div className="popover-anchor insert-anchor" data-popover-root><button className={`dock-add${insertMenuOpen ? " active" : ""}`} type="button" onClick={() => setInsertMenuOpen((current) => !current)} aria-label="插入内容" aria-expanded={insertMenuOpen}><Plus size={19} /></button>{insertMenuOpen && <div className="insert-menu" role="menu" aria-label="插入内容" onKeyDown={navigateMenu}>{insertActions.map((item) => { const Icon = item.icon; return <button type="button" role="menuitem" key={item.label} onClick={() => { item.run(); setInsertMenuOpen(false); }}><Icon size={18} /><span>{item.label}</span></button>; })}</div>}</div><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.surround("**", "**", "粗体文字")} aria-label="粗体" title="粗体"><Bold size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("*", "*", "斜体文字")} aria-label="斜体" title="斜体"><Italic size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("[", "](https://)", "链接文字")} aria-label="链接" title="链接"><Link size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("`", "`", "code")} aria-label="行内代码" title="行内代码"><Code2 size={18} /></button><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.prefixLine("- ")} aria-label="列表" title="无序列表"><List size={18} /></button><button type="button" onClick={() => editorRef.current?.prefixLine("- [ ] ")} aria-label="任务" title="任务列表"><ListChecks size={18} /></button></div>}
+          <footer className="document-status" aria-label="文档统计"><span>{stats.words.toLocaleString("zh-CN")} 字词</span><span>{stats.characters.toLocaleString("zh-CN")} 字符</span><span>约 {stats.minutes} 分钟</span><span className="status-spacer" /><span>{viewMode === "live" ? "实时排版" : viewMode === "source" ? "Markdown" : viewMode === "preview" ? "阅读" : "对照"}</span></footer>
         </main>
       </section>
 
-      <aside className="outline-rail" aria-label="文档大纲">
-        <div className="outline-header">
-          <span>大纲</span>
-          <button className="icon-button quiet" type="button" onClick={() => setOutlineOpen(false)} aria-label="关闭大纲"><X size={16} /></button>
-        </div>
-        <nav>
-          {outline.map((item, index) => (
-            <button
-              type="button"
-              key={`${item.id}-${index}`}
-              className={`outline-level-${item.level}`}
-              onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
-            >
-              {item.text}
-            </button>
-          ))}
-          {!outline.length && <p className="outline-empty">添加标题后，大纲会出现在这里。</p>}
-        </nav>
-      </aside>
+      <aside className="inspector-rail" aria-label="文档检查器"><div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label="检查器页面" onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>大纲</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>文稿</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label="关闭检查器"><X size={17} /></button></div>{inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>添加标题后，大纲会在这里自动生成。</p></div>}</nav> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>统计</span><dl><div><dt>字词</dt><dd>{stats.words.toLocaleString("zh-CN")}</dd></div><div><dt>字符</dt><dd>{stats.characters.toLocaleString("zh-CN")}</dd></div><div><dt>阅读</dt><dd>{stats.minutes} 分钟</dd></div></dl></section><section><span>文件</span><dl><div><dt>名称</dt><dd>{activeDocument.name}</dd></div><div><dt>来源</dt><dd>{activeDocument.source === "local" ? "本地文件" : activeDocument.source === "sample" ? "示例" : "恢复草稿"}</dd></div><div><dt>格式</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={cycleTheme}><SunMoon size={18} /><span><strong>外观</strong><small>{theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}</small></span><ChevronRight size={15} /></button></div>}</aside>
 
-      {paletteOpen && (
-        <div className="palette-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) closePalette(); }}>
-          <section ref={paletteRef} className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板">
-            <label className="palette-search">
-              <Search size={18} />
-              <input
-                autoFocus
-                value={paletteSearch}
-                onChange={(event) => setPaletteSearch(event.target.value)}
-                placeholder="输入命令…"
-              />
-              <kbd>esc</kbd>
-            </label>
-            <div className="palette-results">
-              {commands.map((item, index) => {
-                const Icon = item.icon;
-                return (
-                  <button key={item.label} className={index === 0 ? "suggested" : ""} type="button" onClick={() => runPaletteCommand(item.run)}>
-                    <Icon size={17} />
-                    <span>{item.label}</span>
-                    {item.hint && <kbd>{item.hint}</kbd>}
-                  </button>
-                );
-              })}
-              {!commands.length && <p>没有匹配的命令</p>}
-            </div>
-          </section>
-        </div>
-      )}
-
-      {toast && <div className="toast" role="status"><Check size={15} />{toast}</div>}
+      {paletteOpen && <div className="palette-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPaletteOpen(false); }}><section ref={paletteRef} className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板"><label className="palette-search"><Search size={18} /><input autoFocus value={paletteSearch} onChange={(event) => setPaletteSearch(event.target.value)} placeholder="搜索命令与操作" /><kbd>esc</kbd></label><div className="palette-results">{commands.map((item, index) => { const Icon = item.icon; return <button key={item.label} className={index === 0 ? "suggested" : ""} type="button" onClick={() => { setPaletteOpen(false); window.setTimeout(item.run, 0); }}><Icon size={18} /><span>{item.label}</span>{item.hint && <kbd>{item.hint}</kbd>}</button>; })}{!commands.length && <p>没有匹配的命令</p>}</div></section></div>}
+      {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}
     </div>
   );
 }

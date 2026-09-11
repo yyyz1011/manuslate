@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Delegated: React, TypeScript, Vite, and CodeMirror 6 for the first locally reviewable core. Keep the file layer isolated so a lightweight desktop shell can replace browser file access after the interaction model is accepted.
+Delegated: React, TypeScript, Vite, and CodeMirror 6 for the first locally reviewable desktop-window core. The shipped target is a macOS/Windows PC tool; this web surface is its interaction prototype, not a mobile product. Keep the file layer isolated so a lightweight desktop shell can replace browser file access after the interaction model is accepted.
 
 ## Users
 
@@ -28,17 +28,21 @@ The product is used for focused drafting, technical notes, README files, long-fo
 
 ## Capabilities and Constraints
 
-- Core first: source editing, rendered preview, split view, local open/save, autosaved recovery, outline, search, keyboard shortcuts, focus mode, word count, and light/dark appearance.
+- Core first: in-place live preview, source editing, rendered reading, split view, local open/save, autosaved recovery, outline, search, keyboard shortcuts, focus mode, word count, and light/dark appearance.
+- Rich Markdown includes GFM, task lists, tables, footnotes, fenced code, and KaTeX mathematics without introducing a proprietary document format.
+- Export begins with Markdown, rich copy, standalone HTML, and the system print/PDF path.
 - GitHub-Flavored Markdown is the initial compatibility target.
 - No AI features in the core milestone.
 - No proprietary document format and no forced account.
-- The first build is a browser-local reviewable implementation; desktop packaging follows after the core interaction is accepted.
+- The first build is a browser-local reviewable implementation at desktop window sizes; native desktop packaging follows after the core interaction is accepted.
+- Mobile browsers, phone layouts, and touch-first interaction are outside the product scope. Narrow-window behavior exists only to keep a resized desktop window usable.
 - Product code and visual design are original. Competitors are used only to understand category expectations and tradeoffs.
 
 ## Brand Commitments
 
 - Working name: PatchMark Core. Final name remains open.
 - Interaction quality should feel as considered as a first-party Apple app: quiet, direct, predictable, and carefully animated.
+- The structural reference is a first-party macOS document window: split-view library, centered toolbar title, contextual material surfaces, precise mouse targets, dense keyboard navigation, and restrained spatial transitions.
 - Minimal does not mean featureless; depth should be progressively disclosed.
 
 ## Evidence on Hand

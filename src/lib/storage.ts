@@ -13,30 +13,32 @@ export const welcomeDocument: MarkdownDocument = {
   updatedAt: Date.now(),
   content: `# 写作，应该从正文开始
 
-PatchMark 是一款安静、本地优先的 Markdown 编辑器。它不会用仪表盘挡住你的文档，也不会要求你先理解一套工作区规则。
+PatchMark 是一款安静、本地优先的 Markdown 编辑器。打开就是文稿，不需要账号，也不需要先理解一套工作区规则。
 
-## 这一版先做好什么
+## 边写，边成为成稿
 
-- **打开即读**：已有文档默认以排版后的阅读视图出现
-- **一键编辑**：切换到编辑后，格式工具才会靠近正文出现
-- **可靠保存**：本地草稿自动恢复，文件保存状态始终可见
-- **保持开放**：你的内容始终是普通的 \`.md\` 文件
+- **实时排版**：Markdown 标记只在光标所在行出现
+- **原生资料库**：搜索、最近文稿和大纲保持在内容两侧
+- **可靠保存**：恢复草稿自动保存，写入文件时状态清楚可见
+- **开放格式**：内容始终是普通的 \`.md\` 文件
 
 > 极简不是减少能力，而是让能力只在需要时出现。
 
-## Markdown 示例
+## 丰富，但不笨重
 
 行内可以使用 **粗体**、*斜体*、\`代码\` 与 [链接](https://commonmark.org/)。
+
+公式也可以直接排版：$E = mc^2$。
 
 \`\`\`ts
 const principle = "The document is the interface";
 \`\`\`
 
-| 模式 | 适合 |
+| 视图 | 适合 |
 | --- | --- |
-| 阅读 | 校对与沉浸阅读 |
-| 编辑 | 专注写作 |
-| 分栏 | 对照源码与结果 |
+| 实时排版 | 日常写作 |
+| 阅读 | 沉浸校对 |
+| 源码 | 精确控制 Markdown |
 
 - [x] 打开就是 Markdown
 - [x] 不依赖账号
@@ -44,7 +46,9 @@ const principle = "The document is the interface";
 
 ---
 
-双击正文，或点击顶部的「编辑」开始书写。
+顶部可以切换显示方式；底部的格式工具坞只在写作时出现。[^local]
+
+[^local]: 草稿保存在当前浏览器，本地文件只会在你主动保存时写入。
 `,
 };
 
@@ -59,7 +63,16 @@ function safeParse<T>(value: string | null, fallback: T): T {
 
 export function loadDocuments(): MarkdownDocument[] {
   const saved = safeParse<MarkdownDocument[]>(localStorage.getItem(DOCUMENTS_KEY), []);
-  return saved.length ? saved : [welcomeDocument];
+  return saved.length
+    ? saved.map((document) => {
+        const untouchedLegacyWelcome = document.id === welcomeDocument.id
+          && document.content.includes("## 这一版先做好什么")
+          && document.content.includes("双击正文，或点击顶部的「编辑」开始书写。");
+        return document.id === welcomeDocument.id && (document.source === "sample" || untouchedLegacyWelcome)
+          ? welcomeDocument
+          : document;
+      })
+    : [welcomeDocument];
 }
 
 export function saveDocuments(documents: MarkdownDocument[]): void {
@@ -76,7 +89,8 @@ export function saveActiveDocumentId(id: string): void {
 
 export function loadViewMode(): ViewMode {
   const value = localStorage.getItem(VIEW_KEY);
-  return value === "write" || value === "split" || value === "preview" ? value : "preview";
+  if (value === "write") return "live";
+  return value === "live" || value === "source" || value === "split" || value === "preview" ? value : "live";
 }
 
 export function saveViewMode(mode: ViewMode): void {
@@ -91,4 +105,3 @@ export function loadTheme(): ThemeMode {
 export function saveTheme(theme: ThemeMode): void {
   localStorage.setItem(THEME_KEY, theme);
 }
-
