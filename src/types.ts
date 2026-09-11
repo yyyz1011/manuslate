@@ -8,6 +8,13 @@ export interface MarkdownDocument {
   createdAt: number;
   updatedAt: number;
   source: "local" | "draft" | "sample";
+  categoryId?: string;
+  path?: string;
+}
+export interface LibraryCategory {
+  id: string;
+  name: string;
+  createdAt: number;
 }
 export interface OutlineItem {
   id: string;

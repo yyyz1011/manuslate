@@ -29,6 +29,7 @@ The product is used for focused drafting, technical notes, README files, long-fo
 ## Capabilities and Constraints
 
 - Core first: in-place live preview, source editing, rendered reading, split view, local open/save, autosaved recovery, outline, search, keyboard shortcuts, focus mode, word count, and light/dark appearance.
+- Desktop import accepts files or folders through a staged drag-and-drop dialog. Imported folders become local library categories, while documents can be regrouped by drag or an accessible move menu.
 - Rich Markdown includes GFM, task lists, tables, footnotes, fenced code, and KaTeX mathematics without introducing a proprietary document format.
 - Export begins with Markdown, rich copy, standalone HTML, and the system print/PDF path.
 - GitHub-Flavored Markdown is the initial compatibility target.

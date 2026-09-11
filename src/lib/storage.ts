@@ -1,9 +1,10 @@
-import type { MarkdownDocument, ThemeMode, ViewMode } from "../types";
+import type { LibraryCategory, MarkdownDocument, ThemeMode, ViewMode } from "../types";
 
 const DOCUMENTS_KEY = "patchmark-core.documents.v1";
 const ACTIVE_KEY = "patchmark-core.active-document.v1";
 const VIEW_KEY = "patchmark-core.view-mode.v1";
 const THEME_KEY = "patchmark-core.theme.v1";
+const CATEGORIES_KEY = "patchmark-core.categories.v1";
 
 export const welcomeDocument: MarkdownDocument = {
   id: "welcome-to-patchmark",
@@ -18,7 +19,7 @@ PatchMark 是一款安静、本地优先的 Markdown 编辑器。打开就是文
 ## 边写，边成为成稿
 
 - **实时排版**：Markdown 标记只在光标所在行出现
-- **原生资料库**：搜索、最近文稿和大纲保持在内容两侧
+- **分类资料库**：导入文件夹、归类文稿，大纲保持在内容两侧
 - **可靠保存**：恢复草稿自动保存，写入文件时状态清楚可见
 - **开放格式**：内容始终是普通的 \`.md\` 文件
 
@@ -77,6 +78,14 @@ export function loadDocuments(): MarkdownDocument[] {
 
 export function saveDocuments(documents: MarkdownDocument[]): void {
   localStorage.setItem(DOCUMENTS_KEY, JSON.stringify(documents));
+}
+
+export function loadCategories(): LibraryCategory[] {
+  return safeParse<LibraryCategory[]>(localStorage.getItem(CATEGORIES_KEY), []);
+}
+
+export function saveCategories(categories: LibraryCategory[]): void {
+  localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
 }
 
 export function loadActiveDocumentId(): string | null {

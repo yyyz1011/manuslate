@@ -1,17 +1,19 @@
 import {
   Bold, BookOpen, Check, ChevronDown, ChevronRight, Code2, Columns2, Copy, Download, Eye,
-  FileCode2, FilePlus2, Focus, FolderOpen, Heading1, Heading2, Info, Italic, Link, List,
-  ListChecks, ListOrdered, Menu, MoreHorizontal, PanelRight, Pencil, Plus, Printer, Quote,
+  FileCode2, FilePlus2, Focus, Heading1, Heading2, Info, Italic, Link, List,
+  Import, ListChecks, ListOrdered, Menu, MoreHorizontal, PanelRight, Pencil, Plus, Printer, Quote,
   Save, Search, Share, Sparkles, SunMoon, Table2, TextCursorInput, X,
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MarkdownEditorHandle } from "./editor/MarkdownEditor";
+import ImportDialog, { type ImportCandidate } from "./library/ImportDialog";
+import LibraryTree from "./library/LibraryTree";
 import { getOutline, getWordStats } from "./lib/document";
 import {
-  loadActiveDocumentId, loadDocuments, loadTheme, loadViewMode, saveActiveDocumentId,
-  saveDocuments, saveTheme, saveViewMode,
+  loadActiveDocumentId, loadCategories, loadDocuments, loadTheme, loadViewMode, saveActiveDocumentId,
+  saveCategories, saveDocuments, saveTheme, saveViewMode,
 } from "./lib/storage";
-import type { MarkdownDocument, ThemeMode, ViewMode } from "./types";
+import type { LibraryCategory, MarkdownDocument, ThemeMode, ViewMode } from "./types";
 
 const MarkdownEditor = lazy(() => import("./editor/MarkdownEditor"));
 const MarkdownPreview = lazy(() => import("./editor/MarkdownPreview"));
@@ -42,21 +44,6 @@ function escapeHtml(value: string): string {
   })[character] ?? character);
 }
 
-function relativeTime(timestamp: number): string {
-  const diff = Date.now() - timestamp;
-  if (diff < 60_000) return "刚刚";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分钟前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小时前`;
-  return new Intl.DateTimeFormat("zh-CN", { month: "short", day: "numeric" }).format(timestamp);
-}
-
-function documentSnippet(content: string): string {
-  const line = content.split("\n")
-    .map((item) => item.replace(/^#{1,6}\s+/, "").replace(/[*_`>[\]()!-]/g, " ").trim())
-    .find(Boolean);
-  return line || "还没有内容";
-}
-
 function createUntitled(index: number): MarkdownDocument {
   const now = Date.now();
   return {
@@ -67,7 +54,9 @@ function createUntitled(index: number): MarkdownDocument {
 
 function App() {
   const initialDocuments = useMemo(loadDocuments, []);
+  const initialCategories = useMemo(loadCategories, []);
   const [documents, setDocuments] = useState<MarkdownDocument[]>(initialDocuments);
+  const [categories, setCategories] = useState<LibraryCategory[]>(initialCategories);
   const [activeId, setActiveId] = useState(() => {
     const stored = loadActiveDocumentId();
     return initialDocuments.some((item) => item.id === stored) ? stored! : initialDocuments[0].id;
@@ -86,12 +75,12 @@ function App() {
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [insertMenuOpen, setInsertMenuOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [draftState, setDraftState] = useState<"saving" | "saved">("saved");
   const editorRef = useRef<MarkdownEditorHandle>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
   const paletteRef = useRef<HTMLElement>(null);
   const paletteReturnFocusRef = useRef<HTMLElement | null>(null);
   const handlesRef = useRef(new Map<string, FileSystemFileHandle>());
@@ -188,39 +177,56 @@ function App() {
     window.setTimeout(() => editorRef.current?.focus(), 0);
   }, [documents, setViewMode]);
 
-  const addFiles = useCallback((files: Array<{ file: File; handle?: FileSystemFileHandle }>) => {
+  const importFiles = useCallback(async (files: ImportCandidate[]) => {
     if (!files.length) return;
-    Promise.all(files.map(async ({ file, handle }) => {
+    const categoryIds = new Map(categories.map((item) => [item.name.toLocaleLowerCase(), item.id]));
+    const additions: LibraryCategory[] = [];
+    files.forEach((item) => {
+      const name = item.categoryName?.trim();
+      if (!name || categoryIds.has(name.toLocaleLowerCase())) return;
+      const category: LibraryCategory = { id: uniqueId(), name, createdAt: Date.now() };
+      categoryIds.set(name.toLocaleLowerCase(), category.id); additions.push(category);
+    });
+    if (additions.length) setCategories((current) => [...current, ...additions]);
+
+    const opened = await Promise.all(files.map(async ({ file, handle, relativePath, categoryName }) => {
       const content = await file.text();
       const item: MarkdownDocument = {
-        id: uniqueId(), name: file.name, content, source: "local",
+        id: uniqueId(), name: file.name, content, source: "local", path: relativePath,
+        categoryId: categoryName ? categoryIds.get(categoryName.toLocaleLowerCase()) : undefined,
         createdAt: file.lastModified || Date.now(), updatedAt: file.lastModified || Date.now(),
       };
       if (handle) handlesRef.current.set(item.id, handle);
       savedSnapshotsRef.current.set(item.id, content);
       return item;
-    })).then((opened) => {
-      setDocuments((current) => {
-        const names = new Set(opened.map((item) => item.name));
-        return [...opened, ...current.filter((item) => !names.has(item.name))];
-      });
-      setActiveId(opened[0].id); saveActiveDocumentId(opened[0].id); setViewMode("live");
-      notify(opened.length === 1 ? `已打开 ${opened[0].name}` : `已打开 ${opened.length} 个文档`);
+    }));
+    setDocuments((current) => {
+      const keys = new Set(opened.map((item) => item.path || item.name));
+      return [...opened, ...current.filter((item) => !keys.has(item.path || item.name))];
     });
-  }, [notify, setViewMode]);
+    setActiveId(opened[0].id); saveActiveDocumentId(opened[0].id); setViewMode("live");
+    notify(opened.length === 1 ? `已导入 ${opened[0].name}` : `已导入 ${opened.length} 个文稿`);
+  }, [categories, notify, setViewMode]);
 
-  const openFiles = useCallback(async () => {
-    if (window.showOpenFilePicker) {
-      try {
-        const handles = await window.showOpenFilePicker({ multiple: true, types: markdownFileTypes });
-        const files = await Promise.all(handles.map(async (handle) => ({ file: await handle.getFile(), handle })));
-        addFiles(files); return;
-      } catch (error) {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-      }
-    }
-    inputRef.current?.click();
-  }, [addFiles]);
+  const createCategory = useCallback((name: string) => {
+    if (categories.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify("已经有同名分类"); return; }
+    setCategories((current) => [...current, { id: uniqueId(), name, createdAt: Date.now() }]);
+  }, [categories, notify]);
+
+  const renameCategory = useCallback((id: string, name: string) => {
+    if (categories.some((item) => item.id !== id && item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify("已经有同名分类"); return; }
+    setCategories((current) => current.map((item) => item.id === id ? { ...item, name } : item));
+  }, [categories, notify]);
+
+  const deleteCategory = useCallback((id: string) => {
+    setCategories((current) => current.filter((item) => item.id !== id));
+    setDocuments((current) => current.map((item) => item.categoryId === id ? { ...item, categoryId: undefined } : item));
+    notify("分类已删除，文稿已移到未分类");
+  }, [notify]);
+
+  const moveDocument = useCallback((documentId: string, categoryId?: string) => {
+    setDocuments((current) => current.map((item) => item.id === documentId ? { ...item, categoryId } : item));
+  }, []);
 
   const saveActive = useCallback(async () => {
     if (!activeDocument) return;
@@ -313,6 +319,7 @@ function App() {
     const timeout = window.setTimeout(() => { saveDocuments(documents); setDraftState("saved"); }, 380);
     return () => window.clearTimeout(timeout);
   }, [documents]);
+  useEffect(() => { saveCategories(categories); }, [categories]);
 
   useEffect(() => {
     if (!paletteOpen) return;
@@ -334,7 +341,7 @@ function App() {
       const mod = event.metaKey || event.ctrlKey; if (!mod) return;
       if (event.key.toLowerCase() === "k") { event.preventDefault(); openPalette(); }
       else if (event.key.toLowerCase() === "s") { event.preventDefault(); void saveActive(); }
-      else if (event.key.toLowerCase() === "o") { event.preventDefault(); void openFiles(); }
+      else if (event.key.toLowerCase() === "o") { event.preventDefault(); setImportOpen(true); }
       else if (event.key.toLowerCase() === "n") { event.preventDefault(); createDocument(); }
       else if (event.key === "1") { event.preventDefault(); setViewMode("live"); }
       else if (event.key === "2") { event.preventDefault(); setViewMode("preview"); }
@@ -343,7 +350,7 @@ function App() {
       else if (event.shiftKey && event.key.toLowerCase() === "f") { event.preventDefault(); setViewMode("live"); setFocusMode((current) => !current); }
     };
     window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown);
-  }, [createDocument, dismissMenus, openFiles, openPalette, saveActive, setViewMode]);
+  }, [createDocument, dismissMenus, openPalette, saveActive, setViewMode]);
 
   const filteredDocuments = useMemo(() => {
     const query = documentSearch.trim().toLocaleLowerCase();
@@ -352,7 +359,7 @@ function App() {
 
   const commands = [
     { label: "新建文稿", hint: "⌘N", icon: FilePlus2, run: createDocument },
-    { label: "打开 Markdown", hint: "⌘O", icon: FolderOpen, run: () => void openFiles() },
+    { label: "导入 Markdown", hint: "⌘O", icon: Import, run: () => setImportOpen(true) },
     { label: "写入本地文件", hint: "⌘S", icon: Save, run: () => void saveActive() },
     { label: "实时排版", hint: "⌘1", icon: TextCursorInput, run: () => setViewMode("live") },
     { label: "阅读视图", hint: "⌘2", icon: Eye, run: () => setViewMode("preview") },
@@ -382,21 +389,14 @@ function App() {
       if ((event.target as HTMLElement).closest("[data-popover-root]")) return;
       dismissMenus();
     }}>
-      <input ref={inputRef} className="visually-hidden" type="file" accept=".md,.markdown,.mdown,.txt,text/markdown,text/plain" multiple onChange={(event) => {
-        addFiles(Array.from(event.target.files ?? []).map((file) => ({ file }))); event.currentTarget.value = "";
-      }} />
       {sidebarOpen && <button className="mobile-scrim" aria-label="关闭文稿列表" onClick={() => setSidebarOpen(false)} />}
 
       <aside className="library-rail" aria-label="文稿列表">
         <div className="library-nav"><button className="icon-button compose-button" type="button" onClick={createDocument} aria-label="新建文稿" title="新建文稿 ⌘N"><FilePlus2 size={19} /></button></div>
         <div className="library-heading"><h1>文稿</h1><p>本机草稿与打开的文件</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
-        <div className="rail-heading"><span>最近</span><span>{filteredDocuments.length}</span></div>
-        <div className="document-list">
-          {filteredDocuments.map((item) => <button className={`document-row${item.id === activeDocument.id ? " active" : ""}`} type="button" key={item.id} onClick={() => selectDocument(item.id)}><span className="document-copy"><span className="document-name">{withoutExtension(item.name)}</span><span className="document-snippet">{documentSnippet(item.content)}</span><span className="document-meta">{relativeTime(item.updatedAt)}</span></span>{item.id === activeDocument.id && <ChevronRight size={15} aria-hidden="true" />}</button>)}
-          {!filteredDocuments.length && <div className="rail-empty">没有匹配的文稿</div>}
-        </div>
-        <div className="library-footer"><button type="button" onClick={() => void openFiles()}><FolderOpen size={18} /><span>打开文件</span><kbd>⌘O</kbd></button></div>
+        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim())} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} />
+        <div className="library-footer"><button type="button" onClick={() => setImportOpen(true)}><Import size={18} /><span>导入文件</span><kbd>⌘O</kbd></button></div>
       </aside>
 
       <section className="workspace">
@@ -432,6 +432,7 @@ function App() {
       <aside className="inspector-rail" aria-label="文档检查器"><div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label="检查器页面" onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>大纲</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>文稿</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label="关闭检查器"><X size={17} /></button></div>{inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>添加标题后，大纲会在这里自动生成。</p></div>}</nav> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>统计</span><dl><div><dt>字词</dt><dd>{stats.words.toLocaleString("zh-CN")}</dd></div><div><dt>字符</dt><dd>{stats.characters.toLocaleString("zh-CN")}</dd></div><div><dt>阅读</dt><dd>{stats.minutes} 分钟</dd></div></dl></section><section><span>文件</span><dl><div><dt>名称</dt><dd>{activeDocument.name}</dd></div><div><dt>来源</dt><dd>{activeDocument.source === "local" ? "本地文件" : activeDocument.source === "sample" ? "示例" : "恢复草稿"}</dd></div><div><dt>格式</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={cycleTheme}><SunMoon size={18} /><span><strong>外观</strong><small>{theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}</small></span><ChevronRight size={15} /></button></div>}</aside>
 
       {paletteOpen && <div className="palette-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPaletteOpen(false); }}><section ref={paletteRef} className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板"><label className="palette-search"><Search size={18} /><input autoFocus value={paletteSearch} onChange={(event) => setPaletteSearch(event.target.value)} placeholder="搜索命令与操作" /><kbd>esc</kbd></label><div className="palette-results">{commands.map((item, index) => { const Icon = item.icon; return <button key={item.label} className={index === 0 ? "suggested" : ""} type="button" onClick={() => { setPaletteOpen(false); window.setTimeout(item.run, 0); }}><Icon size={18} /><span>{item.label}</span>{item.hint && <kbd>{item.hint}</kbd>}</button>; })}{!commands.length && <p>没有匹配的命令</p>}</div></section></div>}
+      <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importFiles} />
       {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}
     </div>
   );

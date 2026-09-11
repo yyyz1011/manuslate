@@ -12,6 +12,11 @@ interface FileSystemFileHandle {
   createWritable(): Promise<FileSystemWritableFileStream>;
 }
 
+interface FileSystemDirectoryHandle {
+  kind: "directory";
+  name: string;
+}
+
 interface Window {
   showOpenFilePicker?: (options?: {
     multiple?: boolean;
@@ -21,6 +26,7 @@ interface Window {
     suggestedName?: string;
     types?: Array<{ description: string; accept: Record<string, string[]> }>;
   }) => Promise<FileSystemFileHandle>;
+  showDirectoryPicker?: (options?: { mode?: "read" | "readwrite" }) => Promise<FileSystemDirectoryHandle>;
 }
 
 declare module "markdown-it-task-lists" {
