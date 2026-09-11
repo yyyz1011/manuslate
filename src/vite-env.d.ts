@@ -1,21 +1,35 @@
 /// <reference types="vite/client" />
 
-interface FileSystemHandle {
-  readonly kind: "file" | "directory";
-  readonly name: string;
+interface FileSystemWritableFileStream extends WritableStream {
+  write(data: Blob | BufferSource | string): Promise<void>;
+  close(): Promise<void>;
 }
 
-interface FileSystemFileHandle extends FileSystemHandle {
-  readonly kind: "file";
+interface FileSystemFileHandle {
+  kind: "file";
+  name: string;
   getFile(): Promise<File>;
   createWritable(): Promise<FileSystemWritableFileStream>;
 }
 
-interface FileSystemDirectoryHandle extends FileSystemHandle {
-  readonly kind: "directory";
-  values(): AsyncIterableIterator<FileSystemFileHandle | FileSystemDirectoryHandle>;
+interface Window {
+  showOpenFilePicker?: (options?: {
+    multiple?: boolean;
+    types?: Array<{ description: string; accept: Record<string, string[]> }>;
+  }) => Promise<FileSystemFileHandle[]>;
+  showSaveFilePicker?: (options?: {
+    suggestedName?: string;
+    types?: Array<{ description: string; accept: Record<string, string[]> }>;
+  }) => Promise<FileSystemFileHandle>;
 }
 
-interface Window {
-  showDirectoryPicker?: (options?: { mode?: "read" | "readwrite" }) => Promise<FileSystemDirectoryHandle>;
+declare module "markdown-it-task-lists" {
+  import type MarkdownIt from "markdown-it";
+  interface TaskListOptions {
+    enabled?: boolean;
+    label?: boolean;
+    labelAfter?: boolean;
+  }
+  const taskLists: (instance: MarkdownIt, options?: TaskListOptions) => void;
+  export default taskLists;
 }
