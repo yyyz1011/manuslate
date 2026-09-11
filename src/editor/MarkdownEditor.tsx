@@ -261,10 +261,12 @@ function makeTheme(dark: boolean, livePreview: boolean) {
         letterSpacing: "-0.025em",
         lineHeight: "1.24",
       },
-      ".cm-live-h1": { fontSize: "2.1em", marginBottom: "0.5em" },
-      ".cm-live-h2": { fontSize: "1.5em", marginTop: "1.15em", marginBottom: "0.3em" },
-      ".cm-live-h3": { fontSize: "1.2em", marginTop: "0.9em", fontWeight: "690" },
-      ".cm-live-h4, .cm-live-h5, .cm-live-h6": { fontSize: "1.05em", marginTop: "0.7em", fontWeight: "680" },
+      // CodeMirror measures the line box for pointer mapping; vertical margins sit
+      // outside that box and make clicks drift progressively down the document.
+      ".cm-live-h1": { fontSize: "2.1em", paddingBottom: "0.5em" },
+      ".cm-live-h2": { fontSize: "1.5em", paddingTop: "1.15em", paddingBottom: "0.3em" },
+      ".cm-live-h3": { fontSize: "1.2em", paddingTop: "0.9em", fontWeight: "690" },
+      ".cm-live-h4, .cm-live-h5, .cm-live-h6": { fontSize: "1.05em", paddingTop: "0.7em", fontWeight: "680" },
       ".cm-live-codeblock": {
         backgroundColor: dark ? "rgba(255,255,255,.045)" : "rgba(35,42,52,.045)",
         fontFamily: '"SFMono-Regular", "SF Mono", ui-monospace, Menlo, Consolas, monospace',
