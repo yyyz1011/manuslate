@@ -2,7 +2,7 @@
 
 ![PatchMark 产品图标](public/patchmark-icon.png)
 
-一款安静、本地优先、开源免费的 PC Markdown 编辑器。当前阶段不做 AI，先把打开、阅读、编辑和保存做得足够好。
+一款安静、本地优先、开源免费的 PC Markdown 编辑器。当前阶段不做 AI，先把打开、阅读、编辑和保存做得足够好。项目同时提供浏览器评审版和基于 Tauri 的 macOS 桌面 App。
 
 ## 当前能力
 
@@ -49,9 +49,24 @@ npm run build
 npm run preview
 ```
 
+## 桌面 App
+
+```bash
+# 启动原生开发窗口
+npm run app:dev
+
+# 构建 macOS .app
+npm run app:build
+
+# 需要发布安装镜像时再构建 .dmg
+npm run app:dmg
+```
+
+桌面版使用系统文件与文件夹选择器，直接读写用户选择的 Markdown；默认文稿目录仅保存在当前电脑。构建产物位于 `src-tauri/target/release/bundle/`。
+
 ## 产品边界
 
-这一里程碑验证 PC 桌面的 Markdown 核心体验与本地知识资料库。移动端、AI、账户、云同步和多人协作不在当前范围内。浏览器版本用于快速评审桌面交互；支持 File System Access API 的浏览器会在本机保存文件句柄，但浏览器仍可能要求用户重新授权。桌面壳阶段会把这一层替换为原生文件访问。
+这一里程碑验证 PC 桌面的 Markdown 核心体验与本地知识资料库。移动端、AI、账户、云同步和多人协作不在当前范围内。浏览器版本用于快速评审桌面交互；桌面 App 使用原生文件访问，浏览器版本继续保留 File System Access API 与上传下载降级路径。
 
 ## License
 

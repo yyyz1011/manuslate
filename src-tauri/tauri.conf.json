@@ -1,0 +1,46 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "PatchMark",
+  "version": "0.1.0",
+  "identifier": "app.patchmark.desktop",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://127.0.0.1:4173",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "PatchMark",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 900,
+        "minHeight": 600,
+        "center": true,
+        "hiddenTitle": true,
+        "titleBarStyle": "Overlay",
+        "trafficLightPosition": { "x": 18, "y": 19 }
+      }
+    ],
+    "security": { "csp": null }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "category": "Productivity",
+    "shortDescription": "A quiet, local-first Markdown editor.",
+    "longDescription": "PatchMark is an open-source, local-first Markdown editor for focused writing and managing Markdown libraries.",
+    "fileAssociations": [
+      { "ext": ["md", "markdown", "mdown"], "name": "Markdown Document", "role": "Editor" }
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "macOS": { "minimumSystemVersion": "12.0" }
+  }
+}

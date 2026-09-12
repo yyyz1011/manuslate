@@ -19,6 +19,7 @@ export interface MarkdownDocument {
   source: "local" | "draft" | "sample";
   categoryId?: string;
   path?: string;
+  nativePath?: string;
   diskModifiedAt?: number;
   diskContent?: string;
   pinned?: boolean;

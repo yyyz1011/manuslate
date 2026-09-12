@@ -12,6 +12,11 @@ import { ConfirmDialog, ConflictDialog, HistoryDialog, SettingsDialog, TemplateD
 import { getOutline, getWordStats } from "./lib/document";
 import { getBacklinks, getOutgoingLinks, resolveDocumentLink } from "./lib/links";
 import {
+  chooseNativeDirectory, chooseNativeMarkdownDirectory, chooseNativeMarkdownFiles, chooseNativeSavePath,
+  isDesktopApp, pathName, readNativeSnapshot, uniqueNativeMarkdownPath, writeNativeImage, writeNativeMarkdown,
+  type NativeMarkdownFile,
+} from "./lib/native";
+import {
   builtInTemplates, defaultEditorPreferences, loadActiveDocumentId, loadCategories, loadDocuments, loadEditorPreferences, loadTheme, loadTrash, loadVersions, loadViewMode, saveActiveDocumentId,
   saveCategories, saveDocuments, saveEditorPreferences, saveTheme, saveTrash, saveVersions, saveViewMode,
 } from "./lib/storage";
@@ -23,6 +28,9 @@ import type { DocumentTemplate, EditorPreferences, FileConflict, LibraryCategory
 
 const MarkdownEditor = lazy(() => import("./editor/MarkdownEditor"));
 const MarkdownPreview = lazy(() => import("./editor/MarkdownPreview"));
+const desktopApp = isDesktopApp();
+const NATIVE_DEFAULT_DIRECTORY_KEY = "patchmark.native.default-directory";
+const NATIVE_ASSET_DIRECTORY_KEY = "patchmark.native.asset-directory";
 
 const markdownFileTypes = [{
   description: "Markdown",
@@ -121,8 +129,12 @@ function App() {
   const [fileConflict, setFileConflict] = useState<FileConflict | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ kind: "category" | "document"; id: string } | null>(null);
   const [handleAccess, setHandleAccess] = useState<Record<string, "granted" | "prompt" | "denied" | "missing">>({});
-  const [defaultDirectoryName, setDefaultDirectoryName] = useState<string | null>(null);
-  const [defaultDirectoryAccess, setDefaultDirectoryAccess] = useState<PermissionState | "missing">("missing");
+  const [defaultDirectoryPath, setDefaultDirectoryPath] = useState<string | null>(() => desktopApp ? localStorage.getItem(NATIVE_DEFAULT_DIRECTORY_KEY) : null);
+  const [defaultDirectoryName, setDefaultDirectoryName] = useState<string | null>(() => {
+    const path = desktopApp ? localStorage.getItem(NATIVE_DEFAULT_DIRECTORY_KEY) : null;
+    return path ? pathName(path) : null;
+  });
+  const [defaultDirectoryAccess, setDefaultDirectoryAccess] = useState<PermissionState | "missing">(() => desktopApp && localStorage.getItem(NATIVE_DEFAULT_DIRECTORY_KEY) ? "granted" : "missing");
   const editorRef = useRef<MarkdownEditorHandle>(null);
   const paletteRef = useRef<HTMLElement>(null);
   const paletteReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -145,8 +157,9 @@ function App() {
     ? (activeDocument.source === "local" ? (activeDocument.diskContent ?? savedSnapshotsRef.current.get(activeDocument.id)) !== activeDocument.content : savedSnapshotsRef.current.get(activeDocument.id) !== activeDocument.content)
     : false;
   const activeHandleName = activeDocument ? handlesRef.current.get(activeDocument.id)?.name : undefined;
-  const hasDisplayName = Boolean(activeHandleName && activeHandleName !== activeDocument?.name);
-  const activeHandleAccess = activeDocument?.source === "local" ? handleAccess[activeDocument.id] : undefined;
+  const activeDiskName = activeDocument?.nativePath ? pathName(activeDocument.nativePath) : activeHandleName;
+  const hasDisplayName = Boolean(activeDiskName && activeDiskName !== activeDocument?.name);
+  const activeHandleAccess = activeDocument?.source === "local" ? (activeDocument.nativePath ? "granted" : handleAccess[activeDocument.id]) : undefined;
   const activeView = viewOptions.find((item) => item.mode === viewMode) ?? viewOptions[0];
   const ActiveViewIcon = activeView.icon;
 
@@ -175,16 +188,16 @@ function App() {
     ? "正在存入恢复草稿…"
     : activeDocument?.source === "sample"
       ? "示例文稿 · 已存入恢复草稿"
-      : activeDocument?.source === "local" && activeHandleName
+      : activeDocument?.source === "local" && activeDiskName
         ? activeHandleAccess === "prompt"
-          ? `${activeHandleName} · 保存时重新授权`
+          ? `${activeDiskName} · 保存时重新授权`
           : activeHandleAccess === "denied"
-            ? `${activeHandleName} · 文件权限已关闭`
+            ? `${activeDiskName} · 文件权限已关闭`
             : isDiskDirty
-              ? `尚未写入 ${activeHandleName}`
+              ? `尚未写入 ${activeDiskName}`
               : hasDisplayName
-                ? `已同步 ${activeHandleName} · 当前为显示名`
-                : `已与 ${activeHandleName} 同步`
+                ? `已同步 ${activeDiskName} · 当前为显示名`
+                : `已与 ${activeDiskName} 同步`
         : activeDocument?.source === "local"
           ? "恢复副本 · 保存时重新选择文件"
           : isDiskDirty
@@ -289,6 +302,23 @@ function App() {
 
   const handleImageFile = useCallback(async (file: File): Promise<string | null> => {
     try {
+      if (desktopApp) {
+        let directoryPath = localStorage.getItem(NATIVE_ASSET_DIRECTORY_KEY);
+        if (!directoryPath) {
+          notify("请选择文稿旁边的资源目录（例如 assets）");
+          directoryPath = await chooseNativeDirectory("选择图片资源文件夹");
+          if (!directoryPath) return null;
+          localStorage.setItem(NATIVE_ASSET_DIRECTORY_KEY, directoryPath);
+        }
+        const extension = file.name.match(/\.[a-z0-9]+$/i)?.[0] || ".png";
+        const stem = file.name.replace(/\.[^.]+$/, "").replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-|-$/g, "") || "image";
+        const fileName = `${stem}-${Date.now()}${extension.toLocaleLowerCase()}`;
+        const target = await writeNativeImage(directoryPath, fileName, new Uint8Array(await file.arrayBuffer()));
+        const markdownPath = `${pathName(directoryPath)}/${pathName(target)}`;
+        setAssetUrls((current) => ({ ...current, [markdownPath]: URL.createObjectURL(file) }));
+        notify(`图片已存入 ${pathName(directoryPath)}`);
+        return markdownPath;
+      }
       let directory = assetDirectoryRef.current;
       if (!directory) {
         if (!window.showDirectoryPicker) { notify("当前浏览器不支持本地资源目录"); return null; }
@@ -336,10 +366,10 @@ function App() {
     });
     if (additions.length) setCategories((current) => [...current, ...additions]);
 
-    const opened = await Promise.all(files.map(async ({ file, handle, relativePath, categoryName }) => {
+    const opened = await Promise.all(files.map(async ({ file, handle, nativePath, relativePath, categoryName }) => {
       const content = await file.text();
       const item: MarkdownDocument = {
-        id: uniqueId(), name: file.name, content, source: "local", path: relativePath,
+        id: uniqueId(), name: file.name, content, source: "local", path: relativePath ?? nativePath, nativePath,
         diskModifiedAt: file.lastModified, diskContent: content,
         categoryId: categoryName ? categoryIds.get(categoryName.toLocaleLowerCase()) : undefined,
         createdAt: file.lastModified || Date.now(), updatedAt: file.lastModified || Date.now(),
@@ -348,6 +378,8 @@ function App() {
         handlesRef.current.set(item.id, handle);
         setHandleAccess((current) => ({ ...current, [item.id]: "granted" }));
         try { await rememberFileHandle(item.id, handle); } catch { /* recovery copy remains available */ }
+      } else if (nativePath) {
+        setHandleAccess((current) => ({ ...current, [item.id]: "granted" }));
       }
       savedSnapshotsRef.current.set(item.id, content);
       return item;
@@ -359,6 +391,16 @@ function App() {
     setActiveId(opened[0].id); saveActiveDocumentId(opened[0].id); setViewMode("live");
     notify(opened.length === 1 ? `已导入 ${opened[0].name}` : `已导入 ${opened.length} 个文稿`);
   }, [categories, notify, setViewMode]);
+
+  const nativeFilesToCandidates = useCallback((files: NativeMarkdownFile[]): ImportCandidate[] => files.map((item) => ({
+    file: new File([item.content], item.name, { type: "text/markdown", lastModified: item.modifiedAt }),
+    nativePath: item.path,
+    relativePath: item.relativePath,
+    categoryName: item.categoryName,
+  })), []);
+
+  const chooseDesktopFiles = useCallback(async () => nativeFilesToCandidates(await chooseNativeMarkdownFiles()), [nativeFilesToCandidates]);
+  const chooseDesktopFolder = useCallback(async () => nativeFilesToCandidates(await chooseNativeMarkdownDirectory()), [nativeFilesToCandidates]);
 
   const createCategory = useCallback((name: string, parentId?: string) => {
     if (categories.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify("已经有同名分类"); return; }
@@ -452,7 +494,35 @@ function App() {
     notify(`已安全写入 ${handle.name}`);
   }, [notify]);
 
+  const writeDocumentToNativePath = useCallback(async (documentToWrite: MarkdownDocument, nativePath: string, keepDisplayName: boolean) => {
+    const written = await writeNativeMarkdown(nativePath, documentToWrite.content);
+    savedSnapshotsRef.current.set(documentToWrite.id, documentToWrite.content);
+    setHandleAccess((current) => ({ ...current, [documentToWrite.id]: "granted" }));
+    setDocuments((current) => current.map((item) => item.id === documentToWrite.id ? {
+      ...item,
+      name: keepDisplayName ? item.name : written.name,
+      source: "local",
+      path: written.path,
+      nativePath: written.path,
+      diskContent: documentToWrite.content,
+      diskModifiedAt: written.modifiedAt,
+    } : item));
+    notify(`已安全写入 ${written.name}`);
+  }, [notify]);
+
   const chooseDefaultDocumentDirectory = useCallback(async () => {
+    if (desktopApp) {
+      try {
+        const directory = await chooseNativeDirectory("选择新文稿文件夹");
+        if (!directory) return;
+        localStorage.setItem(NATIVE_DEFAULT_DIRECTORY_KEY, directory);
+        setDefaultDirectoryPath(directory);
+        setDefaultDirectoryName(pathName(directory));
+        setDefaultDirectoryAccess("granted");
+        notify(`新文稿将保存到 ${pathName(directory)}`);
+      } catch { notify("文件夹设置失败，请重试"); }
+      return;
+    }
     if (!window.showDirectoryPicker) { notify("当前浏览器不支持自定义文件夹"); return; }
     try {
       const directory = await window.showDirectoryPicker({ mode: "readwrite" });
@@ -468,7 +538,9 @@ function App() {
   }, [notify]);
 
   const clearDefaultDocumentDirectory = useCallback(() => {
+    localStorage.removeItem(NATIVE_DEFAULT_DIRECTORY_KEY);
     defaultDirectoryRef.current = null;
+    setDefaultDirectoryPath(null);
     setDefaultDirectoryName(null);
     setDefaultDirectoryAccess("missing");
     void forgetDefaultDocumentDirectory().catch(() => undefined);
@@ -478,6 +550,23 @@ function App() {
   const saveActive = useCallback(async () => {
     if (!activeDocument) return;
     try {
+      if (desktopApp) {
+        let nativePath = activeDocument.nativePath;
+        const hadNativePath = Boolean(nativePath);
+        if (!nativePath && defaultDirectoryPath) nativePath = await uniqueNativeMarkdownPath(defaultDirectoryPath, activeDocument.name);
+        if (!nativePath) nativePath = await chooseNativeSavePath(activeDocument.name.endsWith(".md") ? activeDocument.name : `${activeDocument.name}.md`) ?? undefined;
+        if (!nativePath) return;
+        if (hadNativePath && activeDocument.source === "local") {
+          const disk = await readNativeSnapshot(nativePath);
+          const baseline = activeDocument.diskContent ?? savedSnapshotsRef.current.get(activeDocument.id) ?? activeDocument.content;
+          if (disk.content !== baseline && disk.content !== activeDocument.content) {
+            setFileConflict({ documentId: activeDocument.id, diskContent: disk.content, diskModifiedAt: disk.modifiedAt });
+            return;
+          }
+        }
+        await writeDocumentToNativePath(activeDocument, nativePath, hadNativePath);
+        return;
+      }
       let handle = handlesRef.current.get(activeDocument.id);
       if (!handle) {
         handle = await recallFileHandle(activeDocument.id);
@@ -530,7 +619,7 @@ function App() {
       if (error instanceof DOMException && error.name === "AbortError") return;
       notify("保存失败，请重试");
     }
-  }, [activeDocument, notify, writeDocumentToHandle]);
+  }, [activeDocument, defaultDirectoryPath, notify, writeDocumentToHandle, writeDocumentToNativePath]);
 
   const useDiskConflict = useCallback(() => {
     if (!fileConflict) return;
@@ -549,6 +638,13 @@ function App() {
   const overwriteDiskConflict = useCallback(async () => {
     if (!fileConflict) return;
     const documentToWrite = documents.find((item) => item.id === fileConflict.documentId);
+    if (desktopApp && documentToWrite?.nativePath) {
+      try {
+        await writeDocumentToNativePath(documentToWrite, documentToWrite.nativePath, true);
+        setFileConflict(null);
+      } catch { notify("覆盖失败，磁盘文件没有改变"); }
+      return;
+    }
     const handle = handlesRef.current.get(fileConflict.documentId);
     if (!documentToWrite || !handle) { setFileConflict(null); notify("文件连接已丢失，请重新保存"); return; }
     try {
@@ -556,7 +652,7 @@ function App() {
       await writeDocumentToHandle(documentToWrite, handle, true);
       setFileConflict(null);
     } catch { notify("覆盖失败，磁盘文件没有改变"); }
-  }, [documents, fileConflict, notify, writeDocumentToHandle]);
+  }, [documents, fileConflict, notify, writeDocumentToHandle, writeDocumentToNativePath]);
 
   const renameActive = useCallback(() => {
     const next = renameValue.trim();
@@ -622,7 +718,7 @@ function App() {
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
   useEffect(() => {
     let cancelled = false;
-    void Promise.all(initialDocuments.filter((item) => item.source === "local").map(async (item) => {
+    void Promise.all(initialDocuments.filter((item) => item.source === "local" && !item.nativePath).map(async (item) => {
       try {
         const handle = await recallFileHandle(item.id);
         if (!handle || cancelled) {
@@ -639,6 +735,7 @@ function App() {
     return () => { cancelled = true; };
   }, [initialDocuments]);
   useEffect(() => {
+    if (desktopApp) return;
     let cancelled = false;
     void recallDefaultDocumentDirectory().then(async (directory) => {
       if (!directory || cancelled) return;
@@ -658,6 +755,22 @@ function App() {
       if (!documentToCheck || documentToCheck.source !== "local") return;
       checking = true;
       try {
+        if (desktopApp && documentToCheck.nativePath) {
+          const disk = await readNativeSnapshot(documentToCheck.nativePath);
+          setHandleAccess((current) => ({ ...current, [documentToCheck.id]: "granted" }));
+          if (documentToCheck.diskModifiedAt === disk.modifiedAt) return;
+          const baseline = documentToCheck.diskContent ?? savedSnapshotsRef.current.get(documentToCheck.id) ?? documentToCheck.content;
+          if (disk.content === baseline) {
+            setDocuments((current) => current.map((item) => item.id === documentToCheck.id ? { ...item, diskModifiedAt: disk.modifiedAt, diskContent: disk.content } : item));
+          } else if (documentToCheck.content === baseline) {
+            savedSnapshotsRef.current.set(documentToCheck.id, disk.content);
+            setDocuments((current) => current.map((item) => item.id === documentToCheck.id ? { ...item, content: disk.content, diskContent: disk.content, diskModifiedAt: disk.modifiedAt, updatedAt: Date.now() } : item));
+            notify(`${pathName(documentToCheck.nativePath)} 已从磁盘更新`);
+          } else {
+            setFileConflict((current) => current ?? { documentId: documentToCheck.id, diskContent: disk.content, diskModifiedAt: disk.modifiedAt });
+          }
+          return;
+        }
         let handle = handlesRef.current.get(documentToCheck.id);
         if (!handle) {
           handle = await recallFileHandle(documentToCheck.id);
@@ -802,10 +915,11 @@ function App() {
   } as CSSProperties;
 
   return (
-    <div style={appStyle} className={`app-shell${sidebarOpen ? " has-sidebar" : ""}${inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
+    <div style={appStyle} className={`app-shell${desktopApp ? " desktop-app" : ""}${sidebarOpen ? " has-sidebar" : ""}${inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
       if ((event.target as HTMLElement).closest("[data-popover-root]")) return;
       dismissMenus();
     }}>
+      {desktopApp && <div className="desktop-drag-region" data-tauri-drag-region aria-hidden="true" />}
       {sidebarOpen && <button className="mobile-scrim" aria-label="关闭文稿列表" onClick={() => setSidebarOpen(false)} />}
 
       <aside className="library-rail" aria-label="文稿列表">
@@ -850,11 +964,11 @@ function App() {
       {inspectorOpen && <aside className="inspector-rail" aria-label="文档检查器"><div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label="检查器页面" onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>大纲</button><button id="links-tab" role="tab" aria-selected={inspectorTab === "links"} aria-controls="links-panel" tabIndex={inspectorTab === "links" ? 0 : -1} className={inspectorTab === "links" ? "active" : ""} type="button" onClick={() => setInspectorTab("links")}>链接</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>文稿</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label="关闭检查器"><X size={17} /></button></div>{inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => navigateToOutline(item)}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>添加标题后，大纲会在这里自动生成。</p></div>}</nav> : inspectorTab === "links" ? <div id="links-panel" role="tabpanel" aria-labelledby="links-tab" className="links-panel"><section><span>引用本文 · {backlinks.length}</span>{backlinks.map((item) => <button type="button" key={item.id} onClick={() => selectDocument(item.id)}><Link2 size={14} /><span>{withoutExtension(item.name)}</span></button>)}{!backlinks.length && <p>还没有其他文稿链接到这里。</p>}</section><section><span>本文链接 · {outgoingLinks.length}</span>{outgoingLinks.map((item, index) => <button type="button" className={item.ambiguous ? "ambiguous" : item.broken ? "broken" : ""} key={`${item.href}-${index}`} title={item.candidates?.join("\n")} onClick={() => navigateDocumentLink(item.href)}><Link size={14} /><span><strong>{item.label}</strong><small>{item.ambiguous ? `目标不唯一 · ${item.candidates?.length ?? 0} 个同名文件` : item.broken ? `失效 · ${item.href}` : item.href}</small></span></button>)}{!outgoingLinks.length && <p>使用 `[标题](文件.md)` 建立文稿关系。</p>}</section></div> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>统计</span><dl><div><dt>字词</dt><dd>{stats.words.toLocaleString("zh-CN")}</dd></div><div><dt>字符</dt><dd>{stats.characters.toLocaleString("zh-CN")}</dd></div><div><dt>阅读</dt><dd>{stats.minutes} 分钟</dd></div></dl></section><section><span>文件</span><dl><div><dt>名称</dt><dd>{activeDocument.name}</dd></div>{activeDocument.path && <div><dt>路径</dt><dd>{activeDocument.path}</dd></div>}<div><dt>来源</dt><dd>{activeDocument.source === "local" ? "本地文件" : activeDocument.source === "sample" ? "示例" : "恢复草稿"}</dd></div>{activeDocument.source === "local" && <div><dt>连接</dt><dd>{activeHandleAccess === "granted" ? "可读写并监测外部修改" : activeHandleAccess === "prompt" ? "保存时需要授权" : activeHandleAccess === "denied" ? "权限已关闭" : "需要重新定位"}</dd></div>}<div><dt>格式</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={() => setSettingsOpen(true)}><Settings2 size={18} /><span><strong>编辑器设置</strong><small>{editorPreferences.manuscriptFontSize} px · {theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}</small></span><ChevronRight size={15} /></button><button className="theme-row" type="button" onClick={() => setHistoryOpen(true)}><Clock3 size={18} /><span><strong>版本记录</strong><small>{versions.filter((item) => item.documentId === activeDocument.id).length} 个本地版本</small></span><ChevronRight size={15} /></button></div>}</aside>}
 
       {paletteOpen && <div className="palette-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPaletteOpen(false); }}><section ref={paletteRef} className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板" onKeyDown={(event) => { if (event.key === "ArrowDown") { event.preventDefault(); setPaletteIndex((current) => commands.length ? (current + 1) % commands.length : 0); } else if (event.key === "ArrowUp") { event.preventDefault(); setPaletteIndex((current) => commands.length ? (current - 1 + commands.length) % commands.length : 0); } else if (event.key === "Enter" && commands[paletteIndex]) { event.preventDefault(); const command = commands[paletteIndex]; setPaletteOpen(false); window.setTimeout(command.run, 0); } }}><label className="palette-search"><Search size={18} /><input autoFocus value={paletteSearch} onChange={(event) => { setPaletteSearch(event.target.value); setPaletteIndex(0); }} placeholder="搜索命令与操作" aria-activedescendant={commands[paletteIndex] ? `palette-command-${paletteIndex}` : undefined} /><kbd>esc</kbd></label><div className="palette-results" role="listbox" aria-label="命令结果">{commands.map((item, index) => { const Icon = item.icon; return <button id={`palette-command-${index}`} role="option" aria-selected={index === paletteIndex} key={item.label} className={index === paletteIndex ? "suggested" : ""} type="button" onMouseEnter={() => setPaletteIndex(index)} onClick={() => { setPaletteOpen(false); window.setTimeout(item.run, 0); }}><Icon size={18} /><span>{item.label}</span>{item.hint && <kbd>{item.hint}</kbd>}</button>; })}{!commands.length && <p>没有匹配的命令</p>}</div></section></div>}
-      <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importFiles} />
+      <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importFiles} onChooseNativeFiles={desktopApp ? chooseDesktopFiles : undefined} onChooseNativeFolder={desktopApp ? chooseDesktopFolder : undefined} />
       <TemplateDialog open={templateOpen} templates={builtInTemplates} onClose={() => setTemplateOpen(false)} onCreate={createDocument} />
       <HistoryDialog open={historyOpen} document={activeDocument} versions={versions.filter((item) => item.documentId === activeDocument.id)} onClose={() => setHistoryOpen(false)} onRestore={restoreVersion} onNameVersion={saveNamedVersion} />
       <TrashDialog open={trashOpen} entries={trash} onClose={() => setTrashOpen(false)} onRestore={restoreTrashEntry} onDelete={deleteTrashEntry} />
-      <SettingsDialog open={settingsOpen} preferences={editorPreferences} theme={theme} defaultDirectoryName={defaultDirectoryName} defaultDirectoryAccess={defaultDirectoryAccess} canChooseDirectory={Boolean(window.showDirectoryPicker)} onClose={() => setSettingsOpen(false)} onChange={setEditorPreferences} onThemeChange={setTheme} onReset={() => setEditorPreferences(defaultEditorPreferences)} onChooseDirectory={() => void chooseDefaultDocumentDirectory()} onClearDirectory={clearDefaultDocumentDirectory} />
+      <SettingsDialog open={settingsOpen} preferences={editorPreferences} theme={theme} defaultDirectoryName={defaultDirectoryName} defaultDirectoryAccess={defaultDirectoryAccess} canChooseDirectory={desktopApp || Boolean(window.showDirectoryPicker)} onClose={() => setSettingsOpen(false)} onChange={setEditorPreferences} onThemeChange={setTheme} onReset={() => setEditorPreferences(defaultEditorPreferences)} onChooseDirectory={() => void chooseDefaultDocumentDirectory()} onClearDirectory={clearDefaultDocumentDirectory} />
       <ConfirmDialog open={Boolean(pendingDelete)} title={pendingDelete?.kind === "category" ? `删除分类“${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”？` : `把“${withoutExtension(documents.find((item) => item.id === pendingDelete?.id)?.name ?? "文稿")}”移到最近删除？`} description={pendingDelete?.kind === "category" ? "分类和子分类会被移除，其中的文稿会回到未分类。" : documents.find((item) => item.id === pendingDelete?.id)?.source === "local" ? "只移除 PatchMark 中的记录，电脑上的原文件不会被删除。" : "文稿会保留在最近删除中，可以稍后恢复。"} confirmLabel={pendingDelete?.kind === "category" ? "删除分类" : "移到最近删除"} onClose={() => setPendingDelete(null)} onConfirm={confirmPendingDelete} />
       <ConflictDialog conflict={fileConflict} document={documents.find((item) => item.id === fileConflict?.documentId) ?? activeDocument} onClose={() => setFileConflict(null)} onUseDisk={useDiskConflict} onOverwrite={() => void overwriteDiskConflict()} />
       {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}

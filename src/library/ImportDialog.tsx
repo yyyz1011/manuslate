@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 export interface ImportCandidate {
   file: File;
   handle?: FileSystemFileHandle;
+  nativePath?: string;
   relativePath?: string;
   categoryName?: string;
 }
@@ -12,6 +13,8 @@ interface ImportDialogProps {
   open: boolean;
   onClose: () => void;
   onImport: (files: ImportCandidate[]) => Promise<void>;
+  onChooseNativeFiles?: () => Promise<ImportCandidate[]>;
+  onChooseNativeFolder?: () => Promise<ImportCandidate[]>;
 }
 
 interface DirectoryWithValues extends FileSystemDirectoryHandle {
@@ -90,7 +93,7 @@ async function collectLegacyDirectory(
   return files;
 }
 
-export default function ImportDialog({ open, onClose, onImport }: ImportDialogProps) {
+export default function ImportDialog({ open, onClose, onImport, onChooseNativeFiles, onChooseNativeFolder }: ImportDialogProps) {
   const [queued, setQueued] = useState<ImportCandidate[]>([]);
   const [dragging, setDragging] = useState(false);
   const [working, setWorking] = useState(false);
@@ -137,6 +140,10 @@ export default function ImportDialog({ open, onClose, onImport }: ImportDialogPr
   };
 
   const chooseFiles = async () => {
+    if (onChooseNativeFiles) {
+      try { appendFiles(await onChooseNativeFiles()); } catch { setMessage("文件读取失败，请检查文件权限"); }
+      return;
+    }
     if (window.showOpenFilePicker) {
       try {
         const handles = await window.showOpenFilePicker({ multiple: true, types: [{ description: "Markdown", accept: { "text/markdown": [".md", ".markdown", ".mdown"], "text/plain": [".txt"] } }] });
@@ -150,6 +157,15 @@ export default function ImportDialog({ open, onClose, onImport }: ImportDialogPr
   };
 
   const chooseFolder = async () => {
+    if (onChooseNativeFolder) {
+      try {
+        setWorking(true);
+        const files = await onChooseNativeFolder();
+        appendFiles(files);
+        if (!files.length) setMessage("这个文件夹里没有可导入的 Markdown 文件");
+      } catch { setMessage("文件夹读取失败，请检查文件权限"); } finally { setWorking(false); }
+      return;
+    }
     if (window.showDirectoryPicker) {
       try {
         const directory = await window.showDirectoryPicker({ mode: "readwrite" });

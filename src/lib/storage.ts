@@ -60,7 +60,7 @@ const principle = "The document is the interface";
 
 顶部可以切换显示方式；底部的格式工具坞只在写作时出现。[^local]
 
-[^local]: 草稿保存在当前浏览器，本地文件只会在你主动保存时写入。
+[^local]: 草稿保存在这台设备上，本地文件只会在你主动保存时写入。
 `,
 };
 

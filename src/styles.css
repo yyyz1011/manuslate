@@ -99,6 +99,8 @@ button:focus-visible, input:focus-visible {
   background: var(--ground);
   transition: grid-template-columns 420ms var(--ease-out);
 }
+.app-shell.desktop-app { padding-top: 38px; }
+.desktop-drag-region { position: fixed; z-index: 110; top: 0; right: 0; left: 0; height: 38px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--chrome) 88%, transparent); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
 .app-shell.has-sidebar { grid-template-columns: 286px minmax(0, 1fr) 0; }
 .app-shell.has-inspector { grid-template-columns: 0 minmax(0, 1fr) 286px; }
 .app-shell.has-sidebar.has-inspector { grid-template-columns: 286px minmax(0, 1fr) 286px; }
