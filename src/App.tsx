@@ -919,11 +919,10 @@ function App() {
       if ((event.target as HTMLElement).closest("[data-popover-root]")) return;
       dismissMenus();
     }}>
-      {desktopApp && <div className="desktop-drag-region" data-tauri-drag-region aria-hidden="true" />}
       {sidebarOpen && <button className="mobile-scrim" aria-label="关闭文稿列表" onClick={() => setSidebarOpen(false)} />}
 
       <aside className="library-rail" aria-label="文稿列表">
-        <div className="library-heading"><div className="library-title-row"><div className="product-brand"><img src="/patchmark-icon-64.png" alt="" /><h1>PatchMark</h1></div><button className="icon-button compose-button" type="button" onClick={() => setTemplateOpen(true)} aria-label="新建文稿" title="新建文稿"><FilePlus2 size={19} /></button></div><p>本地优先的 Markdown 编辑器</p></div>
+        <div className="library-heading" data-tauri-drag-region={desktopApp ? true : undefined}><div className="library-title-row"><div className="product-brand"><img src="/patchmark-icon-64.png" alt="" /><h1>PatchMark</h1></div><button className="icon-button compose-button" type="button" onClick={() => setTemplateOpen(true)} aria-label="新建文稿" title="新建文稿"><FilePlus2 size={19} /></button></div><p>本地优先的 Markdown 编辑器</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
         <div className="search-scopes" role="group" aria-label="搜索范围">{([ ["all", "全部"], ["title", "标题"], ["content", "正文"], ["pinned", "置顶"] ] as const).map(([value, label]) => <button type="button" className={searchFilter === value ? "active" : ""} key={value} onClick={() => setSearchFilter(value)}>{label}</button>)}</div>
         <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onTogglePinned={togglePinned} />
@@ -931,7 +930,7 @@ function App() {
       </aside>
 
       <section className="workspace">
-        <header className="titlebar">
+        <header className="titlebar" data-tauri-drag-region={desktopApp ? true : undefined}>
           <div className="titlebar-left"><button className="icon-button" type="button" onClick={() => setSidebarOpen((current) => !current)} aria-label={sidebarOpen ? "隐藏文稿列表" : "显示文稿列表"} title="文稿列表"><Menu size={20} /></button></div>
           <div className="document-title-block">
             {renaming ? <input autoFocus className="title-input" aria-label={activeDocument.source === "local" ? "修改列表显示名，不重命名原文件" : "重命名文稿"} value={renameValue} onChange={(event) => setRenameValue(event.target.value)} onBlur={renameActive} onKeyDown={(event) => { if (event.key === "Enter") renameActive(); if (event.key === "Escape") setRenaming(false); }} /> : <button className="document-title-button" type="button" onClick={() => { setRenameValue(withoutExtension(activeDocument.name)); setRenaming(true); }} aria-label={activeDocument.source === "local" ? "修改列表显示名，不重命名原文件" : "重命名文稿"} title={activeDocument.source === "local" ? "修改列表显示名（不会重命名原文件）" : "重命名文稿"}><span>{withoutExtension(activeDocument.name)}</span>{isDiskDirty && <span className="dirty-dot" title="尚未写入文件" />}</button>}
