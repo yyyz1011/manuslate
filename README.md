@@ -58,11 +58,11 @@ npm run app:dev
 # 构建 macOS .app
 npm run app:build
 
-# 需要发布安装镜像时再构建 .dmg
+# 构建可分发的 .dmg（不依赖 Finder 自动化权限）
 npm run app:dmg
 ```
 
-桌面版使用系统文件与文件夹选择器，直接读写用户选择的 Markdown；默认文稿目录仅保存在当前电脑。构建产物位于 `src-tauri/target/release/bundle/`。
+桌面版使用系统文件与文件夹选择器，直接读写用户选择的 Markdown；默认文稿目录仅保存在当前电脑。`app:build` 会生成并校验本地签名的 `.app`；`app:dmg` 使用系统 `hdiutil` 创建带“应用程序”快捷方式的安装镜像，不会请求 Finder 自动化权限。构建产物位于 `src-tauri/target/release/bundle/`。
 
 ## 产品边界
 

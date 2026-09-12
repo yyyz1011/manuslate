@@ -8,8 +8,8 @@
     "build": "tsc --noEmit -p tsconfig.app.json && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "app:dev": "tauri dev",
-    "app:build": "tauri build --bundles app",
-    "app:dmg": "tauri build --bundles dmg"
+    "app:build": "./scripts/build-app.sh",
+    "app:dmg": "./scripts/build-dmg.sh"
   },
   "keywords": [],
   "author": "",
