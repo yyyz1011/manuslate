@@ -1,72 +1,61 @@
-# PatchMark
+# Manuslate
 
-![PatchMark 产品图标](public/patchmark-icon.png)
+![Manuslate app icon](public/manuslate-icon-v1-128.png)
 
-一款安静、本地优先、开源免费的 PC Markdown 编辑器。当前阶段不做 AI，先把打开、阅读、编辑和保存做得足够好。项目同时提供浏览器评审版和基于 Tauri 的 macOS 桌面 App。
+A refined, open-source, local-first Markdown editor and document library for desktop. Manuslate opens directly into the document, keeps files portable, and puts advanced tools one deliberate click away.
 
-## 当前能力
+> The name combines **manuscript** and **slate**: a calm surface for turning structured text into finished work.
 
-- 启动直接进入可编辑的 Markdown 实时排版，而不是仪表盘
-- 实时排版、源码、阅读、分栏对照四种桌面视图
-- GitHub-Flavored Markdown、表格、任务列表、脚注、数学公式、链接与代码块
-- 打开多个本地 Markdown 文件并保存回本地
-- 文件或文件夹拖放导入，保留真实相对路径与子目录树
-- 可折叠分类目录；支持拖动文稿或通过菜单移动分类
-- 浏览器不支持 File System Access API 时自动降级为上传与下载
-- 文件句柄通过 IndexedDB 本地保存；浏览器允许时可在重启后恢复连接
-- 草稿自动恢复、磁盘未保存状态提示与外部修改监测
-- 保存前冲突检查、逐行差异和“使用磁盘版本 / 覆盖磁盘文件”安全选择
-- 可收起文稿列表与文档大纲
-- 专注当前段落的写作模式
-- 上下文 Markdown 格式工具坞与插入菜单
-- 输入 `/` 快速插入标题、任务、引用、代码块、表格与分隔线
-- 选中文字时出现轻量浮动格式栏
-- 粘贴、拖入或选择图片，写入用户指定的本地资源目录
-- 全文搜索并按标题、正文或置顶文稿筛选；文内查找支持替换
-- 从当前文档解析相对 Markdown 链接；同名目标消歧、标题锚点、反向链接与失效检查
-- 自动版本、命名版本、逐行差异比较与安全恢复
-- 最近删除、恢复与永久清理；本地原文件不会被联动删除
-- 可嵌套知识树、置顶快捷区、拖拽归类和多选批量移动
-- 空白、会议记录、项目计划、README、每日笔记模板
-- Markdown、富文本、独立 HTML、系统打印/PDF 输出
-- 命令面板与常用键盘快捷键
-- 浅色、深色和跟随系统外观
-- 桌面窗口缩放兜底、键盘焦点和减少动态效果支持
+## Highlights
 
-## 本地运行
+- Live Markdown editing, source, reading, and split views
+- GFM, tables, tasks, footnotes, math, links, images, and fenced code
+- File and folder import with preserved relative paths
+- Nested categories, pinned documents, drag-to-organize, backlinks, and broken-link checks
+- Local files with explicit save state, external-change detection, and conflict comparison
+- Recovery drafts, automatic and named versions, and Recently Deleted
+- In-document outline, scoped library search, find/replace, command palette, and focus mode
+- Markdown, rich-text, standalone HTML, and system print/PDF output
+- Configurable typography, page width, default document folder, and light/dark appearance
+- English and Simplified Chinese interface; English is the default
+- No account, proprietary document format, or cloud dependency
+
+## Run locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-打开 <http://127.0.0.1:4173/>。
+Open <http://127.0.0.1:4173/>.
 
-## 构建
+## Build
 
 ```bash
 npm run build
 npm run preview
-```
 
-## 桌面 App
-
-```bash
-# 启动原生开发窗口
+# Native development window
 npm run app:dev
 
-# 构建 macOS .app
+# macOS .app
 npm run app:build
 
-# 构建可分发的 .dmg（不依赖 Finder 自动化权限）
+# Distributable macOS .dmg
 npm run app:dmg
 ```
 
-桌面版使用系统文件与文件夹选择器，直接读写用户选择的 Markdown；默认文稿目录仅保存在当前电脑。`app:build` 会生成并校验本地签名的 `.app`；`app:dmg` 使用系统 `hdiutil` 创建带“应用程序”快捷方式的安装镜像，不会请求 Finder 自动化权限。构建产物位于 `src-tauri/target/release/bundle/`。
+Native artifacts are written to `src-tauri/target/release/bundle/`. The desktop app reads and writes only files or folders chosen by the user. Its remembered folder access and recovery metadata stay on the current device.
 
-## 产品边界
+## 中文
 
-这一里程碑验证 PC 桌面的 Markdown 核心体验与本地知识资料库。移动端、AI、账户、云同步和多人协作不在当前范围内。浏览器版本用于快速评审桌面交互；桌面 App 使用原生文件访问，浏览器版本继续保留 File System Access API 与上传下载降级路径。
+Manuslate 是一款开源免费、本地优先的桌面 Markdown 编辑器与文稿资料库。启动后直接进入文稿，支持实时排版、源码、阅读与分栏视图，以及文件夹导入、分类、双链、版本恢复、本地图片、搜索替换和多种导出。设置中可切换简体中文；默认界面语言为英文。
+
+当前里程碑先把 Markdown 核心和本地资料管理做好。AI、账户、云同步、移动端和多人协作不在当前范围内。
+
+## Feedback
+
+Use [GitHub Issues](https://github.com/yyyz1011/manuslate/issues) for bugs and feature requests.
 
 ## License
 

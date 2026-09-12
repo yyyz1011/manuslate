@@ -1,5 +1,5 @@
 ---
-name: "PatchMark Core"
+name: "Manuslate Core"
 description: "A document-first desktop Markdown workspace with first-party editorial restraint."
 colors:
   system-ground-light: "#f2f2f7"
@@ -15,11 +15,11 @@ colors:
   separator-strong-light: "rgba(60, 60, 67, 0.21)"
   fill-light: "rgba(120, 120, 128, 0.12)"
   fill-strong-light: "rgba(120, 120, 128, 0.2)"
-  quiet-blue: "#0a84ff"
-  quiet-blue-soft-light: "rgba(10, 132, 255, 0.14)"
-  quiet-blue-ink-light: "#0070dc"
-  selection-light: "rgba(10, 132, 255, 0.22)"
-  danger-light: "#ff3b30"
+  editorial-crimson: "#c84049"
+  editorial-crimson-soft-light: "rgba(200, 64, 73, 0.13)"
+  editorial-crimson-ink-light: "#ad2f3b"
+  selection-light: "rgba(200, 64, 73, 0.2)"
+  danger-light: "#b42332"
   system-ground-dark: "#111113"
   grouped-sidebar-dark: "#1b1b1e"
   paper-dark: "#202023"
@@ -33,10 +33,10 @@ colors:
   separator-strong-dark: "rgba(235, 235, 245, 0.21)"
   fill-dark: "rgba(118, 118, 128, 0.24)"
   fill-strong-dark: "rgba(118, 118, 128, 0.34)"
-  quiet-blue-soft-dark: "rgba(10, 132, 255, 0.2)"
-  quiet-blue-ink-dark: "#64adff"
-  selection-dark: "rgba(10, 132, 255, 0.32)"
-  danger-dark: "#ff453a"
+  editorial-crimson-soft-dark: "rgba(255, 100, 104, 0.18)"
+  editorial-crimson-ink-dark: "#ff8588"
+  selection-dark: "rgba(255, 100, 104, 0.28)"
+  danger-dark: "#ff5c63"
 typography:
   display:
     fontFamily: "-apple-system, BlinkMacSystemFont, SF Pro Text, Segoe UI, sans-serif"
@@ -102,7 +102,7 @@ spacing:
   manuscript-gutter: "42px"
 components:
   button-primary:
-    backgroundColor: "{colors.quiet-blue}"
+    backgroundColor: "{colors.editorial-crimson}"
     textColor: "{colors.paper-light}"
     typography: "{typography.ui}"
     rounded: "{rounded.control}"
@@ -115,8 +115,8 @@ components:
     padding: "0"
     size: "40px"
   button-icon-active:
-    backgroundColor: "{colors.quiet-blue-soft-light}"
-    textColor: "{colors.quiet-blue-ink-light}"
+    backgroundColor: "{colors.editorial-crimson-soft-light}"
+    textColor: "{colors.editorial-crimson-ink-light}"
     rounded: "{rounded.control}"
     padding: "0"
     size: "40px"
@@ -135,8 +135,8 @@ components:
     padding: "0 8px 0 10px"
     height: "36px"
   document-row-active:
-    backgroundColor: "{colors.quiet-blue-soft-light}"
-    textColor: "{colors.quiet-blue-ink-light}"
+    backgroundColor: "{colors.editorial-crimson-soft-light}"
+    textColor: "{colors.editorial-crimson-ink-light}"
     typography: "{typography.ui}"
     rounded: "{rounded.group}"
     padding: "11px 11px 10px 13px"
@@ -160,15 +160,15 @@ components:
     width: "min(560px, calc(100vw - 30px))"
 ---
 
-# Design System: PatchMark Core
+# Design System: Manuslate Core
 
 ## Overview
 
 **Creative North Star: "The Native Editorial Window"**
 
-PatchMark is a macOS- and Windows-PC document tool shaped with the quiet confidence of a first-party desktop editor. The window opens inside the work: a grouped library, a centered live manuscript, a restrained toolbar, and an optional inspector share one continuous document environment rather than a dashboard or mode wall.
+Manuslate is a macOS- and Windows-PC document tool shaped with the quiet confidence of a first-party desktop editor. The window opens inside the work: a grouped library, a centered live manuscript, a restrained toolbar, and an optional inspector share one continuous document environment rather than a dashboard or mode wall.
 
-The visual system uses system typography, paper white, grouped gray rails, hairline separators, quiet blue state, and contextual translucent materials. Its signature is live Markdown typesetting: punctuation and syntax stay out of the way until the caret enters the current line, while formatting and insertion actions live in a contextual dock instead of a permanent ribbon. Mouse precision and dense keyboard navigation define interaction density; narrow behavior is only a safety mechanism for resized desktop windows.
+The visual system uses system typography, paper white, grouped gray rails, hairline separators, restrained editorial-crimson state, and contextual translucent materials. Its signature is live Markdown typesetting: punctuation and syntax stay out of the way until the caret enters the current line, while formatting and insertion actions live in a contextual dock instead of a permanent ribbon. Mouse precision and dense keyboard navigation define interaction density; narrow behavior is only a safety mechanism for resized desktop windows.
 
 **Key Characteristics:**
 
@@ -176,18 +176,18 @@ The visual system uses system typography, paper white, grouped gray rails, hairl
 - One continuous `760px` manuscript plane with syntax revealed only on the current line.
 - A `286px` grouped library, a `40px` native window strip with a separate sidebar brand row (`62px` combined toolbar in the browser preview), and an optional `286px` inspector.
 - System sans throughout rendered content and interface chrome; mono only for explicit source mode and code.
-- Quiet blue for state, paper white for the manuscript, grouped gray for supporting rails.
+- Editorial crimson for state, paper white for the manuscript, grouped gray for supporting rails.
 - Contextual material popovers and format dock, controlled by keyboard and mouse.
 
 ## Colors
 
-The palette follows desktop system materials: paper and grouped neutrals carry structure, graphite carries content, and quiet blue is the single interaction voice across light and dark appearances.
+The palette follows desktop system materials: paper and grouped neutrals carry structure, graphite carries content, and editorial crimson is the single interaction voice across light and dark appearances.
 
 ### Primary
 
-- **Quiet Blue:** `quiet-blue` marks the caret, compose/save actions, current mode cues, checked tasks, focus, and other immediate interactive state.
-- **Quiet Blue Wash:** `quiet-blue-soft-light` and `quiet-blue-soft-dark` carry selected rows, hovered commands, and active controls without becoming large decorative panels.
-- **Quiet Blue Ink:** `quiet-blue-ink-light` and `quiet-blue-ink-dark` keep active text and icons legible on the wash.
+- **Editorial Crimson:** `editorial-crimson` marks the caret, compose/save actions, current mode cues, checked tasks, focus, and other immediate interactive state.
+- **Crimson Wash:** `editorial-crimson-soft-light` and `editorial-crimson-soft-dark` carry selected rows, hovered commands, and active controls without becoming large decorative panels.
+- **Crimson Ink:** `editorial-crimson-ink-light` and `editorial-crimson-ink-dark` keep active text and icons legible on the wash.
 
 ### Secondary
 
@@ -203,11 +203,11 @@ The palette follows desktop system materials: paper and grouped neutrals carry s
 - **Graphite:** the `graphite-*`, `secondary-*`, and `tertiary-*` pairs create primary, secondary, and metadata hierarchy without hard black/white contrast.
 - **Separators:** `separator-*` and `separator-strong-*` divide structural regions and strengthen at elevated edges.
 - **System Fills:** `fill-*` and `fill-strong-*` provide hover, field, and pressed feedback within neutral chrome.
-- **Selection:** `selection-light` and `selection-dark` keep text selection visible while staying in the quiet-blue family.
+- **Selection:** `selection-light` and `selection-dark` keep text selection visible while staying in the editorial-crimson family.
 
 ### Named Rules
 
-**The Quiet Blue Rule.** Blue communicates current, selected, focused, linked, save, or compose state; it never becomes background decoration.
+**The Editorial Crimson Rule.** Crimson communicates current, selected, focused, linked, save, or compose state; it never becomes background decoration.
 
 **The Material Hierarchy Rule.** Use grouped gray for rails, paper for the manuscript, translucent chrome for fixed bars, and elevated material only for content that physically floats.
 
@@ -238,7 +238,7 @@ The palette follows desktop system materials: paper and grouped neutrals carry s
 
 ## Layout
 
-At a `1440px` desktop window, the shell is a three-column document workspace: a collapsible `286px` library, a flexible center workspace containing a `760px` manuscript, and an optional `286px` inspector. On macOS, a compact `40px` native window strip carries the traffic lights and sidebar toggle while the PatchMark brand occupies its own quiet row below; the centered document title and actions share that top strip in the workspace. The browser preview retains a roomier combined `62px` toolbar. A `28px` status strip provides quiet document state without becoming a second toolbar.
+At a `1440px` desktop window, the shell is a three-column document workspace: a collapsible `286px` library, a flexible center workspace containing a `760px` manuscript, and an optional `286px` inspector. On macOS, a compact `40px` native window strip carries the traffic lights and sidebar toggle while the Manuslate brand occupies its own quiet row below; the centered document title and actions share that top strip in the workspace. The browser preview retains a roomier combined `62px` toolbar. A `28px` status strip provides quiet document state without becoming a second toolbar.
 
 The manuscript uses `42px` desktop gutters and generous top/bottom breathing room. At `1180px`, the library tightens to `252px` and the inspector overlays rather than shrinking the manuscript. At `900px`, both rails become desktop-window overlays and split view resolves to reading. The `520px` rules are emergency clipping protection for an unusually narrow resized desktop window, not a phone layout or a separate product surface.
 
@@ -276,8 +276,8 @@ The form language uses compact desktop radii rather than pills: inline details a
 ### Buttons
 
 - **Shape:** toolbar icon buttons are precise `40px` mouse targets with `11px` corners; primary manuscript actions are `42px` high with the same radius.
-- **Primary:** compose/save and first-document actions use quiet blue with white text; secondary toolbar controls remain transparent and graphite-muted.
-- **Hover / Focus:** neutral controls gain system fill, active controls gain quiet-blue wash, press scales to `0.90–0.985`, and keyboard focus uses a three-pixel quiet-blue outline with a two-pixel offset.
+- **Primary:** compose/save and first-document actions use editorial crimson with white text; secondary toolbar controls remain transparent and graphite-muted.
+- **Hover / Focus:** neutral controls gain system fill, active controls gain crimson wash, press scales to `0.90–0.985`, and keyboard focus uses a three-pixel crimson outline with a two-pixel offset.
 - **Disabled:** menu actions may reduce opacity to `0.38` while retaining shape and label context.
 
 ### Chips
@@ -296,12 +296,12 @@ The form language uses compact desktop radii rather than pills: inline details a
 ### Inputs / Fields
 
 - **Style:** library search is a borderless `36px` system-fill field with `10px` corners; title editing is a centered `26px` fill field with `7px` corners.
-- **Focus:** search gains an inset quiet-blue stroke plus a three-pixel blue wash; text inputs retain a visible keyboard focus outline.
+- **Focus:** search gains an inset crimson stroke plus a three-pixel crimson wash; text inputs retain a visible keyboard focus outline.
 - **Error / Disabled:** system danger is reserved for real failure; disabling never depends on color alone.
 
 ### Navigation
 
-The `286px` library is a grouped neutral rail with 78px document rows, title/snippet/time hierarchy, and a quiet-blue selected state. The optional `286px` inspector uses keyboard-navigable tabs and indented outline rows. Both are mouse-precise, keyboard reachable, and may overlay only as a narrow desktop-window fallback.
+The `286px` library is a grouped neutral rail with 78px document rows, title/snippet/time hierarchy, and an editorial-crimson selected state. The optional `286px` inspector uses keyboard-navigable tabs and indented outline rows. Both are mouse-precise, keyboard reachable, and may overlay only as a narrow desktop-window fallback.
 
 ### Live Manuscript
 
@@ -322,15 +322,15 @@ View, share, insert, and command surfaces use elevated translucent material, str
 - **Do** open into a usable manuscript rather than a dashboard, setup screen, or mobile-style landing state.
 - **Do** align all document representations to the implemented `760px` manuscript measure.
 - **Do** reveal Markdown syntax only on the current line in live mode and provide explicit source mode for complete literal access.
-- **Do** reserve quiet blue for interaction state, compose/save actions, selection, focus, links, and current context.
+- **Do** reserve editorial crimson for interaction state, compose/save actions, selection, focus, links, and current context.
 - **Do** keep library and inspector controls dense, mouse-precise, and fully keyboard navigable.
 - **Do** collapse or overlay rails when a desktop window becomes too narrow, and honor reduced-motion preferences.
 
 ### Don't:
 
-- **Don't** describe or design PatchMark as an iPadOS, phone, mobile-browser, or touch-first product.
+- **Don't** describe or design Manuslate as an iPadOS, phone, mobile-browser, or touch-first product.
 - **Don't** reintroduce serif manuscript typography; the implemented reading and live-editing voice is the system UI family.
 - **Don't** add a permanent formatting ribbon, dashboard card grid, or separate preview wall between writing and the finished page.
 - **Don't** stretch prose beyond the `760px` measure or let rails crush the manuscript.
-- **Don't** use large blue surfaces, decorative gradients, or extra accent families.
+- **Don't** use large accent surfaces, decorative gradients, or extra accent families.
 - **Don't** use narrow-window safety rules as evidence for a separate mobile design system.

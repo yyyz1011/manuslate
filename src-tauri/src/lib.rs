@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn unique_path_never_reuses_an_existing_document() {
-        let directory = std::env::temp_dir().join(format!("patchmark-test-{}", std::process::id()));
+        let directory = std::env::temp_dir().join(format!("manuslate-test-{}", std::process::id()));
         fs::create_dir_all(&directory).unwrap();
         fs::write(directory.join("未命名.md"), "existing").unwrap();
         let result = unique_markdown_path(directory.to_string_lossy().to_string(), "未命名.md".into()).unwrap();
@@ -184,6 +184,7 @@ mod tests {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             read_markdown_files,
             scan_markdown_directory,
@@ -193,5 +194,5 @@ pub fn run() {
             write_image_file,
         ])
         .run(tauri::generate_context!())
-        .expect("PatchMark 启动失败");
+        .expect("Manuslate failed to start");
 }

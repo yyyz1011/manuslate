@@ -46,7 +46,7 @@ The product is used for focused drafting, technical notes, README files, long-fo
 
 ## Brand Commitments
 
-- Product name: PatchMark.
+- Product name: Manuslate (manuscript + slate).
 - Interaction quality should feel as considered as a first-party Apple app: quiet, direct, predictable, and carefully animated.
 - The structural reference is a first-party macOS document window: split-view library, centered toolbar title, contextual material surfaces, precise mouse targets, dense keyboard navigation, and restrained spatial transitions.
 - Minimal does not mean featureless; depth should be progressively disclosed.

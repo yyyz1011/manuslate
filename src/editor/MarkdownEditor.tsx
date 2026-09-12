@@ -24,6 +24,7 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
+import { useI18n } from "../i18n";
 import { renderMarkdown } from "../lib/markdown";
 import type { EditorPreferences } from "../types";
 
@@ -80,7 +81,11 @@ function searchButton(label: string, paths: string[], onClick: () => void) {
   return button;
 }
 
-class PatchMarkSearchPanel implements Panel {
+function ui(english: string, chinese: string): string {
+  return document.documentElement.lang === "zh-CN" ? chinese : english;
+}
+
+class ManuslateSearchPanel implements Panel {
   readonly dom: HTMLElement;
   readonly top = true;
   private query: SearchQuery;
@@ -102,7 +107,7 @@ class PatchMarkSearchPanel implements Panel {
     const searchRow = document.createElement("div");
     searchRow.className = "pm-search-row";
 
-    this.expandButton = searchButton("展开替换", ["m9 18 6-6-6-6"], () => this.toggleReplace()) as HTMLButtonElement;
+    this.expandButton = searchButton(ui("Show replace", "展开替换"), ["m9 18 6-6-6-6"], () => this.toggleReplace()) as HTMLButtonElement;
     this.expandButton.classList.add("pm-search-expand");
     this.expandButton.setAttribute("aria-expanded", "false");
 
@@ -111,8 +116,8 @@ class PatchMarkSearchPanel implements Panel {
     fieldWrap.append(searchIcon(["m21 21-4.35-4.35", "M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"], 15));
     this.searchField = document.createElement("input");
     this.searchField.value = this.query.search;
-    this.searchField.placeholder = "查找文稿";
-    this.searchField.setAttribute("aria-label", "查找文稿");
+    this.searchField.placeholder = ui("Find in document", "查找文稿");
+    this.searchField.setAttribute("aria-label", ui("Find in document", "查找文稿"));
     this.searchField.setAttribute("main-field", "true");
     this.searchField.autocomplete = "off";
     this.searchField.spellcheck = false;
@@ -123,21 +128,21 @@ class PatchMarkSearchPanel implements Panel {
     this.count.setAttribute("aria-live", "polite");
     fieldWrap.append(this.count);
 
-    const previous = searchButton("上一个", ["m18 15-6-6-6 6"], () => this.navigate(findPrevious));
-    const next = searchButton("下一个", ["m6 9 6 6 6-6"], () => this.navigate(findNext));
+    const previous = searchButton(ui("Previous", "上一个"), ["m18 15-6-6-6 6"], () => this.navigate(findPrevious));
+    const next = searchButton(ui("Next", "下一个"), ["m6 9 6 6 6-6"], () => this.navigate(findNext));
     const more = document.createElement("button");
     more.type = "button";
     more.className = "pm-search-icon-button pm-search-more";
-    more.setAttribute("aria-label", "匹配选项");
+    more.setAttribute("aria-label", ui("Match options", "匹配选项"));
     more.setAttribute("aria-expanded", "false");
-    more.title = "匹配选项";
+    more.title = ui("Match options", "匹配选项");
     more.textContent = "•••";
     more.addEventListener("click", () => {
       const open = Boolean(this.options.hidden);
       this.options.hidden = !open;
       more.setAttribute("aria-expanded", String(open));
     });
-    const close = searchButton("关闭查找", ["M18 6 6 18", "m6 6 12 12"], () => closeSearchPanel(this.view));
+    const close = searchButton(ui("Close find", "关闭查找"), ["M18 6 6 18", "m6 6 12 12"], () => closeSearchPanel(this.view));
     searchRow.append(this.expandButton, fieldWrap, previous, next, more, close);
 
     this.replaceRow = document.createElement("div");
@@ -147,28 +152,28 @@ class PatchMarkSearchPanel implements Panel {
     replaceWrap.className = "pm-search-field pm-replace-field";
     this.replaceField = document.createElement("input");
     this.replaceField.value = this.query.replace;
-    this.replaceField.placeholder = "替换为";
-    this.replaceField.setAttribute("aria-label", "替换为");
+    this.replaceField.placeholder = ui("Replace with", "替换为");
+    this.replaceField.setAttribute("aria-label", ui("Replace with", "替换为"));
     this.replaceField.autocomplete = "off";
     this.replaceField.spellcheck = false;
     this.replaceField.addEventListener("input", () => this.commit());
     replaceWrap.append(this.replaceField);
     const replaceOne = document.createElement("button");
     replaceOne.type = "button";
-    replaceOne.textContent = "替换";
+    replaceOne.textContent = ui("Replace", "替换");
     replaceOne.addEventListener("click", () => this.replace(false));
     const replaceEvery = document.createElement("button");
     replaceEvery.type = "button";
-    replaceEvery.textContent = "全部替换";
+    replaceEvery.textContent = ui("Replace all", "全部替换");
     replaceEvery.addEventListener("click", () => this.replace(true));
     this.replaceRow.append(replaceWrap, replaceOne, replaceEvery);
 
     this.options = document.createElement("div");
     this.options.className = "pm-search-options";
     this.options.hidden = true;
-    this.caseField = this.option("区分大小写", this.query.caseSensitive);
-    this.wordField = this.option("全词匹配", this.query.wholeWord);
-    this.regexpField = this.option("正则表达式", this.query.regexp);
+    this.caseField = this.option(ui("Match case", "区分大小写"), this.query.caseSensitive);
+    this.wordField = this.option(ui("Whole words", "全词匹配"), this.query.wholeWord);
+    this.regexpField = this.option(ui("Regular expression", "正则表达式"), this.query.regexp);
 
     this.dom.append(searchRow, this.replaceRow, this.options);
     this.dom.addEventListener("keydown", (event) => this.keydown(event));
@@ -195,7 +200,7 @@ class PatchMarkSearchPanel implements Panel {
     this.dom.classList.toggle("is-replacing", open);
     this.expandButton.classList.toggle("is-open", open);
     this.expandButton.setAttribute("aria-expanded", String(open));
-    this.expandButton.setAttribute("aria-label", open ? "收起替换" : "展开替换");
+    this.expandButton.setAttribute("aria-label", open ? ui("Hide replace", "收起替换") : ui("Show replace", "展开替换"));
     if (open) this.replaceField.focus();
   }
 
@@ -226,7 +231,7 @@ class PatchMarkSearchPanel implements Panel {
 
   private updateCount() {
     if (!this.query.search || !this.query.valid) {
-      this.count.textContent = this.query.search && !this.query.valid ? "表达式有误" : "0 / 0";
+      this.count.textContent = this.query.search && !this.query.valid ? ui("Invalid expression", "表达式有误") : "0 / 0";
       this.dom.classList.toggle("has-error", Boolean(this.query.search && !this.query.valid));
       return;
     }
@@ -272,35 +277,35 @@ class PatchMarkSearchPanel implements Panel {
   mount() { this.searchField.select(); }
 }
 
-function createPatchMarkSearchPanel(view: EditorView) {
-  return new PatchMarkSearchPanel(view);
+function createManuslateSearchPanel(view: EditorView) {
+  return new ManuslateSearchPanel(view);
 }
 
 const slashActions = [
-  { key: "标题1 h1", label: "一级标题", detail: "大标题", text: "# " },
-  { key: "标题2 h2", label: "二级标题", detail: "章节标题", text: "## " },
-  { key: "任务 todo", label: "任务列表", detail: "可勾选事项", text: "- [ ] " },
-  { key: "引用 quote", label: "引用", detail: "突出一段话", text: "> " },
-  { key: "代码 code", label: "代码块", detail: "带语法高亮", text: "```\n\n```" },
-  { key: "表格 table", label: "表格", detail: "两列起步", text: "| 列 1 | 列 2 |\n| --- | --- |\n| 内容 | 内容 |" },
-  { key: "分割线 divider", label: "分割线", detail: "分隔章节", text: "---" },
+  { key: "heading1 h1 标题1", en: "Heading 1", zh: "一级标题", enDetail: "Large heading", zhDetail: "大标题", text: "# " },
+  { key: "heading2 h2 标题2", en: "Heading 2", zh: "二级标题", enDetail: "Section heading", zhDetail: "章节标题", text: "## " },
+  { key: "task todo 任务", en: "Task list", zh: "任务列表", enDetail: "Checkable items", zhDetail: "可勾选事项", text: "- [ ] " },
+  { key: "quote 引用", en: "Quote", zh: "引用", enDetail: "Emphasize a passage", zhDetail: "突出一段话", text: "> " },
+  { key: "code 代码", en: "Code block", zh: "代码块", enDetail: "Syntax-highlighted block", zhDetail: "带语法高亮", text: "```\n\n```" },
+  { key: "table 表格", en: "Table", zh: "表格", enDetail: "Start with two columns", zhDetail: "两列起步", text: "| Column 1 | Column 2 |\n| --- | --- |\n| Content | Content |" },
+  { key: "divider 分割线", en: "Divider", zh: "分割线", enDetail: "Separate sections", zhDetail: "分隔章节", text: "---" },
 ];
 
 const lightHighlight = HighlightStyle.define([
-  { tag: tags.heading, color: "#155fb4", fontWeight: "650" },
+  { tag: tags.heading, color: "#a92f3b", fontWeight: "650" },
   { tag: tags.strong, color: "#20242a", fontWeight: "700" },
   { tag: tags.emphasis, color: "#434a54", fontStyle: "italic" },
-  { tag: [tags.link, tags.url], color: "#0a6dcc", textDecoration: "underline" },
+  { tag: [tags.link, tags.url], color: "#b33440", textDecoration: "underline" },
   { tag: [tags.monospace, tags.processingInstruction], color: "#a33c25" },
   { tag: tags.quote, color: "#747c87", fontStyle: "italic" },
   { tag: tags.meta, color: "#9a6472" },
 ]);
 
 const darkHighlight = HighlightStyle.define([
-  { tag: tags.heading, color: "#80b9ff", fontWeight: "650" },
+  { tag: tags.heading, color: "#ff878a", fontWeight: "650" },
   { tag: tags.strong, color: "#f2f4f7", fontWeight: "700" },
   { tag: tags.emphasis, color: "#c7ccd4", fontStyle: "italic" },
-  { tag: [tags.link, tags.url], color: "#66a9f4", textDecoration: "underline" },
+  { tag: [tags.link, tags.url], color: "#ff7f84", textDecoration: "underline" },
   { tag: [tags.monospace, tags.processingInstruction], color: "#f09a7f" },
   { tag: tags.quote, color: "#959ca6", fontStyle: "italic" },
   { tag: tags.meta, color: "#c894a4" },
@@ -349,7 +354,7 @@ class LiveBlockWidget extends WidgetType {
     });
     block.setAttribute("role", "button");
     block.setAttribute("tabindex", "-1");
-    block.setAttribute("aria-label", "点击编辑 Markdown 源码");
+    block.setAttribute("aria-label", ui("Click to edit Markdown source", "点击编辑 Markdown 源码"));
     block.addEventListener("mousedown", (event) => {
       event.preventDefault();
       view.dispatch({ selection: EditorSelection.cursor(this.sourcePosition), scrollIntoView: true });
@@ -596,7 +601,7 @@ function makeTheme(dark: boolean, livePreview: boolean, preferences: EditorPrefe
         minWidth: "0",
         margin: "0 auto",
         padding: "76px 42px 190px",
-        caretColor: dark ? "#67aefc" : "#0878e6",
+        caretColor: dark ? "#ff7d82" : "#bd3541",
       },
       ".cm-line": {
         padding: "0",
@@ -637,7 +642,7 @@ function makeTheme(dark: boolean, livePreview: boolean, preferences: EditorPrefe
         color: dark ? "#aeb4bd" : "#646970",
         fontSize: "1.05em",
       },
-      ".cm-live-task.is-checked": { color: dark ? "#67aefc" : "#0878e6" },
+      ".cm-live-task.is-checked": { color: dark ? "#ff7d82" : "#bd3541" },
       ".cm-live-table-row": {
         backgroundColor: dark ? "rgba(255,255,255,.025)" : "rgba(35,42,52,.025)",
         fontVariantNumeric: "tabular-nums",
@@ -668,16 +673,16 @@ function makeTheme(dark: boolean, livePreview: boolean, preferences: EditorPrefe
         fontStyle: "italic",
       },
       ".cm-live-footnote": {
-        color: dark ? "#67aefc" : "#0878e6",
+        color: dark ? "#ff7d82" : "#bd3541",
         fontSize: ".72em",
         verticalAlign: "super",
       },
       ".cm-cursor, .cm-dropCursor": {
-        borderLeftColor: dark ? "#67aefc" : "#0878e6",
+        borderLeftColor: dark ? "#ff7d82" : "#bd3541",
         borderLeftWidth: "2px",
       },
       ".cm-selectionBackground, ::selection": {
-        backgroundColor: dark ? "#1f4b75 !important" : "#cae4ff !important",
+        backgroundColor: dark ? "#642d34 !important" : "#f3ccd0 !important",
       },
       ".cm-activeLine": {
         backgroundColor: "transparent",
@@ -694,7 +699,7 @@ function makeTheme(dark: boolean, livePreview: boolean, preferences: EditorPrefe
         backgroundColor: "transparent",
         borderColor: "transparent",
       },
-      ".cm-searchMatch": { backgroundColor: dark ? "rgba(10,132,255,.28)" : "rgba(10,132,255,.17)", borderRadius: "3px" },
+      ".cm-searchMatch": { backgroundColor: dark ? "rgba(255,100,104,.26)" : "rgba(200,64,73,.16)", borderRadius: "3px" },
       ".cm-searchMatch-selected": { backgroundColor: dark ? "rgba(255,179,64,.46)" : "rgba(255,159,10,.28)", outline: `1px solid ${dark ? "rgba(255,190,92,.65)" : "rgba(218,125,0,.42)"}` },
       ".cm-tooltip": {
         border: `1px solid ${dark ? "#3d4148" : "#dfe3e8"}`,
@@ -707,6 +712,7 @@ function makeTheme(dark: boolean, livePreview: boolean, preferences: EditorPrefe
 
 const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
   ({ value, onChange, dark, focusMode, livePreview, preferences, onImageFile, assetUrls = {} }, ref) => {
+    const { t } = useI18n();
     const hostRef = useRef<HTMLDivElement>(null);
     const shellRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
@@ -742,7 +748,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
       const selection = view.state.selection.main;
       const path = await onImageFile(file);
       if (!path || !viewRef.current) return;
-      const alt = file.name.replace(/\.[^.]+$/, "") || "图片";
+      const alt = file.name.replace(/\.[^.]+$/, "") || t("image", "图片");
       const markdown = `![${alt}](${path})`;
       viewRef.current.dispatch({ changes: { from: selection.from, to: selection.to, insert: markdown }, selection: { anchor: selection.from + markdown.length }, scrollIntoView: true });
       viewRef.current.focus();
@@ -766,9 +772,9 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
           highlightActiveLine(),
           EditorView.lineWrapping,
           markdown({ base: markdownLanguage }),
-          search({ top: true, createPanel: createPatchMarkSearchPanel }),
+          search({ top: true, createPanel: createManuslateSearchPanel }),
           keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
-          placeholder("从这里开始写…"),
+          placeholder(t("Start writing here…", "从这里开始写…")),
           themeCompartment.current.of(makeTheme(dark, livePreview, preferences)),
           highlightCompartment.current.of(syntaxHighlighting(dark ? darkHighlight : lightHighlight)),
           focusCompartment.current.of(focusMode ? paragraphFocus : []),
@@ -830,7 +836,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
         });
         view.focus();
       },
-      surround: (before, after = before, placeholderText = "文字") => {
+      surround: (before, after = before, placeholderText = t("text", "文字")) => {
         const view = viewRef.current;
         if (!view) return;
         const selection = view.state.selection.main;
@@ -879,9 +885,9 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
 
     return (
       <div ref={shellRef} className="markdown-editor-shell" onPasteCapture={(event) => { const image = Array.from(event.clipboardData.files).find((file) => file.type.startsWith("image/")); if (image && onImageFile) { event.preventDefault(); void insertImage(image); } }} onDragOver={(event) => { if (Array.from(event.dataTransfer.items).some((item) => item.type.startsWith("image/"))) event.preventDefault(); }} onDropCapture={(event) => { const image = Array.from(event.dataTransfer.files).find((file) => file.type.startsWith("image/")); if (image && onImageFile) { event.preventDefault(); void insertImage(image); } }}>
-        <div ref={hostRef} className={`markdown-editor${focusMode ? " is-focus-mode" : ""}${livePreview ? " is-live-preview" : " is-source"}`} aria-label="Markdown 编辑器" />
-        {selectionToolbar && <div className="selection-toolbar" style={{ left: selectionToolbar.left, top: selectionToolbar.top }} role="toolbar" aria-label="所选文字格式"><button type="button" onMouseDown={(event) => { event.preventDefault(); viewRef.current && (() => { const view = viewRef.current!; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `**${text}**` }, selection: EditorSelection.range(s.from + 2, s.to + 2) }); view.focus(); })(); }}>B</button><button type="button" className="italic-control" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `*${text}*` }, selection: EditorSelection.range(s.from + 1, s.to + 1) }); view.focus(); }}>I</button><button type="button" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); const inserted = `[${text}](https://)`; view.dispatch({ changes: { from: s.from, to: s.to, insert: inserted }, selection: EditorSelection.range(s.from + text.length + 3, s.from + text.length + 11) }); view.focus(); }}>链接</button><button type="button" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `\`${text}\`` }, selection: EditorSelection.range(s.from + 1, s.to + 1) }); view.focus(); }}>&lt;/&gt;</button></div>}
-        {slash && <div className="slash-menu" style={{ left: slash.left, top: slash.top }} role="menu" aria-label="快速插入"><span>快速插入</span>{slashActions.filter((action) => !slash.query || action.key.includes(slash.query) || action.label.toLocaleLowerCase().includes(slash.query)).map((action) => <button type="button" role="menuitem" key={action.label} onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; view.dispatch({ changes: { from: slash.from, to: slash.to, insert: action.text }, selection: { anchor: slash.from + (action.text.includes("\n\n") ? action.text.indexOf("\n\n") + 1 : action.text.length) }, scrollIntoView: true }); setSlash(null); view.focus(); }}><strong>{action.label}</strong><small>{action.detail}</small></button>)}</div>}
+        <div ref={hostRef} className={`markdown-editor${focusMode ? " is-focus-mode" : ""}${livePreview ? " is-live-preview" : " is-source"}`} aria-label={t("Markdown editor", "Markdown 编辑器")} />
+        {selectionToolbar && <div className="selection-toolbar" style={{ left: selectionToolbar.left, top: selectionToolbar.top }} role="toolbar" aria-label={t("Selected text formatting", "所选文字格式")}><button type="button" onMouseDown={(event) => { event.preventDefault(); viewRef.current && (() => { const view = viewRef.current!; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `**${text}**` }, selection: EditorSelection.range(s.from + 2, s.to + 2) }); view.focus(); })(); }}>B</button><button type="button" className="italic-control" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `*${text}*` }, selection: EditorSelection.range(s.from + 1, s.to + 1) }); view.focus(); }}>I</button><button type="button" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); const inserted = `[${text}](https://)`; view.dispatch({ changes: { from: s.from, to: s.to, insert: inserted }, selection: EditorSelection.range(s.from + text.length + 3, s.from + text.length + 11) }); view.focus(); }}>{t("Link", "链接")}</button><button type="button" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `\`${text}\`` }, selection: EditorSelection.range(s.from + 1, s.to + 1) }); view.focus(); }}>&lt;/&gt;</button></div>}
+        {slash && <div className="slash-menu" style={{ left: slash.left, top: slash.top }} role="menu" aria-label={t("Quick insert", "快速插入")}><span>{t("Quick insert", "快速插入")}</span>{slashActions.filter((action) => !slash.query || action.key.includes(slash.query) || action.en.toLocaleLowerCase().includes(slash.query) || action.zh.includes(slash.query)).map((action) => <button type="button" role="menuitem" key={action.key} onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; view.dispatch({ changes: { from: slash.from, to: slash.to, insert: action.text }, selection: { anchor: slash.from + (action.text.includes("\n\n") ? action.text.indexOf("\n\n") + 1 : action.text.length) }, scrollIntoView: true }); setSlash(null); view.focus(); }}><strong>{t(action.en, action.zh)}</strong><small>{t(action.enDetail, action.zhDetail)}</small></button>)}</div>}
       </div>
     );
   },

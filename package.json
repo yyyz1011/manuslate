@@ -1,7 +1,7 @@
 {
-  "name": "patchmark-core",
+  "name": "manuslate",
   "version": "0.1.0",
-  "description": "A quiet, local-first Markdown editor.",
+  "description": "A refined, local-first Markdown editor and document library.",
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1",
@@ -26,6 +26,7 @@
     "@mdit/plugin-katex": "^1.1.1",
     "@tauri-apps/api": "^2.11.1",
     "@tauri-apps/plugin-dialog": "^2.7.3",
+    "@tauri-apps/plugin-opener": "^2.5.5",
     "katex": "^0.18.7",
     "lucide-react": "^1.45.0",
     "markdown-it": "^15.0.2",

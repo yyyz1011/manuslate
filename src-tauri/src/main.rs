@@ -1,3 +1,3 @@
 fn main() {
-    patchmark_lib::run();
+    manuslate_lib::run();
 }

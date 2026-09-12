@@ -1,0 +1,24 @@
+name: Feature request
+description: Suggest a focused improvement to Manuslate
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: workflow
+    attributes:
+      label: What workflow should improve?
+      description: Describe the job you are trying to complete, not only the control you want added.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Suggested behavior
+      description: What should Manuslate do, and where should the capability appear?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you have tried
+      description: Optional context about current workarounds or other tools.

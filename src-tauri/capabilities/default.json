@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
-  "description": "PatchMark desktop window permissions",
+  "description": "Manuslate desktop window permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "core:window:allow-start-dragging", "dialog:default"]
+  "permissions": ["core:default", "core:window:allow-start-dragging", "dialog:default", "opener:default"]
 }

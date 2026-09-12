@@ -1,5 +1,6 @@
 import { FileText, FolderOpen, FolderUp, Import, UploadCloud, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "../i18n";
 
 export interface ImportCandidate {
   file: File;
@@ -94,10 +95,11 @@ async function collectLegacyDirectory(
 }
 
 export default function ImportDialog({ open, onClose, onImport, onChooseNativeFiles, onChooseNativeFolder }: ImportDialogProps) {
+  const { t } = useI18n();
   const [queued, setQueued] = useState<ImportCandidate[]>([]);
   const [dragging, setDragging] = useState(false);
   const [working, setWorking] = useState(false);
-  const [message, setMessage] = useState("支持 .md、.markdown、.mdown 和 .txt");
+  const [message, setMessage] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
@@ -109,9 +111,9 @@ export default function ImportDialog({ open, onClose, onImport, onChooseNativeFi
 
   useEffect(() => {
     if (!open) return;
-    setQueued([]); setDragging(false); setWorking(false); setMessage("支持 .md、.markdown、.mdown 和 .txt");
+    setQueued([]); setDragging(false); setWorking(false); setMessage(t("Supports .md, .markdown, .mdown, and .txt", "支持 .md、.markdown、.mdown 和 .txt"));
     folderInputRef.current?.setAttribute("webkitdirectory", "");
-  }, [open]);
+  }, [open, t]);
 
   useEffect(() => {
     if (!open) return;
@@ -136,12 +138,12 @@ export default function ImportDialog({ open, onClose, onImport, onChooseNativeFi
       return [...byKey.values()];
     });
     const skipped = next.length - markdown.length;
-    setMessage(skipped ? `已忽略 ${skipped} 个非 Markdown 文件` : "可以继续添加，确认后一次导入");
+    setMessage(skipped ? t(`Ignored ${skipped} non-Markdown files`, `已忽略 ${skipped} 个非 Markdown 文件`) : t("Add more, then import everything at once", "可以继续添加，确认后一次导入"));
   };
 
   const chooseFiles = async () => {
     if (onChooseNativeFiles) {
-      try { appendFiles(await onChooseNativeFiles()); } catch { setMessage("文件读取失败，请检查文件权限"); }
+      try { appendFiles(await onChooseNativeFiles()); } catch { setMessage(t("Could not read files. Check file permissions.", "文件读取失败，请检查文件权限")); }
       return;
     }
     if (window.showOpenFilePicker) {
@@ -162,8 +164,8 @@ export default function ImportDialog({ open, onClose, onImport, onChooseNativeFi
         setWorking(true);
         const files = await onChooseNativeFolder();
         appendFiles(files);
-        if (!files.length) setMessage("这个文件夹里没有可导入的 Markdown 文件");
-      } catch { setMessage("文件夹读取失败，请检查文件权限"); } finally { setWorking(false); }
+        if (!files.length) setMessage(t("No importable Markdown files in this folder.", "这个文件夹里没有可导入的 Markdown 文件"));
+      } catch { setMessage(t("Could not read the folder. Check permissions.", "文件夹读取失败，请检查文件权限")); } finally { setWorking(false); }
       return;
     }
     if (window.showDirectoryPicker) {
@@ -172,7 +174,7 @@ export default function ImportDialog({ open, onClose, onImport, onChooseNativeFi
         setWorking(true);
         const files = await collectDirectory(directory);
         appendFiles(files);
-        if (!files.length) setMessage("这个文件夹里没有可导入的 Markdown 文件");
+        if (!files.length) setMessage(t("No importable Markdown files in this folder.", "这个文件夹里没有可导入的 Markdown 文件"));
         setWorking(false);
         return;
       } catch (error) {
@@ -205,7 +207,7 @@ export default function ImportDialog({ open, onClose, onImport, onChooseNativeFi
       if (!collected.length) appendFiles(Array.from(event.dataTransfer.files).map((file) => ({ file })));
       else appendFiles(collected);
     } catch {
-      setMessage("有内容无法读取，请改用“选择文件夹”重试");
+      setMessage(t("Some items could not be read. Try Choose folder instead.", "有内容无法读取，请改用“选择文件夹”重试"));
     } finally {
       setWorking(false);
     }
@@ -218,17 +220,17 @@ export default function ImportDialog({ open, onClose, onImport, onChooseNativeFi
       <section ref={dialogRef} className="import-dialog" role="dialog" aria-modal="true" aria-labelledby="import-title">
         <header className="import-header">
           <div className="import-title-mark"><Import size={20} /></div>
-          <div><h2 id="import-title">导入 Markdown</h2><p>文件保留原格式，文件夹会自动成为一个分类。</p></div>
-          <button autoFocus className="icon-button" type="button" onClick={onClose} disabled={working} aria-label="关闭导入"><X size={18} /></button>
+          <div><h2 id="import-title">{t("Import Markdown", "导入 Markdown")}</h2><p>{t("Files keep their format. A folder becomes a category.", "文件保留原格式，文件夹会自动成为一个分类。")}</p></div>
+          <button autoFocus className="icon-button" type="button" onClick={onClose} disabled={working} aria-label={t("Close import", "关闭导入")}><X size={18} /></button>
         </header>
 
         <div className={`import-dropzone${dragging ? " is-dragging" : ""}`} onDragEnter={(event) => { event.preventDefault(); setDragging(true); }} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; setDragging(true); }} onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragging(false); }} onDrop={(event) => void handleDrop(event)}>
           <div className="drop-illustration" aria-hidden="true"><FolderOpen size={34} /><span><FileText size={18} /></span></div>
-          <strong>{working ? "正在读取文件夹…" : dragging ? "松开即可加入" : "把文件或文件夹拖到这里"}</strong>
-          <span>内容只在你的电脑上处理</span>
+          <strong>{working ? t("Reading folder…", "正在读取文件夹…") : dragging ? t("Drop to add", "松开即可加入") : t("Drop files or folders here", "把文件或文件夹拖到这里")}</strong>
+          <span>{t("Everything is processed on your computer", "内容只在你的电脑上处理")}</span>
           <div className="import-pickers">
-            <button type="button" onClick={() => void chooseFiles()} disabled={working}><UploadCloud size={17} />选择文件</button>
-            <button type="button" onClick={() => void chooseFolder()} disabled={working}><FolderUp size={17} />选择文件夹</button>
+            <button type="button" onClick={() => void chooseFiles()} disabled={working}><UploadCloud size={17} />{t("Choose files", "选择文件")}</button>
+            <button type="button" onClick={() => void chooseFolder()} disabled={working}><FolderUp size={17} />{t("Choose folder", "选择文件夹")}</button>
           </div>
         </div>
 
@@ -236,11 +238,11 @@ export default function ImportDialog({ open, onClose, onImport, onChooseNativeFi
         <input ref={folderInputRef} className="visually-hidden" type="file" tabIndex={-1} aria-hidden="true" multiple onChange={(event) => { appendFiles(Array.from(event.currentTarget.files ?? []).map((file) => { const relativePath = file.webkitRelativePath || file.name; return { file, relativePath, categoryName: relativePath.split("/")[0] }; })); event.currentTarget.value = ""; }} />
 
         <div className="import-queue" aria-live="polite">
-          <div><span>{queued.length ? `已选择 ${queued.length} 个文稿` : "等待选择"}</span><small>{message}</small></div>
-          {queued.length > 0 && <div className="queued-files">{queued.slice(0, 4).map((item) => <span key={item.relativePath || `${item.file.name}-${item.file.lastModified}`}><FileText size={14} /><span>{item.relativePath || item.file.name}</span></span>)}{queued.length > 4 && <small>还有 {queued.length - 4} 个文稿</small>}</div>}
+          <div><span>{queued.length ? t(`${queued.length} documents selected`, `已选择 ${queued.length} 个文稿`) : t("Waiting for files", "等待选择")}</span><small>{message}</small></div>
+          {queued.length > 0 && <div className="queued-files">{queued.slice(0, 4).map((item) => <span key={item.relativePath || `${item.file.name}-${item.file.lastModified}`}><FileText size={14} /><span>{item.relativePath || item.file.name}</span></span>)}{queued.length > 4 && <small>{t(`${queued.length - 4} more`, `还有 ${queued.length - 4} 个文稿`)}</small>}</div>}
         </div>
 
-        <footer className="import-actions"><button type="button" onClick={onClose} disabled={working}>取消</button><button className="primary" type="button" disabled={!queued.length || working} onClick={async () => { setWorking(true); try { await onImport(queued); onClose(); } catch { setMessage("导入失败，请检查文件权限后重试"); } finally { setWorking(false); } }}><Import size={16} />导入{queued.length ? ` ${queued.length} 个文稿` : ""}</button></footer>
+        <footer className="import-actions"><button type="button" onClick={onClose} disabled={working}>{t("Cancel", "取消")}</button><button className="primary" type="button" disabled={!queued.length || working} onClick={async () => { setWorking(true); try { await onImport(queued); onClose(); } catch { setMessage(t("Import failed. Check file permissions and try again.", "导入失败，请检查文件权限后重试")); } finally { setWorking(false); } }}><Import size={16} />{t("Import", "导入")}{queued.length ? t(` ${queued.length} documents`, ` ${queued.length} 个文稿`) : ""}</button></footer>
       </section>
     </div>
   );

@@ -19,48 +19,48 @@ export const defaultEditorPreferences: EditorPreferences = {
 
 export const welcomeDocument: MarkdownDocument = {
   id: "welcome-to-patchmark",
-  name: "欢迎使用 PatchMark.md",
+  name: "Welcome to Manuslate.md",
   source: "sample",
   createdAt: Date.now(),
   updatedAt: Date.now(),
-  content: `# 写作，应该从正文开始
+  content: `# Writing should begin with the document
 
-PatchMark 是一款安静、本地优先的 Markdown 编辑器。打开就是文稿，不需要账号，也不需要先理解一套工作区规则。
+Manuslate is a refined, local-first Markdown editor. It opens directly into your work—no account and no workspace ritual required.
 
-## 边写，边成为成稿
+## Write at the speed of thought
 
-- **实时排版**：Markdown 标记只在光标所在行出现
-- **分类资料库**：导入文件夹、归类文稿，大纲保持在内容两侧
-- **可靠保存**：恢复草稿自动保存，写入文件时状态清楚可见
-- **开放格式**：内容始终是普通的 \`.md\` 文件
+- **Live typesetting**: Markdown marks appear only where you are editing
+- **Organized library**: import folders, classify documents, and keep the outline close
+- **Reliable saves**: recovery drafts are automatic and disk writes stay visible
+- **Open format**: your work always remains an ordinary \`.md\` file
 
-> 极简不是减少能力，而是让能力只在需要时出现。
+> Minimal does not mean less capable. It means capability appears exactly when needed.
 
-## 丰富，但不笨重
+## Rich, never heavy
 
-行内可以使用 **粗体**、*斜体*、\`代码\` 与 [链接](https://commonmark.org/)。
+Use **bold**, *italic*, \`code\`, and [links](https://commonmark.org/) inline.
 
-公式也可以直接排版：$E = mc^2$。
+Typeset math directly: $E = mc^2$.
 
 \`\`\`ts
 const principle = "The document is the interface";
 \`\`\`
 
-| 视图 | 适合 |
+| View | Best for |
 | --- | --- |
-| 实时排版 | 日常写作 |
-| 阅读 | 沉浸校对 |
-| 源码 | 精确控制 Markdown |
+| Live | Everyday writing |
+| Reading | Focused review |
+| Source | Exact Markdown control |
 
-- [x] 打开就是 Markdown
-- [x] 不依赖账号
-- [ ] 由你写下下一篇文档
+- [x] Open directly into Markdown
+- [x] No account required
+- [ ] Write your next document
 
 ---
 
-顶部可以切换显示方式；底部的格式工具坞只在写作时出现。[^local]
+Switch views from the title bar. The formatting dock appears only while you write.[^local]
 
-[^local]: 草稿保存在这台设备上，本地文件只会在你主动保存时写入。
+[^local]: Recovery drafts stay on this device. Manuslate writes local files only when you save.
 `,
 };
 

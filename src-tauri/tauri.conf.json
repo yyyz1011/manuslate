@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "PatchMark",
+  "productName": "Manuslate",
   "version": "0.1.0",
-  "identifier": "app.patchmark.desktop",
+  "identifier": "app.manuslate.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:4173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "PatchMark",
+        "title": "Manuslate",
         "width": 1280,
         "height": 820,
         "minWidth": 900,
@@ -30,7 +30,7 @@
     "targets": ["app", "dmg"],
     "category": "Productivity",
     "shortDescription": "A quiet, local-first Markdown editor.",
-    "longDescription": "PatchMark is an open-source, local-first Markdown editor for focused writing and managing Markdown libraries.",
+    "longDescription": "Manuslate is an open-source, local-first Markdown editor for focused writing and managing Markdown libraries.",
     "fileAssociations": [
       { "ext": ["md", "markdown", "mdown"], "name": "Markdown Document", "role": "Editor" }
     ],
