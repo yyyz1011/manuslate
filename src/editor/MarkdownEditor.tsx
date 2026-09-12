@@ -21,6 +21,7 @@ import {
 } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
 import { renderMarkdown } from "../lib/markdown";
+import type { EditorPreferences } from "../types";
 
 export interface MarkdownEditorHandle {
   focus: () => void;
@@ -37,6 +38,7 @@ interface MarkdownEditorProps {
   dark: boolean;
   focusMode: boolean;
   livePreview: boolean;
+  preferences: EditorPreferences;
   onImageFile?: (file: File) => Promise<string | null>;
   assetUrls?: Record<string, string>;
 }
@@ -337,7 +339,10 @@ const paragraphFocus = ViewPlugin.fromClass(
   { decorations: (plugin) => plugin.decorations },
 );
 
-function makeTheme(dark: boolean, livePreview: boolean) {
+function makeTheme(dark: boolean, livePreview: boolean, preferences: EditorPreferences) {
+  const manuscriptTypeface = preferences.typeface === "serif"
+    ? '"Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif'
+    : '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif';
   return EditorView.theme(
     {
       "&": {
@@ -348,15 +353,16 @@ function makeTheme(dark: boolean, livePreview: boolean) {
       },
       ".cm-scroller": {
         fontFamily: livePreview
-          ? '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif'
+          ? manuscriptTypeface
           : '"SFMono-Regular", "SF Mono", ui-monospace, Menlo, Consolas, monospace',
-        lineHeight: livePreview ? "1.72" : "1.82",
+        fontSize: `${livePreview ? preferences.manuscriptFontSize : preferences.sourceFontSize}px`,
+        lineHeight: livePreview ? String(preferences.lineHeight) : "1.82",
         overflowX: "hidden",
         overflowY: "auto",
       },
       ".cm-content": {
         width: "100%",
-        maxWidth: "760px",
+        maxWidth: `${preferences.manuscriptWidth}px`,
         minWidth: "0",
         margin: "0 auto",
         padding: "76px 42px 190px",
@@ -485,7 +491,7 @@ function makeTheme(dark: boolean, livePreview: boolean) {
 }
 
 const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
-  ({ value, onChange, dark, focusMode, livePreview, onImageFile, assetUrls = {} }, ref) => {
+  ({ value, onChange, dark, focusMode, livePreview, preferences, onImageFile, assetUrls = {} }, ref) => {
     const hostRef = useRef<HTMLDivElement>(null);
     const shellRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
@@ -547,7 +553,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
           markdown({ base: markdownLanguage }),
           keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
           placeholder("从这里开始写…"),
-          themeCompartment.current.of(makeTheme(dark, livePreview)),
+          themeCompartment.current.of(makeTheme(dark, livePreview, preferences)),
           highlightCompartment.current.of(syntaxHighlighting(dark ? darkHighlight : lightHighlight)),
           focusCompartment.current.of(focusMode ? paragraphFocus : []),
           liveCompartment.current.of(livePreview ? makeLivePreviewExtension(assetUrls) : []),
@@ -571,11 +577,11 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
       if (!view) return;
       view.dispatch({
         effects: [
-          themeCompartment.current.reconfigure(makeTheme(dark, livePreview)),
+          themeCompartment.current.reconfigure(makeTheme(dark, livePreview, preferences)),
           highlightCompartment.current.reconfigure(syntaxHighlighting(dark ? darkHighlight : lightHighlight)),
         ],
       });
-    }, [dark, livePreview]);
+    }, [dark, livePreview, preferences]);
 
     useEffect(() => {
       const view = viewRef.current;

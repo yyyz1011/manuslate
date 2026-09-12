@@ -1,4 +1,4 @@
-import type { DocumentTemplate, LibraryCategory, MarkdownDocument, ThemeMode, TrashEntry, VersionSnapshot, ViewMode } from "../types";
+import type { DocumentTemplate, EditorPreferences, LibraryCategory, MarkdownDocument, ThemeMode, TrashEntry, VersionSnapshot, ViewMode } from "../types";
 
 const DOCUMENTS_KEY = "patchmark-core.documents.v1";
 const ACTIVE_KEY = "patchmark-core.active-document.v1";
@@ -7,6 +7,15 @@ const THEME_KEY = "patchmark-core.theme.v1";
 const CATEGORIES_KEY = "patchmark-core.categories.v1";
 const VERSIONS_KEY = "patchmark-core.versions.v1";
 const TRASH_KEY = "patchmark-core.trash.v1";
+const EDITOR_PREFERENCES_KEY = "patchmark-core.editor-preferences.v1";
+
+export const defaultEditorPreferences: EditorPreferences = {
+  manuscriptFontSize: 17,
+  sourceFontSize: 15,
+  lineHeight: 1.75,
+  manuscriptWidth: 760,
+  typeface: "sans",
+};
 
 export const welcomeDocument: MarkdownDocument = {
   id: "welcome-to-patchmark",
@@ -139,4 +148,26 @@ export function loadTheme(): ThemeMode {
 
 export function saveTheme(theme: ThemeMode): void {
   localStorage.setItem(THEME_KEY, theme);
+}
+
+function clamp(value: unknown, min: number, max: number, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.min(max, Math.max(min, value))
+    : fallback;
+}
+
+export function loadEditorPreferences(): EditorPreferences {
+  const saved = safeParse<Partial<EditorPreferences>>(localStorage.getItem(EDITOR_PREFERENCES_KEY), {});
+  const width = saved.manuscriptWidth;
+  return {
+    manuscriptFontSize: Math.round(clamp(saved.manuscriptFontSize, 13, 24, defaultEditorPreferences.manuscriptFontSize)),
+    sourceFontSize: Math.round(clamp(saved.sourceFontSize, 12, 20, defaultEditorPreferences.sourceFontSize)),
+    lineHeight: Math.round(clamp(saved.lineHeight, 1.4, 2, defaultEditorPreferences.lineHeight) * 20) / 20,
+    manuscriptWidth: width === 640 || width === 760 || width === 900 ? width : defaultEditorPreferences.manuscriptWidth,
+    typeface: saved.typeface === "serif" ? "serif" : "sans",
+  };
+}
+
+export function saveEditorPreferences(preferences: EditorPreferences): void {
+  localStorage.setItem(EDITOR_PREFERENCES_KEY, JSON.stringify(preferences));
 }

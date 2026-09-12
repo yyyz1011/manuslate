@@ -1,5 +1,14 @@
 export type ViewMode = "live" | "source" | "preview" | "split";
 export type ThemeMode = "system" | "light" | "dark";
+export type ManuscriptTypeface = "sans" | "serif";
+
+export interface EditorPreferences {
+  manuscriptFontSize: number;
+  sourceFontSize: number;
+  lineHeight: number;
+  manuscriptWidth: 640 | 760 | 900;
+  typeface: ManuscriptTypeface;
+}
 
 export interface MarkdownDocument {
   id: string;
