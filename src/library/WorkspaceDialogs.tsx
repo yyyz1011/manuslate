@@ -161,7 +161,10 @@ export function SettingsDialog({ open, preferences, theme, defaultDirectoryName,
           <section className="settings-group language-settings" aria-labelledby="language-heading"><div className="settings-group-title"><div><h3 id="language-heading">{t("Language", "语言")}</h3><p>{t("Change the interface language instantly.", "即时切换应用界面语言。")}</p></div></div><div className="language-setting-row"><span className="directory-icon"><Globe2 size={18} /></span><span><strong>{t("Interface language", "界面语言")}</strong><small>{t("English is the default on a new installation.", "新安装默认使用英文。")}</small></span><div className="settings-segment language-segment" role="group" aria-label={t("Interface language", "界面语言")}><button type="button" className={language === "en" ? "active" : ""} aria-pressed={language === "en"} onClick={() => setLanguage("en")}>English</button><button type="button" className={language === "zh-CN" ? "active" : ""} aria-pressed={language === "zh-CN"} onClick={() => setLanguage("zh-CN")}>简体中文</button></div></div></section>
         </div>
       </div>
-      <footer className="settings-footer"><span>{t("Changes are saved automatically on this device", "更改自动保存在这台设备上")}</span><button data-dialog-primary type="button" onClick={onClose}>{t("Done", "完成")}</button></footer>
+      <footer className="settings-footer">
+        <span className="settings-footer-status"><Check size={13} aria-hidden="true" />{t("Changes save automatically on this device", "更改会自动保存在这台设备上")}</span>
+        <button data-dialog-primary type="button" onClick={onClose}>{t("Done", "完成")}</button>
+      </footer>
     </section>
   </div>;
 }
