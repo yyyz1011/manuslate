@@ -2,7 +2,7 @@ import {
   Bold, BookOpen, Check, ChevronDown, ChevronRight, Code2, Columns2, Copy, Download, Eye,
   Archive, Clock3, FileCode2, FilePlus2, FileSearch, Focus, Heading1, Heading2, Image, Info, Italic, Link, Link2, List,
   Import, ListChecks, ListOrdered, Menu, MoreHorizontal, PanelRight, Pencil, Plus, Printer, Quote,
-  Save, Search, Settings2, Share, Sparkles, SunMoon, Table2, TextCursorInput, Trash2, X,
+  Save, Search, Settings, Settings as Settings2, Share, Sparkles, SunMoon, Table2, TextCursorInput, Trash2, X,
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import type { MarkdownEditorHandle } from "./editor/MarkdownEditor";
@@ -15,7 +15,10 @@ import {
   builtInTemplates, defaultEditorPreferences, loadActiveDocumentId, loadCategories, loadDocuments, loadEditorPreferences, loadTheme, loadTrash, loadVersions, loadViewMode, saveActiveDocumentId,
   saveCategories, saveDocuments, saveEditorPreferences, saveTheme, saveTrash, saveVersions, saveViewMode,
 } from "./lib/storage";
-import { ensureWritePermission, forgetFileHandle, permissionFor, recallFileHandle, rememberFileHandle } from "./lib/workspace";
+import {
+  ensureWritePermission, forgetDefaultDocumentDirectory, forgetFileHandle, permissionFor,
+  recallDefaultDocumentDirectory, recallFileHandle, rememberDefaultDocumentDirectory, rememberFileHandle,
+} from "./lib/workspace";
 import type { DocumentTemplate, EditorPreferences, FileConflict, LibraryCategory, MarkdownDocument, ThemeMode, TrashEntry, VersionSnapshot, ViewMode } from "./types";
 
 const MarkdownEditor = lazy(() => import("./editor/MarkdownEditor"));
@@ -53,6 +56,27 @@ function createUntitled(index: number): MarkdownDocument {
     id: uniqueId(), name: index === 1 ? "未命名.md" : `未命名 ${index}.md`, content: "",
     source: "draft", createdAt: now, updatedAt: now,
   };
+}
+
+function safeMarkdownName(name: string): string {
+  const normalized = name.trim().replace(/[\\/:*?"<>|]/g, "-").replace(/\s+/g, " ") || "未命名";
+  return /\.(md|markdown|mdown|txt)$/i.test(normalized) ? normalized : `${normalized}.md`;
+}
+
+async function createUniqueFileHandle(directory: FileSystemDirectoryHandle, suggestedName: string): Promise<FileSystemFileHandle> {
+  const fileName = safeMarkdownName(suggestedName);
+  const extension = fileName.match(/\.[^.]+$/)?.[0] ?? ".md";
+  const stem = fileName.slice(0, -extension.length);
+  for (let index = 0; index < 1000; index += 1) {
+    const candidate = index === 0 ? fileName : `${stem} ${index + 1}${extension}`;
+    try {
+      await directory.getFileHandle(candidate);
+    } catch (error) {
+      if (error instanceof DOMException && error.name !== "NotFoundError") throw error;
+      return directory.getFileHandle(candidate, { create: true });
+    }
+  }
+  return directory.getFileHandle(`${stem}-${Date.now()}${extension}`, { create: true });
 }
 
 function App() {
@@ -97,12 +121,15 @@ function App() {
   const [fileConflict, setFileConflict] = useState<FileConflict | null>(null);
   const [pendingDelete, setPendingDelete] = useState<{ kind: "category" | "document"; id: string } | null>(null);
   const [handleAccess, setHandleAccess] = useState<Record<string, "granted" | "prompt" | "denied" | "missing">>({});
+  const [defaultDirectoryName, setDefaultDirectoryName] = useState<string | null>(null);
+  const [defaultDirectoryAccess, setDefaultDirectoryAccess] = useState<PermissionState | "missing">("missing");
   const editorRef = useRef<MarkdownEditorHandle>(null);
   const paletteRef = useRef<HTMLElement>(null);
   const paletteReturnFocusRef = useRef<HTMLElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const handlesRef = useRef(new Map<string, FileSystemFileHandle>());
   const assetDirectoryRef = useRef<FileSystemDirectoryHandle | null>(null);
+  const defaultDirectoryRef = useRef<FileSystemDirectoryHandle | null>(null);
   const savedSnapshotsRef = useRef(new Map(initialDocuments.map((item) => [item.id, item.content])));
   const autoVersionRef = useRef(new Map<string, { content: string; at: number }>());
   const documentsRef = useRef(documents);
@@ -425,6 +452,29 @@ function App() {
     notify(`已安全写入 ${handle.name}`);
   }, [notify]);
 
+  const chooseDefaultDocumentDirectory = useCallback(async () => {
+    if (!window.showDirectoryPicker) { notify("当前浏览器不支持自定义文件夹"); return; }
+    try {
+      const directory = await window.showDirectoryPicker({ mode: "readwrite" });
+      defaultDirectoryRef.current = directory;
+      setDefaultDirectoryName(directory.name);
+      setDefaultDirectoryAccess(await permissionFor(directory));
+      await rememberDefaultDocumentDirectory(directory);
+      notify(`新文稿将保存到 ${directory.name}`);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      notify("文件夹设置失败，请重试");
+    }
+  }, [notify]);
+
+  const clearDefaultDocumentDirectory = useCallback(() => {
+    defaultDirectoryRef.current = null;
+    setDefaultDirectoryName(null);
+    setDefaultDirectoryAccess("missing");
+    void forgetDefaultDocumentDirectory().catch(() => undefined);
+    notify("已改为首次保存时选择位置");
+  }, [notify]);
+
   const saveActive = useCallback(async () => {
     if (!activeDocument) return;
     try {
@@ -434,6 +484,17 @@ function App() {
         if (handle) handlesRef.current.set(activeDocument.id, handle);
       }
       const hadHandle = Boolean(handle);
+      if (!handle && defaultDirectoryRef.current) {
+        const directory = defaultDirectoryRef.current;
+        if (await ensureWritePermission(directory)) {
+          setDefaultDirectoryAccess("granted");
+          handle = await createUniqueFileHandle(directory, activeDocument.name);
+          handlesRef.current.set(activeDocument.id, handle);
+        } else {
+          setDefaultDirectoryAccess("denied");
+          notify("默认文件夹不可写，将为这篇文稿选择位置");
+        }
+      }
       if (!handle && window.showSaveFilePicker) {
         handle = await window.showSaveFilePicker({
           suggestedName: activeDocument.name.endsWith(".md") ? activeDocument.name : `${activeDocument.name}.md`,
@@ -578,6 +639,18 @@ function App() {
     return () => { cancelled = true; };
   }, [initialDocuments]);
   useEffect(() => {
+    let cancelled = false;
+    void recallDefaultDocumentDirectory().then(async (directory) => {
+      if (!directory || cancelled) return;
+      defaultDirectoryRef.current = directory;
+      setDefaultDirectoryName(directory.name);
+      setDefaultDirectoryAccess(await permissionFor(directory));
+    }).catch(() => {
+      if (!cancelled) setDefaultDirectoryAccess("missing");
+    });
+    return () => { cancelled = true; };
+  }, []);
+  useEffect(() => {
     let checking = false;
     const checkActiveFile = async () => {
       if (checking) return;
@@ -699,7 +772,7 @@ function App() {
     ...(!isCompact ? [{ label: "并排对照", hint: "⌘4", icon: Columns2, run: () => setViewMode("split") }] : []),
     { label: focusMode ? "退出专注模式" : "进入专注模式", hint: "⌘⇧F", icon: Focus, run: () => { setViewMode("live"); setFocusMode((current) => !current); } },
     { label: inspectorOpen ? "关闭检查器" : "打开检查器", hint: "", icon: PanelRight, run: () => setInspectorOpen((current) => !current) },
-    { label: "打开设置", hint: "⌘,", icon: Settings2, run: () => setSettingsOpen(true) },
+    { label: "打开设置", hint: "⌘,", icon: Settings, run: () => setSettingsOpen(true) },
     { label: "切换外观", hint: "", icon: SunMoon, run: cycleTheme },
     { label: "导出 HTML", hint: "", icon: Download, run: exportHtml },
   ].filter((item) => item.label.toLocaleLowerCase().includes(paletteSearch.trim().toLocaleLowerCase()));
@@ -740,7 +813,7 @@ function App() {
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
         <div className="search-scopes" role="group" aria-label="搜索范围">{([ ["all", "全部"], ["title", "标题"], ["content", "正文"], ["pinned", "置顶"] ] as const).map(([value, label]) => <button type="button" className={searchFilter === value ? "active" : ""} key={value} onClick={() => setSearchFilter(value)}>{label}</button>)}</div>
         <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onTogglePinned={togglePinned} />
-        <div className="library-footer" role="toolbar" aria-label="资料库工具"><button type="button" aria-label="导入文件" data-tooltip="导入文件 · ⌘O" onClick={() => setImportOpen(true)}><Import size={18} /></button><button type="button" aria-label="最近删除" data-tooltip="最近删除" onClick={() => setTrashOpen(true)}><Trash2 size={17} />{trash.length > 0 && <b aria-label={`${trash.length} 个项目`}>{trash.length}</b>}</button><button type="button" aria-label="设置" data-tooltip="设置 · ⌘," onClick={() => setSettingsOpen(true)}><Settings2 size={17} /></button></div>
+        <div className="library-footer" role="toolbar" aria-label="资料库工具"><button type="button" aria-label="导入文件" data-tooltip="导入文件 · ⌘O" onClick={() => setImportOpen(true)}><Import size={18} /></button><button type="button" aria-label="最近删除" data-tooltip="最近删除" onClick={() => setTrashOpen(true)}><Trash2 size={17} />{trash.length > 0 && <b aria-label={`${trash.length} 个项目`}>{trash.length}</b>}</button><button type="button" aria-label="设置" data-tooltip="设置 · ⌘," onClick={() => setSettingsOpen(true)}><Settings size={17} /></button></div>
       </aside>
 
       <section className="workspace">
@@ -781,7 +854,7 @@ function App() {
       <TemplateDialog open={templateOpen} templates={builtInTemplates} onClose={() => setTemplateOpen(false)} onCreate={createDocument} />
       <HistoryDialog open={historyOpen} document={activeDocument} versions={versions.filter((item) => item.documentId === activeDocument.id)} onClose={() => setHistoryOpen(false)} onRestore={restoreVersion} onNameVersion={saveNamedVersion} />
       <TrashDialog open={trashOpen} entries={trash} onClose={() => setTrashOpen(false)} onRestore={restoreTrashEntry} onDelete={deleteTrashEntry} />
-      <SettingsDialog open={settingsOpen} preferences={editorPreferences} theme={theme} onClose={() => setSettingsOpen(false)} onChange={setEditorPreferences} onThemeChange={setTheme} onReset={() => setEditorPreferences(defaultEditorPreferences)} />
+      <SettingsDialog open={settingsOpen} preferences={editorPreferences} theme={theme} defaultDirectoryName={defaultDirectoryName} defaultDirectoryAccess={defaultDirectoryAccess} canChooseDirectory={Boolean(window.showDirectoryPicker)} onClose={() => setSettingsOpen(false)} onChange={setEditorPreferences} onThemeChange={setTheme} onReset={() => setEditorPreferences(defaultEditorPreferences)} onChooseDirectory={() => void chooseDefaultDocumentDirectory()} onClearDirectory={clearDefaultDocumentDirectory} />
       <ConfirmDialog open={Boolean(pendingDelete)} title={pendingDelete?.kind === "category" ? `删除分类“${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”？` : `把“${withoutExtension(documents.find((item) => item.id === pendingDelete?.id)?.name ?? "文稿")}”移到最近删除？`} description={pendingDelete?.kind === "category" ? "分类和子分类会被移除，其中的文稿会回到未分类。" : documents.find((item) => item.id === pendingDelete?.id)?.source === "local" ? "只移除 PatchMark 中的记录，电脑上的原文件不会被删除。" : "文稿会保留在最近删除中，可以稍后恢复。"} confirmLabel={pendingDelete?.kind === "category" ? "删除分类" : "移到最近删除"} onClose={() => setPendingDelete(null)} onConfirm={confirmPendingDelete} />
       <ConflictDialog conflict={fileConflict} document={documents.find((item) => item.id === fileConflict?.documentId) ?? activeDocument} onClose={() => setFileConflict(null)} onUseDisk={useDiskConflict} onOverwrite={() => void overwriteDiskConflict()} />
       {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}

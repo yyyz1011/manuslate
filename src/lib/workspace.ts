@@ -1,6 +1,9 @@
 const DATABASE_NAME = "patchmark-workspace";
 const DATABASE_VERSION = 1;
 const HANDLE_STORE = "file-handles";
+const DEFAULT_DOCUMENT_DIRECTORY_KEY = "__patchmark_default_document_directory__";
+
+type WritableFileSystemHandle = FileSystemFileHandle | FileSystemDirectoryHandle;
 
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -46,12 +49,27 @@ export async function forgetFileHandle(documentId: string): Promise<void> {
   await withStore("readwrite", (store) => store.delete(documentId));
 }
 
-export async function permissionFor(handle: FileSystemFileHandle): Promise<PermissionState> {
+export async function rememberDefaultDocumentDirectory(handle: FileSystemDirectoryHandle): Promise<void> {
+  if (!("indexedDB" in window)) return;
+  await withStore("readwrite", (store) => store.put(handle, DEFAULT_DOCUMENT_DIRECTORY_KEY));
+}
+
+export async function recallDefaultDocumentDirectory(): Promise<FileSystemDirectoryHandle | undefined> {
+  if (!("indexedDB" in window)) return undefined;
+  return withStore<FileSystemDirectoryHandle | undefined>("readonly", (store) => store.get(DEFAULT_DOCUMENT_DIRECTORY_KEY));
+}
+
+export async function forgetDefaultDocumentDirectory(): Promise<void> {
+  if (!("indexedDB" in window)) return;
+  await withStore("readwrite", (store) => store.delete(DEFAULT_DOCUMENT_DIRECTORY_KEY));
+}
+
+export async function permissionFor(handle: WritableFileSystemHandle): Promise<PermissionState> {
   if (!handle.queryPermission) return "granted";
   return handle.queryPermission({ mode: "readwrite" });
 }
 
-export async function ensureWritePermission(handle: FileSystemFileHandle): Promise<boolean> {
+export async function ensureWritePermission(handle: WritableFileSystemHandle): Promise<boolean> {
   const current = await permissionFor(handle);
   if (current === "granted") return true;
   if (!handle.requestPermission) return false;

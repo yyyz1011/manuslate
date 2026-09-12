@@ -1,4 +1,4 @@
-import { AlertTriangle, ArchiveRestore, Check, Clock3, FilePlus2, HardDriveDownload, Monitor, Moon, RotateCcw, Save, Settings2, Sun, Trash2, Type, X } from "lucide-react";
+import { AlertTriangle, ArchiveRestore, Check, Clock3, FilePlus2, FolderOpen, HardDriveDownload, Monitor, Moon, RotateCcw, Save, Settings, Sun, Trash2, Type, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { lineDiff } from "../lib/diff";
 import type { DocumentTemplate, EditorPreferences, FileConflict, MarkdownDocument, ThemeMode, TrashEntry, VersionSnapshot } from "../types";
@@ -82,10 +82,15 @@ interface SettingsDialogProps {
   open: boolean;
   preferences: EditorPreferences;
   theme: ThemeMode;
+  defaultDirectoryName: string | null;
+  defaultDirectoryAccess: PermissionState | "missing";
+  canChooseDirectory: boolean;
   onClose: () => void;
   onChange: (preferences: EditorPreferences) => void;
   onThemeChange: (theme: ThemeMode) => void;
   onReset: () => void;
+  onChooseDirectory: () => void;
+  onClearDirectory: () => void;
 }
 
 const widthOptions: Array<{ value: EditorPreferences["manuscriptWidth"]; label: string }> = [
@@ -100,7 +105,7 @@ const themeOptions: Array<{ value: ThemeMode; label: string; icon: typeof Sun }>
   { value: "dark", label: "深色", icon: Moon },
 ];
 
-export function SettingsDialog({ open, preferences, theme, onClose, onChange, onThemeChange, onReset }: SettingsDialogProps) {
+export function SettingsDialog({ open, preferences, theme, defaultDirectoryName, defaultDirectoryAccess, canChooseDirectory, onClose, onChange, onThemeChange, onReset, onChooseDirectory, onClearDirectory }: SettingsDialogProps) {
   const dialogRef = useDialogFocus(open, onClose);
   const patch = (next: Partial<EditorPreferences>) => onChange({ ...preferences, ...next });
   const sampleTypeface = preferences.typeface === "serif"
@@ -110,7 +115,7 @@ export function SettingsDialog({ open, preferences, theme, onClose, onChange, on
   return <div className="sheet-backdrop settings-backdrop" onMouseDown={(event) => event.target === event.currentTarget && onClose()}>
     <section ref={dialogRef} className="workspace-dialog settings-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <header>
-        <div><span className="dialog-mark"><Settings2 size={18} /></span><div><h2 id="settings-title">设置</h2><p>让写作表面适合你的眼睛与节奏</p></div></div>
+        <div><span className="dialog-mark"><Settings size={18} /></span><div><h2 id="settings-title">设置</h2><p>让写作表面适合你的眼睛与节奏</p></div></div>
         <button className="icon-button" onClick={onClose} aria-label="关闭设置"><X size={17} /></button>
       </header>
       <div className="settings-layout">
@@ -118,14 +123,24 @@ export function SettingsDialog({ open, preferences, theme, onClose, onChange, on
         <div className="settings-content">
           <section className="settings-group" aria-labelledby="typesetting-heading">
             <div className="settings-group-title"><div><h3 id="typesetting-heading">文稿排版</h3><p>实时排版和阅读视图保持一致。</p></div><button type="button" className="reset-settings" onClick={onReset}><RotateCcw size={13} />恢复默认</button></div>
-            <div className="type-specimen" style={{ fontFamily: sampleTypeface, fontSize: `${preferences.manuscriptFontSize}px`, lineHeight: preferences.lineHeight }}>
-              <span>即时预览</span><strong>写作，从舒服的版面开始</strong><p>Markdown 标记退到一旁，文字回到眼前。调整会立即应用到当前文稿。</p>
+            <div className="type-specimen" aria-label="源码与即时预览">
+              <section className="source-specimen" style={{ fontSize: `${preferences.sourceFontSize}px` }}><span>Markdown 源码</span><pre>{"# 写作，从舒服的版面开始\n\n**Markdown** 标记退到一旁，文字回到眼前。"}</pre></section>
+              <section className="rendered-specimen" style={{ fontFamily: sampleTypeface, fontSize: `${preferences.manuscriptFontSize}px`, lineHeight: preferences.lineHeight }}><span>即时预览</span><strong>写作，从舒服的版面开始</strong><p><b>Markdown</b> 标记退到一旁，文字回到眼前。</p></section>
             </div>
             <label className="preference-slider"><span><strong>文稿字号</strong><small>实时排版与阅读视图</small></span><input type="range" min="13" max="24" step="1" value={preferences.manuscriptFontSize} onChange={(event) => patch({ manuscriptFontSize: Number(event.target.value) })} /><output>{preferences.manuscriptFontSize} px</output></label>
             <label className="preference-slider"><span><strong>行高</strong><small>控制正文的呼吸感</small></span><input type="range" min="1.4" max="2" step="0.05" value={preferences.lineHeight} onChange={(event) => patch({ lineHeight: Number(event.target.value) })} /><output>{preferences.lineHeight.toFixed(2)}</output></label>
             <label className="preference-slider"><span><strong>源码字号</strong><small>Markdown 源码视图</small></span><input type="range" min="12" max="20" step="1" value={preferences.sourceFontSize} onChange={(event) => patch({ sourceFontSize: Number(event.target.value) })} /><output>{preferences.sourceFontSize} px</output></label>
             <div className="preference-choice"><span><strong>正文字体</strong><small>只影响文稿，不影响代码</small></span><div className="settings-segment" role="group" aria-label="正文字体"><button type="button" className={preferences.typeface === "sans" ? "active" : ""} aria-pressed={preferences.typeface === "sans"} onClick={() => patch({ typeface: "sans" })}>现代</button><button type="button" className={preferences.typeface === "serif" ? "active serif" : "serif"} aria-pressed={preferences.typeface === "serif"} onClick={() => patch({ typeface: "serif" })}>书卷</button></div></div>
             <div className="preference-choice"><span><strong>页面宽度</strong><small>{preferences.manuscriptWidth} px 版心</small></span><div className="settings-segment width-segment" role="group" aria-label="页面宽度">{widthOptions.map((option) => <button type="button" className={preferences.manuscriptWidth === option.value ? "active" : ""} aria-pressed={preferences.manuscriptWidth === option.value} key={option.value} onClick={() => patch({ manuscriptWidth: option.value })}>{option.label}</button>)}</div></div>
+          </section>
+          <section className="settings-group file-settings" aria-labelledby="file-settings-heading">
+            <div className="settings-group-title"><div><h3 id="file-settings-heading">文件与存储</h3><p>指定新文稿第一次写入磁盘的位置。</p></div></div>
+            <div className="directory-setting">
+              <span className="directory-icon"><FolderOpen size={18} /></span>
+              <span className="directory-copy"><strong>{defaultDirectoryName ?? "每次保存时选择"}</strong><small>{defaultDirectoryName ? defaultDirectoryAccess === "granted" ? "已授权写入，新文稿首次保存时进入这里" : "保存时会请求重新授权" : "新文稿先进入恢复草稿，按 ⌘S 时选择文件夹"}</small></span>
+              <span className="directory-actions"><button type="button" onClick={onChooseDirectory} disabled={!canChooseDirectory}>{defaultDirectoryName ? "更改" : "选择文件夹"}</button>{defaultDirectoryName && <button type="button" className="subtle" onClick={onClearDirectory}>移除</button>}</span>
+            </div>
+            {!canChooseDirectory && <p className="directory-unsupported">当前浏览器不支持固定文件夹，首次保存时仍可下载 Markdown。</p>}
           </section>
           <section className="settings-group appearance-settings" aria-labelledby="appearance-heading"><div className="settings-group-title"><div><h3 id="appearance-heading">外观</h3><p>选择应用界面的明暗方式。</p></div></div><div className="theme-options" role="radiogroup" aria-label="应用外观">{themeOptions.map((option) => { const Icon = option.icon; return <button type="button" role="radio" aria-checked={theme === option.value} className={theme === option.value ? "active" : ""} key={option.value} onClick={() => onThemeChange(option.value)}><Icon size={17} /><span>{option.label}</span>{theme === option.value && <Check size={14} />}</button>; })}</div></section>
         </div>
