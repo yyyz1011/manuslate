@@ -1,4 +1,6 @@
-# PatchMark Core
+# PatchMark
+
+![PatchMark 产品图标](public/patchmark-icon.png)
 
 一款安静、本地优先、开源免费的 PC Markdown 编辑器。当前阶段不做 AI，先把打开、阅读、编辑和保存做得足够好。
 
