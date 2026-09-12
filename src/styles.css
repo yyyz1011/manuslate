@@ -121,7 +121,7 @@ button:focus-visible, input:focus-visible {
 .library-heading { padding: 18px 14px 14px 18px; }
 .library-title-row { display: flex; height: 40px; align-items: center; justify-content: space-between; }
 .product-brand { display: flex; min-width: 0; height: 40px; align-items: center; gap: 10px; }
-.product-brand img { display: block; width: 35px; height: 35px; flex: 0 0 auto; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(8, 54, 122, 0.18)); transform: translateY(-1px); }
+.product-brand img { display: block; width: 35px; height: 35px; flex: 0 0 auto; object-fit: contain; filter: drop-shadow(0 2px 5px rgba(8, 54, 122, 0.18)); transform: translateY(1px); }
 .library-heading h1 {
   margin: 0;
   color: var(--ink);
@@ -130,8 +130,8 @@ button:focus-visible, input:focus-visible {
   line-height: 34px;
   letter-spacing: -0.035em;
 }
-.compose-button { width: 36px; height: 36px; transform: translateY(-1px); }
-.compose-button:active { transform: translateY(-1px) scale(0.91); }
+.compose-button { width: 36px; height: 36px; transform: translateY(1px); }
+.compose-button:active { transform: translateY(1px) scale(0.91); }
 .library-heading p { margin: 3px 0 0; color: var(--secondary); font-size: 11px; }
 
 .icon-button {
@@ -374,25 +374,48 @@ button:focus-visible, input:focus-visible {
 .document-snippet { margin-top: 3px; color: var(--secondary); font-size: 12px; }
 .document-meta { margin-top: 5px; color: var(--tertiary); font-size: 11px; font-variant-numeric: tabular-nums; }
 .rail-empty { padding: 28px 16px; color: var(--tertiary); font-size: 13px; text-align: center; }
-.library-footer { padding: 8px 10px 12px; border-top: 1px solid var(--line); }
+.library-footer { display: flex; align-items: center; gap: 3px; min-height: 58px; padding: 8px 11px 10px; border-top: 1px solid var(--line); }
 .library-footer button {
+  position: relative;
   display: grid;
-  grid-template-columns: 23px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  height: 44px;
-  padding: 0 10px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  place-items: center;
   border: 0;
-  border-radius: 11px;
+  border-radius: 10px;
   background: transparent;
   color: var(--accent-ink);
-  font-size: 13px;
-  text-align: left;
   cursor: pointer;
+  transition: color 140ms ease, background-color 140ms ease, transform 140ms var(--ease-out);
 }
 .library-footer button:hover { background: var(--fill); }
-.library-footer b { min-width: 17px; padding: 2px 5px; border-radius: 9px; background: var(--fill); color: var(--secondary); font-size: 9px; text-align: center; }
+.library-footer button:active { transform: scale(.91); }
+.library-footer button::after {
+  position: absolute;
+  z-index: 80;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  padding: 6px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: 0 6px 18px rgba(20, 24, 32, .2);
+  content: attr(data-tooltip);
+  font-size: 9px;
+  font-weight: 560;
+  letter-spacing: 0;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, 4px) scale(.96);
+  transition: opacity 120ms ease, transform 150ms var(--ease-out);
+  white-space: nowrap;
+}
+.library-footer button:hover::after, .library-footer button:focus-visible::after { opacity: 1; transform: translate(-50%, 0) scale(1); }
+.library-footer button:first-child::after { left: 0; transform: translate(0, 4px) scale(.96); }
+.library-footer button:first-child:hover::after, .library-footer button:first-child:focus-visible::after { transform: translate(0, 0) scale(1); }
+.library-footer b { position: absolute; top: 3px; right: 2px; min-width: 15px; height: 15px; padding: 0 4px; border: 2px solid var(--sidebar); border-radius: 8px; background: var(--danger); color: white; font-size: 8px; font-weight: 700; line-height: 11px; text-align: center; }
 kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-variant-numeric: tabular-nums; }
 
 .workspace { container: workspace / inline-size; min-width: 0; height: 100%; overflow: hidden; background: var(--paper); }
