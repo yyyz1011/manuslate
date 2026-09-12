@@ -210,7 +210,9 @@ function App() {
 
   const createCategory = useCallback((name: string) => {
     if (categories.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify("已经有同名分类"); return; }
-    setCategories((current) => [...current, { id: uniqueId(), name, createdAt: Date.now() }]);
+    const id = uniqueId();
+    setCategories((current) => [...current, { id, name, createdAt: Date.now() }]);
+    return id;
   }, [categories, notify]);
 
   const renameCategory = useCallback((id: string, name: string) => {
@@ -227,6 +229,32 @@ function App() {
   const moveDocument = useCallback((documentId: string, categoryId?: string) => {
     setDocuments((current) => current.map((item) => item.id === documentId ? { ...item, categoryId } : item));
   }, []);
+
+  const deleteDocument = useCallback((documentId: string) => {
+    const target = documents.find((item) => item.id === documentId);
+    if (!target) return;
+    const isLocalFile = target.source === "local";
+    const message = isLocalFile
+      ? `从资料库移除“${withoutExtension(target.name)}”？\n\n电脑上的原文件不会被删除。`
+      : `删除“${withoutExtension(target.name)}”？\n\n此操作会删除本机恢复草稿。`;
+    if (!window.confirm(message)) return;
+
+    const remaining = documents.filter((item) => item.id !== documentId);
+    let nextDocuments = remaining;
+    if (!remaining.length) {
+      const replacement = createUntitled(1);
+      savedSnapshotsRef.current.set(replacement.id, replacement.content);
+      nextDocuments = [replacement];
+    }
+    handlesRef.current.delete(documentId);
+    savedSnapshotsRef.current.delete(documentId);
+    setDocuments(nextDocuments);
+    if (activeId === documentId) {
+      setActiveId(nextDocuments[0].id);
+      saveActiveDocumentId(nextDocuments[0].id);
+    }
+    notify(isLocalFile ? "已从资料库移除，本地文件仍在电脑上" : "文稿已删除");
+  }, [activeId, documents, notify]);
 
   const saveActive = useCallback(async () => {
     if (!activeDocument) return;
@@ -395,7 +423,7 @@ function App() {
         <div className="library-nav"><button className="icon-button compose-button" type="button" onClick={createDocument} aria-label="新建文稿" title="新建文稿 ⌘N"><FilePlus2 size={19} /></button></div>
         <div className="library-heading"><h1>文稿</h1><p>本机草稿与打开的文件</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
-        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim())} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} />
+        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim())} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} />
         <div className="library-footer"><button type="button" onClick={() => setImportOpen(true)}><Import size={18} /><span>导入文件</span><kbd>⌘O</kbd></button></div>
       </aside>
 

@@ -272,7 +272,13 @@ button:focus-visible, input:focus-visible {
 }
 .category-menu button { display: flex; align-items: center; gap: 8px; width: 100%; height: 32px; padding: 0 8px; border: 0; border-radius: 7px; background: transparent; color: var(--ink-soft); font-size: 11px; cursor: pointer; }
 .category-menu button:hover { background: var(--fill); }
-.category-menu button:last-child { color: var(--danger); }
+.category-menu button:disabled { color: var(--tertiary); cursor: default; opacity: 0.58; }
+.category-menu button:disabled:hover { background: transparent; }
+.category-menu button.danger { color: var(--danger); }
+.category-menu button.is-current { color: var(--ink); font-weight: 620; }
+.category-menu .menu-check { margin-left: auto; color: var(--accent-ink); }
+.category-menu > span { display: block; padding: 5px 8px 4px; color: var(--tertiary); font-size: 9px; font-weight: 650; }
+.menu-separator { height: 1px; margin: 5px 5px; background: var(--line); }
 .category-documents { padding: 0 0 4px 19px; }
 .category-empty { margin: 1px 5px 7px; padding: 9px 10px; border-radius: 8px; color: var(--tertiary); font-size: 10px; }
 .tree-document-wrap { position: relative; }
@@ -306,9 +312,8 @@ button:focus-visible, input:focus-visible {
 .tree-document-wrap:hover .document-more, .document-more:focus-visible, .document-more[aria-expanded="true"] { color: var(--secondary); }
 .document-more:hover { background: color-mix(in srgb, var(--paper) 72%, var(--fill)); color: var(--ink); }
 .tree-document-wrap:hover .tree-document time, .tree-document-wrap:focus-within .tree-document time { opacity: 0; }
-.document-menu { top: 37px; right: 2px; width: 164px; max-height: 226px; overflow-y: auto; }
-.document-menu > span { display: block; padding: 5px 8px 4px; color: var(--tertiary); font-size: 9px; font-weight: 650; }
-.document-menu button:last-child { color: var(--ink-soft); }
+.document-menu { top: 37px; right: 2px; width: 174px; max-height: 284px; overflow-y: auto; }
+.uncategorized-menu { right: 2px; width: 184px; }
 .search-tree-results { padding-top: 2px; }
 .rail-heading {
   display: flex;
