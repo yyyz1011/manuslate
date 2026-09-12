@@ -113,23 +113,17 @@ button:focus-visible, input:focus-visible {
   flex-direction: column;
   border-right: 1px solid var(--line);
 }
-.library-nav {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  height: 56px;
-  padding: 8px 12px 0 18px;
-}
-.library-heading { padding: 10px 18px 16px; }
+.library-heading { padding: 18px 14px 14px 18px; }
+.library-title-row { display: flex; align-items: center; justify-content: space-between; min-height: 40px; }
 .library-heading h1 {
   margin: 0;
   color: var(--ink);
-  font-size: 32px;
+  font-size: 27px;
   font-weight: 760;
   line-height: 1.1;
   letter-spacing: -0.035em;
 }
-.library-heading p { margin: 6px 0 0; color: var(--secondary); font-size: 12px; }
+.library-heading p { margin: 3px 0 0; color: var(--secondary); font-size: 11px; }
 
 .icon-button {
   display: inline-grid;

@@ -420,8 +420,7 @@ function App() {
       {sidebarOpen && <button className="mobile-scrim" aria-label="关闭文稿列表" onClick={() => setSidebarOpen(false)} />}
 
       <aside className="library-rail" aria-label="文稿列表">
-        <div className="library-nav"><button className="icon-button compose-button" type="button" onClick={createDocument} aria-label="新建文稿" title="新建文稿 ⌘N"><FilePlus2 size={19} /></button></div>
-        <div className="library-heading"><h1>文稿</h1><p>本机草稿与打开的文件</p></div>
+        <div className="library-heading"><div className="library-title-row"><h1>文稿</h1><button className="icon-button compose-button" type="button" onClick={createDocument} aria-label="新建文稿" title="新建文稿 ⌘N"><FilePlus2 size={19} /></button></div><p>本机草稿与打开的文件</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
         <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim())} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} />
         <div className="library-footer"><button type="button" onClick={() => setImportOpen(true)}><Import size={18} /><span>导入文件</span><kbd>⌘O</kbd></button></div>
