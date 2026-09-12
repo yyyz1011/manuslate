@@ -80,6 +80,7 @@ function App() {
   const [renameValue, setRenameValue] = useState("");
   const [toast, setToast] = useState<string | null>(null);
   const [draftState, setDraftState] = useState<"saving" | "saved">("saved");
+  const [activeOutlineId, setActiveOutlineId] = useState<string | null>(null);
   const editorRef = useRef<MarkdownEditorHandle>(null);
   const paletteRef = useRef<HTMLElement>(null);
   const paletteReturnFocusRef = useRef<HTMLElement | null>(null);
@@ -95,6 +96,27 @@ function App() {
   const hasDisplayName = Boolean(activeHandleName && activeHandleName !== activeDocument?.name);
   const activeView = viewOptions.find((item) => item.mode === viewMode) ?? viewOptions[0];
   const ActiveViewIcon = activeView.icon;
+
+  const navigateToOutline = useCallback((item: (typeof outline)[number]) => {
+    setActiveOutlineId(item.id);
+    if (viewMode === "preview" || viewMode === "split") {
+      document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    } else {
+      editorRef.current?.scrollToLine(item.line);
+    }
+  }, [viewMode]);
+
+  const syncPreviewOutline = useCallback((event: React.UIEvent<HTMLElement>) => {
+    const pane = event.currentTarget;
+    const threshold = pane.getBoundingClientRect().top + 110;
+    let current = outline[0]?.id ?? null;
+    for (const item of outline) {
+      const heading = pane.querySelector<HTMLElement>(`#${CSS.escape(item.id)}`);
+      if (heading && heading.getBoundingClientRect().top <= threshold) current = item.id;
+      else if (heading) break;
+    }
+    setActiveOutlineId(current);
+  }, [outline]);
 
   const saveStateLabel = draftState === "saving"
     ? "正在存入恢复草稿…"
@@ -348,6 +370,9 @@ function App() {
     return () => window.clearTimeout(timeout);
   }, [documents]);
   useEffect(() => { saveCategories(categories); }, [categories]);
+  useEffect(() => {
+    setActiveOutlineId((current) => outline.some((item) => item.id === current) ? current : outline[0]?.id ?? null);
+  }, [activeDocument.id, outline]);
 
   useEffect(() => {
     if (!paletteOpen) return;
@@ -449,14 +474,15 @@ function App() {
         </header>
 
         <main className={`document-stage mode-${viewMode}`}>
+          {outline.length > 0 && <nav className="document-toc" aria-label="文内目录"><div className="document-toc-inner"><span>目录</span>{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`toc-level-${item.level}${activeOutlineId === item.id ? " active" : ""}`} onClick={() => navigateToOutline(item)} title={item.text}>{item.text}</button>)}</div></nav>}
           {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <section className="editor-pane" aria-label={viewMode === "live" ? "实时排版编辑器" : "Markdown 源码编辑器"}><Suspense fallback={<div className="editor-loading" aria-label="正在准备编辑器"><span /><span /><span /></div>}><MarkdownEditor key={activeDocument.id} ref={editorRef} value={activeDocument.content} onChange={updateActiveContent} dark={dark} focusMode={focusMode} livePreview={viewMode === "live"} /></Suspense></section>}
-          {(viewMode === "preview" || viewMode === "split") && <section className="preview-pane" aria-label="阅读视图" onDoubleClick={() => setViewMode("live")}>{activeDocument.content.trim() ? <Suspense fallback={<div className="preview-loading">正在排版…</div>}><MarkdownPreview content={activeDocument.content} /></Suspense> : <div className="empty-document"><div className="empty-caret" aria-hidden="true" /><h1>开始一篇文稿</h1><p>标题会自动成为文件的名字，也可以稍后修改。</p><button type="button" onClick={() => setViewMode("live")}><Pencil size={17} />开始写作</button></div>}</section>}
+          {(viewMode === "preview" || viewMode === "split") && <section className="preview-pane" aria-label="阅读视图" onScroll={syncPreviewOutline} onDoubleClick={() => setViewMode("live")}>{activeDocument.content.trim() ? <Suspense fallback={<div className="preview-loading">正在排版…</div>}><MarkdownPreview content={activeDocument.content} /></Suspense> : <div className="empty-document"><div className="empty-caret" aria-hidden="true" /><h1>开始一篇文稿</h1><p>标题会自动成为文件的名字，也可以稍后修改。</p><button type="button" onClick={() => setViewMode("live")}><Pencil size={17} />开始写作</button></div>}</section>}
           {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <div className="format-dock" role="toolbar" aria-label="Markdown 格式"><div className="popover-anchor insert-anchor" data-popover-root><button className={`dock-add${insertMenuOpen ? " active" : ""}`} type="button" onClick={() => setInsertMenuOpen((current) => !current)} aria-label="插入内容" aria-expanded={insertMenuOpen}><Plus size={19} /></button>{insertMenuOpen && <div className="insert-menu" role="menu" aria-label="插入内容" onKeyDown={navigateMenu}>{insertActions.map((item) => { const Icon = item.icon; return <button type="button" role="menuitem" key={item.label} onClick={() => { item.run(); setInsertMenuOpen(false); }}><Icon size={18} /><span>{item.label}</span></button>; })}</div>}</div><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.surround("**", "**", "粗体文字")} aria-label="粗体" title="粗体"><Bold size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("*", "*", "斜体文字")} aria-label="斜体" title="斜体"><Italic size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("[", "](https://)", "链接文字")} aria-label="链接" title="链接"><Link size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("`", "`", "code")} aria-label="行内代码" title="行内代码"><Code2 size={18} /></button><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.prefixLine("- ")} aria-label="列表" title="无序列表"><List size={18} /></button><button type="button" onClick={() => editorRef.current?.prefixLine("- [ ] ")} aria-label="任务" title="任务列表"><ListChecks size={18} /></button></div>}
           <footer className="document-status" aria-label="文档统计"><span>{stats.words.toLocaleString("zh-CN")} 字词</span><span>{stats.characters.toLocaleString("zh-CN")} 字符</span><span>约 {stats.minutes} 分钟</span><span className="status-spacer" /><span>{viewMode === "live" ? "实时排版" : viewMode === "source" ? "Markdown" : viewMode === "preview" ? "阅读" : "对照"}</span></footer>
         </main>
       </section>
 
-      <aside className="inspector-rail" aria-label="文档检查器"><div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label="检查器页面" onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>大纲</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>文稿</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label="关闭检查器"><X size={17} /></button></div>{inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => document.getElementById(item.id)?.scrollIntoView({ behavior: "smooth", block: "start" })}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>添加标题后，大纲会在这里自动生成。</p></div>}</nav> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>统计</span><dl><div><dt>字词</dt><dd>{stats.words.toLocaleString("zh-CN")}</dd></div><div><dt>字符</dt><dd>{stats.characters.toLocaleString("zh-CN")}</dd></div><div><dt>阅读</dt><dd>{stats.minutes} 分钟</dd></div></dl></section><section><span>文件</span><dl><div><dt>名称</dt><dd>{activeDocument.name}</dd></div><div><dt>来源</dt><dd>{activeDocument.source === "local" ? "本地文件" : activeDocument.source === "sample" ? "示例" : "恢复草稿"}</dd></div><div><dt>格式</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={cycleTheme}><SunMoon size={18} /><span><strong>外观</strong><small>{theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}</small></span><ChevronRight size={15} /></button></div>}</aside>
+      <aside className="inspector-rail" aria-label="文档检查器"><div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label="检查器页面" onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>大纲</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>文稿</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label="关闭检查器"><X size={17} /></button></div>{inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => navigateToOutline(item)}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>添加标题后，大纲会在这里自动生成。</p></div>}</nav> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>统计</span><dl><div><dt>字词</dt><dd>{stats.words.toLocaleString("zh-CN")}</dd></div><div><dt>字符</dt><dd>{stats.characters.toLocaleString("zh-CN")}</dd></div><div><dt>阅读</dt><dd>{stats.minutes} 分钟</dd></div></dl></section><section><span>文件</span><dl><div><dt>名称</dt><dd>{activeDocument.name}</dd></div><div><dt>来源</dt><dd>{activeDocument.source === "local" ? "本地文件" : activeDocument.source === "sample" ? "示例" : "恢复草稿"}</dd></div><div><dt>格式</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={cycleTheme}><SunMoon size={18} /><span><strong>外观</strong><small>{theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}</small></span><ChevronRight size={15} /></button></div>}</aside>
 
       {paletteOpen && <div className="palette-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPaletteOpen(false); }}><section ref={paletteRef} className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板"><label className="palette-search"><Search size={18} /><input autoFocus value={paletteSearch} onChange={(event) => setPaletteSearch(event.target.value)} placeholder="搜索命令与操作" /><kbd>esc</kbd></label><div className="palette-results">{commands.map((item, index) => { const Icon = item.icon; return <button key={item.label} className={index === 0 ? "suggested" : ""} type="button" onClick={() => { setPaletteOpen(false); window.setTimeout(item.run, 0); }}><Icon size={18} /><span>{item.label}</span>{item.hint && <kbd>{item.hint}</kbd>}</button>; })}{!commands.length && <p>没有匹配的命令</p>}</div></section></div>}
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importFiles} />

@@ -23,6 +23,7 @@ import { tags } from "@lezer/highlight";
 
 export interface MarkdownEditorHandle {
   focus: () => void;
+  scrollToLine: (lineNumber: number) => void;
   surround: (before: string, after?: string, placeholderText?: string) => void;
   prefixLine: (prefix: string) => void;
   insert: (text: string) => void;
@@ -452,6 +453,17 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
 
     useImperativeHandle(ref, () => ({
       focus: () => viewRef.current?.focus(),
+      scrollToLine: (lineNumber) => {
+        const view = viewRef.current;
+        if (!view) return;
+        const safeLine = Math.max(1, Math.min(lineNumber, view.state.doc.lines));
+        const line = view.state.doc.line(safeLine);
+        view.dispatch({
+          selection: EditorSelection.cursor(line.from),
+          effects: EditorView.scrollIntoView(line.from, { y: "start", yMargin: 64 }),
+        });
+        view.focus();
+      },
       surround: (before, after = before, placeholderText = "文字") => {
         const view = viewRef.current;
         if (!view) return;

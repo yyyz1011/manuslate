@@ -12,10 +12,10 @@ export function slugify(value: string): string {
 export function getOutline(content: string): OutlineItem[] {
   return content
     .split("\n")
-    .flatMap((line) => {
+    .flatMap((line, index) => {
       const match = /^(#{1,6})\s+(.+?)\s*#*$/.exec(line);
       if (!match) return [];
-      return [{ id: slugify(match[2]), level: match[1].length, text: match[2] }];
+      return [{ id: slugify(match[2]), level: match[1].length, text: match[2], line: index + 1 }];
     });
 }
 

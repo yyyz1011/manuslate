@@ -20,4 +20,5 @@ export interface OutlineItem {
   id: string;
   level: number;
   text: string;
+  line: number;
 }
