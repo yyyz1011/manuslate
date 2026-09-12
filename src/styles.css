@@ -99,6 +99,7 @@ button:focus-visible, input:focus-visible {
   background: var(--ground);
   transition: grid-template-columns 420ms var(--ease-out);
 }
+.app-shell.desktop-app { --header-height: 48px; }
 .app-shell.has-sidebar { grid-template-columns: 286px minmax(0, 1fr) 0; }
 .app-shell.has-inspector { grid-template-columns: 0 minmax(0, 1fr) 286px; }
 .app-shell.has-sidebar.has-inspector { grid-template-columns: 286px minmax(0, 1fr) 286px; }
@@ -133,13 +134,13 @@ button:focus-visible, input:focus-visible {
 .compose-button { width: 36px; height: 36px; transform: translateY(1px); }
 .compose-button:active { transform: translateY(1px) scale(0.91); }
 .library-heading p { margin: 3px 0 0; color: var(--secondary); font-size: 11px; }
-.desktop-app .library-heading { height: var(--header-height); padding: 0 10px 0 86px; border-bottom: 1px solid var(--line); background: var(--chrome); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
+.desktop-app .library-heading { height: var(--header-height); padding: 0 8px 0 82px; border-bottom: 1px solid var(--line); background: var(--chrome); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
 .desktop-app .library-title-row { height: var(--header-height); }
-.desktop-app .product-brand { gap: 7px; height: var(--header-height); }
-.desktop-app .product-brand img { width: 28px; height: 28px; transform: none; }
-.desktop-app .library-heading h1 { font-size: 17px; line-height: 22px; letter-spacing: -.025em; }
+.desktop-app .product-brand { gap: 6px; height: var(--header-height); }
+.desktop-app .product-brand img { width: 24px; height: 24px; transform: none; }
+.desktop-app .library-heading h1 { font-size: 15px; font-weight: 700; line-height: 20px; letter-spacing: -.018em; }
 .desktop-app .library-heading p { display: none; }
-.desktop-app .compose-button { width: 32px; height: 32px; }
+.desktop-app .compose-button { width: 30px; height: 30px; border-radius: 9px; }
 
 .icon-button {
   display: inline-grid;
@@ -438,6 +439,8 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
   backdrop-filter: saturate(180%) blur(22px);
 }
 .desktop-app:not(.has-sidebar) .titlebar { padding-left: 86px; }
+.desktop-app .titlebar .icon-button { width: 34px; height: 34px; border-radius: 9px; }
+.desktop-app .titlebar .view-button { height: 34px; }
 .titlebar-left, .titlebar-actions { display: flex; align-items: center; min-width: 0; }
 .titlebar-actions { justify-content: flex-end; gap: 3px; }
 .document-title-block { display: flex; min-width: 0; max-width: 360px; align-items: center; flex-direction: column; }
