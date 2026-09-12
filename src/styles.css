@@ -532,7 +532,7 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
   top: 0;
   bottom: 28px;
   left: 14px;
-  width: clamp(104px, calc((100% - 760px) / 2 - 24px), 210px);
+  width: clamp(104px, calc((100% - var(--manuscript-width)) / 2 - 24px), 210px);
   padding-top: 76px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -568,6 +568,12 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
 .mode-split .document-toc { display: none; }
 @container workspace (max-width: 860px) {
   .document-toc { display: none; }
+}
+@container workspace (max-width: 1080px) {
+  .manuscript-width-900 .document-toc { display: none; }
+}
+@container workspace (max-width: 940px) {
+  .manuscript-width-760 .document-toc { display: none; }
 }
 .editor-pane, .preview-pane { position: relative; min-width: 0; height: 100%; overflow: auto; background: var(--paper); }
 .mode-split .editor-pane { border-right: 1px solid var(--line); }
