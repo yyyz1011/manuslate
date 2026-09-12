@@ -15,6 +15,7 @@ interface FileSystemFileHandle {
 interface FileSystemDirectoryHandle {
   kind: "directory";
   name: string;
+  getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
 }
 
 interface Window {

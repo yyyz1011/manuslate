@@ -10,15 +10,38 @@ export interface MarkdownDocument {
   source: "local" | "draft" | "sample";
   categoryId?: string;
   path?: string;
+  pinned?: boolean;
 }
 export interface LibraryCategory {
   id: string;
   name: string;
   createdAt: number;
+  parentId?: string;
 }
 export interface OutlineItem {
   id: string;
   level: number;
   text: string;
   line: number;
+}
+
+export interface VersionSnapshot {
+  id: string;
+  documentId: string;
+  name: string;
+  content: string;
+  createdAt: number;
+  kind: "auto" | "named";
+}
+
+export interface TrashEntry {
+  document: MarkdownDocument;
+  deletedAt: number;
+}
+
+export interface DocumentTemplate {
+  id: string;
+  name: string;
+  description: string;
+  content: string;
 }

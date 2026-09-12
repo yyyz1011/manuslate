@@ -1,19 +1,21 @@
 import {
   Bold, BookOpen, Check, ChevronDown, ChevronRight, Code2, Columns2, Copy, Download, Eye,
-  FileCode2, FilePlus2, Focus, Heading1, Heading2, Info, Italic, Link, List,
+  Archive, Clock3, FileCode2, FilePlus2, FileSearch, Focus, Heading1, Heading2, Image, Info, Italic, Link, Link2, List,
   Import, ListChecks, ListOrdered, Menu, MoreHorizontal, PanelRight, Pencil, Plus, Printer, Quote,
-  Save, Search, Share, Sparkles, SunMoon, Table2, TextCursorInput, X,
+  Save, Search, Share, Sparkles, SunMoon, Table2, TextCursorInput, Trash2, X,
 } from "lucide-react";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MarkdownEditorHandle } from "./editor/MarkdownEditor";
 import ImportDialog, { type ImportCandidate } from "./library/ImportDialog";
 import LibraryTree from "./library/LibraryTree";
+import { HistoryDialog, TemplateDialog, TrashDialog } from "./library/WorkspaceDialogs";
 import { getOutline, getWordStats } from "./lib/document";
+import { getBacklinks, getOutgoingLinks, resolveDocumentLink } from "./lib/links";
 import {
-  loadActiveDocumentId, loadCategories, loadDocuments, loadTheme, loadViewMode, saveActiveDocumentId,
-  saveCategories, saveDocuments, saveTheme, saveViewMode,
+  builtInTemplates, loadActiveDocumentId, loadCategories, loadDocuments, loadTheme, loadTrash, loadVersions, loadViewMode, saveActiveDocumentId,
+  saveCategories, saveDocuments, saveTheme, saveTrash, saveVersions, saveViewMode,
 } from "./lib/storage";
-import type { LibraryCategory, MarkdownDocument, ThemeMode, ViewMode } from "./types";
+import type { DocumentTemplate, LibraryCategory, MarkdownDocument, ThemeMode, TrashEntry, VersionSnapshot, ViewMode } from "./types";
 
 const MarkdownEditor = lazy(() => import("./editor/MarkdownEditor"));
 const MarkdownPreview = lazy(() => import("./editor/MarkdownPreview"));
@@ -57,6 +59,9 @@ function App() {
   const initialCategories = useMemo(loadCategories, []);
   const [documents, setDocuments] = useState<MarkdownDocument[]>(initialDocuments);
   const [categories, setCategories] = useState<LibraryCategory[]>(initialCategories);
+  const [versions, setVersions] = useState<VersionSnapshot[]>(loadVersions);
+  const [trash, setTrash] = useState<TrashEntry[]>(loadTrash);
+  const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
   const [activeId, setActiveId] = useState(() => {
     const stored = loadActiveDocumentId();
     return initialDocuments.some((item) => item.id === stored) ? stored! : initialDocuments[0].id;
@@ -67,7 +72,7 @@ function App() {
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 900);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 900);
   const [inspectorOpen, setInspectorOpen] = useState(false);
-  const [inspectorTab, setInspectorTab] = useState<"outline" | "info">("outline");
+  const [inspectorTab, setInspectorTab] = useState<"outline" | "links" | "info">("outline");
   const [focusMode, setFocusMode] = useState(false);
   const [documentSearch, setDocumentSearch] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
@@ -76,6 +81,10 @@ function App() {
   const [shareMenuOpen, setShareMenuOpen] = useState(false);
   const [insertMenuOpen, setInsertMenuOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
+  const [templateOpen, setTemplateOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [trashOpen, setTrashOpen] = useState(false);
+  const [searchFilter, setSearchFilter] = useState<"all" | "title" | "content" | "pinned">("all");
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState("");
   const [toast, setToast] = useState<string | null>(null);
@@ -84,12 +93,17 @@ function App() {
   const editorRef = useRef<MarkdownEditorHandle>(null);
   const paletteRef = useRef<HTMLElement>(null);
   const paletteReturnFocusRef = useRef<HTMLElement | null>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const handlesRef = useRef(new Map<string, FileSystemFileHandle>());
+  const assetDirectoryRef = useRef<FileSystemDirectoryHandle | null>(null);
   const savedSnapshotsRef = useRef(new Map(initialDocuments.map((item) => [item.id, item.content])));
+  const autoVersionRef = useRef(new Map<string, { content: string; at: number }>());
 
   const activeDocument = documents.find((item) => item.id === activeId) ?? documents[0];
   const outline = useMemo(() => getOutline(activeDocument?.content ?? ""), [activeDocument?.content]);
   const stats = useMemo(() => getWordStats(activeDocument?.content ?? ""), [activeDocument?.content]);
+  const outgoingLinks = useMemo(() => activeDocument ? getOutgoingLinks(activeDocument, documents) : [], [activeDocument, documents]);
+  const backlinks = useMemo(() => activeDocument ? getBacklinks(activeDocument.id, documents) : [], [activeDocument, documents]);
   const dark = theme === "dark" || (theme === "system" && systemDark);
   const isDiskDirty = activeDocument ? savedSnapshotsRef.current.get(activeDocument.id) !== activeDocument.content : false;
   const activeHandleName = activeDocument ? handlesRef.current.get(activeDocument.id)?.name : undefined;
@@ -160,10 +174,12 @@ function App() {
   const navigateInspectorTabs = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
     if (event.key !== "ArrowLeft" && event.key !== "ArrowRight" && event.key !== "Home" && event.key !== "End") return;
     event.preventDefault();
-    const next = event.key === "ArrowLeft" || event.key === "Home" ? "outline" : "info";
+    const tabs = ["outline", "links", "info"] as const;
+    const current = tabs.indexOf(inspectorTab);
+    const next = event.key === "Home" ? tabs[0] : event.key === "End" ? tabs.at(-1)! : tabs[(current + (event.key === "ArrowLeft" ? -1 : 1) + tabs.length) % tabs.length];
     setInspectorTab(next);
     window.setTimeout(() => document.getElementById(`${next}-tab`)?.focus(), 0);
-  }, []);
+  }, [inspectorTab]);
 
   const openPalette = useCallback(() => {
     paletteReturnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -179,25 +195,87 @@ function App() {
   }, [dismissMenus, isCompact, notify]);
 
   const updateActiveContent = useCallback((content: string) => {
+    if (activeDocument && activeDocument.content.trim() && activeDocument.content !== content) {
+      const previous = autoVersionRef.current.get(activeDocument.id);
+      const now = Date.now();
+      if (!previous || now - previous.at > 30_000) {
+        const snapshot: VersionSnapshot = { id: uniqueId(), documentId: activeDocument.id, name: "自动版本", content: activeDocument.content, createdAt: now, kind: "auto" };
+        setVersions((current) => [snapshot, ...current.filter((item) => item.documentId !== activeDocument.id || item.content !== snapshot.content)].filter((item, index, all) => all.slice(0, index).filter((other) => other.documentId === item.documentId).length < 30));
+        autoVersionRef.current.set(activeDocument.id, { content: activeDocument.content, at: now });
+      }
+    }
     setDraftState("saving");
     setDocuments((current) => current.map((item) => item.id === activeId ? {
       ...item, content, source: item.source === "sample" ? "draft" : item.source, updatedAt: Date.now(),
     } : item));
-  }, [activeId]);
+  }, [activeDocument, activeId]);
 
   const selectDocument = useCallback((id: string) => {
     setActiveId(id); saveActiveDocumentId(id); dismissMenus();
     if (window.innerWidth < 900) setSidebarOpen(false);
   }, [dismissMenus]);
 
-  const createDocument = useCallback(() => {
+  const createDocument = useCallback((template?: DocumentTemplate) => {
     const count = documents.filter((item) => item.name.startsWith("未命名")).length + 1;
     const item = createUntitled(count);
+    if (template) {
+      item.name = template.id === "blank" ? item.name : `${template.name}.md`;
+      item.content = template.content;
+    }
     savedSnapshotsRef.current.set(item.id, item.content);
     setDocuments((current) => [item, ...current]); setActiveId(item.id); saveActiveDocumentId(item.id);
     setViewMode("live"); setSidebarOpen(window.innerWidth >= 900);
     window.setTimeout(() => editorRef.current?.focus(), 0);
+    setTemplateOpen(false);
   }, [documents, setViewMode]);
+
+  const saveNamedVersion = useCallback(() => {
+    if (!activeDocument) return;
+    const suggested = `版本 ${new Date().toLocaleString("zh-CN", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}`;
+    const name = window.prompt("版本名称", suggested)?.trim();
+    if (!name) return;
+    const snapshot: VersionSnapshot = { id: uniqueId(), documentId: activeDocument.id, name, content: activeDocument.content, createdAt: Date.now(), kind: "named" };
+    setVersions((current) => [snapshot, ...current]); notify("已保存当前版本");
+  }, [activeDocument, notify]);
+
+  const restoreVersion = useCallback((version: VersionSnapshot) => {
+    if (!window.confirm(`恢复“${version.name}”？当前内容会先保存为自动版本。`)) return;
+    if (activeDocument) setVersions((current) => [{ id: uniqueId(), documentId: activeDocument.id, name: "恢复前", content: activeDocument.content, createdAt: Date.now(), kind: "auto" }, ...current]);
+    updateActiveContent(version.content); setHistoryOpen(false); notify("版本已恢复");
+  }, [activeDocument, notify, updateActiveContent]);
+
+  const handleImageFile = useCallback(async (file: File): Promise<string | null> => {
+    try {
+      let directory = assetDirectoryRef.current;
+      if (!directory) {
+        if (!window.showDirectoryPicker) { notify("当前浏览器不支持本地资源目录"); return null; }
+        notify("请选择文稿旁边的资源目录（例如 assets）");
+        directory = await window.showDirectoryPicker({ mode: "readwrite" });
+        assetDirectoryRef.current = directory;
+      }
+      const extension = file.name.match(/\.[a-z0-9]+$/i)?.[0] || ".png";
+      const stem = file.name.replace(/\.[^.]+$/, "").replace(/[^\p{L}\p{N}_-]+/gu, "-").replace(/^-|-$/g, "") || "image";
+      const fileName = `${stem}-${Date.now()}${extension.toLocaleLowerCase()}`;
+      const handle = await directory.getFileHandle(fileName, { create: true });
+      const writable = await handle.createWritable(); await writable.write(file); await writable.close();
+      const path = `${directory.name}/${fileName}`;
+      setAssetUrls((current) => ({ ...current, [path]: URL.createObjectURL(file) }));
+      notify(`图片已存入 ${directory.name}`);
+      return path;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return null;
+      notify("图片写入失败，请重新选择资源目录"); assetDirectoryRef.current = null; return null;
+    }
+  }, [notify]);
+
+  const navigateDocumentLink = useCallback((href: string) => {
+    if (href.startsWith("#")) { document.getElementById(href.slice(1))?.scrollIntoView({ behavior: "smooth" }); return true; }
+    const resolved = resolveDocumentLink(href, documents);
+    if (!resolved.documentId) return false;
+    selectDocument(resolved.documentId);
+    if (resolved.anchor) window.setTimeout(() => document.getElementById(resolved.anchor!)?.scrollIntoView({ behavior: "smooth" }), 80);
+    return true;
+  }, [documents, selectDocument]);
 
   const importFiles = useCallback(async (files: ImportCandidate[]) => {
     if (!files.length) return;
@@ -230,10 +308,10 @@ function App() {
     notify(opened.length === 1 ? `已导入 ${opened[0].name}` : `已导入 ${opened.length} 个文稿`);
   }, [categories, notify, setViewMode]);
 
-  const createCategory = useCallback((name: string) => {
+  const createCategory = useCallback((name: string, parentId?: string) => {
     if (categories.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify("已经有同名分类"); return; }
     const id = uniqueId();
-    setCategories((current) => [...current, { id, name, createdAt: Date.now() }]);
+    setCategories((current) => [...current, { id, name, createdAt: Date.now(), parentId }]);
     return id;
   }, [categories, notify]);
 
@@ -243,22 +321,27 @@ function App() {
   }, [categories, notify]);
 
   const deleteCategory = useCallback((id: string) => {
-    setCategories((current) => current.filter((item) => item.id !== id));
-    setDocuments((current) => current.map((item) => item.categoryId === id ? { ...item, categoryId: undefined } : item));
+    const descendants = new Set<string>([id]);
+    let changed = true;
+    while (changed) { changed = false; categories.forEach((item) => { if (item.parentId && descendants.has(item.parentId) && !descendants.has(item.id)) { descendants.add(item.id); changed = true; } }); }
+    setCategories((current) => current.filter((item) => !descendants.has(item.id)));
+    setDocuments((current) => current.map((item) => item.categoryId && descendants.has(item.categoryId) ? { ...item, categoryId: undefined } : item));
     notify("分类已删除，文稿已移到未分类");
-  }, [notify]);
+  }, [categories, notify]);
 
   const moveDocument = useCallback((documentId: string, categoryId?: string) => {
     setDocuments((current) => current.map((item) => item.id === documentId ? { ...item, categoryId } : item));
+  }, []);
+
+  const togglePinned = useCallback((documentId: string) => {
+    setDocuments((current) => current.map((item) => item.id === documentId ? { ...item, pinned: !item.pinned, updatedAt: Date.now() } : item));
   }, []);
 
   const deleteDocument = useCallback((documentId: string) => {
     const target = documents.find((item) => item.id === documentId);
     if (!target) return;
     const isLocalFile = target.source === "local";
-    const message = isLocalFile
-      ? `从资料库移除“${withoutExtension(target.name)}”？\n\n电脑上的原文件不会被删除。`
-      : `删除“${withoutExtension(target.name)}”？\n\n此操作会删除本机恢复草稿。`;
+    const message = `把“${withoutExtension(target.name)}”移到最近删除？${isLocalFile ? "\n\n电脑上的原文件不会被删除。" : ""}`;
     if (!window.confirm(message)) return;
 
     const remaining = documents.filter((item) => item.id !== documentId);
@@ -270,13 +353,25 @@ function App() {
     }
     handlesRef.current.delete(documentId);
     savedSnapshotsRef.current.delete(documentId);
+    setTrash((current) => [{ document: target, deletedAt: Date.now() }, ...current.filter((entry) => entry.document.id !== target.id)]);
     setDocuments(nextDocuments);
     if (activeId === documentId) {
       setActiveId(nextDocuments[0].id);
       saveActiveDocumentId(nextDocuments[0].id);
     }
-    notify(isLocalFile ? "已从资料库移除，本地文件仍在电脑上" : "文稿已删除");
+    notify(isLocalFile ? "已移到最近删除，本地文件仍在电脑上" : "已移到最近删除");
   }, [activeId, documents, notify]);
+
+  const restoreTrashEntry = useCallback((entry: TrashEntry) => {
+    setDocuments((current) => [entry.document, ...current.filter((item) => item.id !== entry.document.id)]);
+    setTrash((current) => current.filter((item) => item.document.id !== entry.document.id));
+    setActiveId(entry.document.id); saveActiveDocumentId(entry.document.id); notify("文稿已恢复");
+  }, [notify]);
+
+  const deleteTrashEntry = useCallback((entry: TrashEntry) => {
+    if (!window.confirm(`永久删除“${withoutExtension(entry.document.name)}”的恢复记录？此操作不可撤销。`)) return;
+    setTrash((current) => current.filter((item) => item.document.id !== entry.document.id));
+  }, []);
 
   const saveActive = useCallback(async () => {
     if (!activeDocument) return;
@@ -370,6 +465,15 @@ function App() {
     return () => window.clearTimeout(timeout);
   }, [documents]);
   useEffect(() => { saveCategories(categories); }, [categories]);
+  useEffect(() => { saveVersions(versions); }, [versions]);
+  useEffect(() => { saveTrash(trash); }, [trash]);
+  useEffect(() => {
+    const retainedIds = new Set([...documents.map((item) => item.id), ...trash.map((entry) => entry.document.id)]);
+    setVersions((current) => {
+      const next = current.filter((item) => retainedIds.has(item.documentId));
+      return next.length === current.length ? current : next;
+    });
+  }, [documents, trash]);
   useEffect(() => {
     setActiveOutlineId((current) => outline.some((item) => item.id === current) ? current : outline[0]?.id ?? null);
   }, [activeDocument.id, outline]);
@@ -407,13 +511,23 @@ function App() {
 
   const filteredDocuments = useMemo(() => {
     const query = documentSearch.trim().toLocaleLowerCase();
-    return [...documents].filter((item) => !query || item.name.toLocaleLowerCase().includes(query) || item.content.toLocaleLowerCase().includes(query)).sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [documentSearch, documents]);
+    return [...documents].filter((item) => {
+      if (searchFilter === "pinned" && !item.pinned) return false;
+      if (!query) return true;
+      if (searchFilter === "title") return item.name.toLocaleLowerCase().includes(query);
+      if (searchFilter === "content") return item.content.toLocaleLowerCase().includes(query);
+      return item.name.toLocaleLowerCase().includes(query) || item.content.toLocaleLowerCase().includes(query);
+    }).sort((a, b) => Number(Boolean(b.pinned)) - Number(Boolean(a.pinned)) || b.updatedAt - a.updatedAt);
+  }, [documentSearch, documents, searchFilter]);
 
   const commands = [
-    { label: "新建文稿", hint: "⌘N", icon: FilePlus2, run: createDocument },
+    { label: "新建文稿", hint: "⌘N", icon: FilePlus2, run: () => setTemplateOpen(true) },
     { label: "导入 Markdown", hint: "⌘O", icon: Import, run: () => setImportOpen(true) },
     { label: "写入本地文件", hint: "⌘S", icon: Save, run: () => void saveActive() },
+    { label: "在文稿中查找与替换", hint: "⌘F", icon: FileSearch, run: () => { setViewMode("live"); window.setTimeout(() => editorRef.current?.openSearch(), 40); } },
+    { label: "保存当前版本", hint: "", icon: Clock3, run: saveNamedVersion },
+    { label: "查看版本记录", hint: "", icon: Archive, run: () => setHistoryOpen(true) },
+    { label: "最近删除", hint: "", icon: Trash2, run: () => setTrashOpen(true) },
     { label: "实时排版", hint: "⌘1", icon: TextCursorInput, run: () => setViewMode("live") },
     { label: "阅读视图", hint: "⌘2", icon: Eye, run: () => setViewMode("preview") },
     { label: "Markdown 源码", hint: "⌘3", icon: FileCode2, run: () => setViewMode("source") },
@@ -445,10 +559,11 @@ function App() {
       {sidebarOpen && <button className="mobile-scrim" aria-label="关闭文稿列表" onClick={() => setSidebarOpen(false)} />}
 
       <aside className="library-rail" aria-label="文稿列表">
-        <div className="library-heading"><div className="library-title-row"><h1>文稿</h1><button className="icon-button compose-button" type="button" onClick={createDocument} aria-label="新建文稿" title="新建文稿 ⌘N"><FilePlus2 size={19} /></button></div><p>本机草稿与打开的文件</p></div>
+        <div className="library-heading"><div className="library-title-row"><h1>文稿</h1><button className="icon-button compose-button" type="button" onClick={() => setTemplateOpen(true)} aria-label="新建文稿" title="新建文稿"><FilePlus2 size={19} /></button></div><p>本机草稿与打开的文件</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
-        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim())} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} />
-        <div className="library-footer"><button type="button" onClick={() => setImportOpen(true)}><Import size={18} /><span>导入文件</span><kbd>⌘O</kbd></button></div>
+        <div className="search-scopes" role="group" aria-label="搜索范围">{([ ["all", "全部"], ["title", "标题"], ["content", "正文"], ["pinned", "置顶"] ] as const).map(([value, label]) => <button type="button" className={searchFilter === value ? "active" : ""} key={value} onClick={() => setSearchFilter(value)}>{label}</button>)}</div>
+        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onTogglePinned={togglePinned} />
+        <div className="library-footer"><button type="button" onClick={() => setImportOpen(true)}><Import size={18} /><span>导入文件</span><kbd>⌘O</kbd></button><button type="button" onClick={() => setTrashOpen(true)}><Trash2 size={17} /><span>最近删除</span>{trash.length > 0 && <b>{trash.length}</b>}</button></div>
       </aside>
 
       <section className="workspace">
@@ -475,17 +590,20 @@ function App() {
 
         <main className={`document-stage mode-${viewMode}`}>
           {outline.length > 0 && <nav className="document-toc" aria-label="文内目录"><div className="document-toc-inner"><span>目录</span>{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`toc-level-${item.level}${activeOutlineId === item.id ? " active" : ""}`} onClick={() => navigateToOutline(item)} title={item.text}>{item.text}</button>)}</div></nav>}
-          {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <section className="editor-pane" aria-label={viewMode === "live" ? "实时排版编辑器" : "Markdown 源码编辑器"}><Suspense fallback={<div className="editor-loading" aria-label="正在准备编辑器"><span /><span /><span /></div>}><MarkdownEditor key={activeDocument.id} ref={editorRef} value={activeDocument.content} onChange={updateActiveContent} dark={dark} focusMode={focusMode} livePreview={viewMode === "live"} /></Suspense></section>}
-          {(viewMode === "preview" || viewMode === "split") && <section className="preview-pane" aria-label="阅读视图" onScroll={syncPreviewOutline} onDoubleClick={() => setViewMode("live")}>{activeDocument.content.trim() ? <Suspense fallback={<div className="preview-loading">正在排版…</div>}><MarkdownPreview content={activeDocument.content} /></Suspense> : <div className="empty-document"><div className="empty-caret" aria-hidden="true" /><h1>开始一篇文稿</h1><p>标题会自动成为文件的名字，也可以稍后修改。</p><button type="button" onClick={() => setViewMode("live")}><Pencil size={17} />开始写作</button></div>}</section>}
-          {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <div className="format-dock" role="toolbar" aria-label="Markdown 格式"><div className="popover-anchor insert-anchor" data-popover-root><button className={`dock-add${insertMenuOpen ? " active" : ""}`} type="button" onClick={() => setInsertMenuOpen((current) => !current)} aria-label="插入内容" aria-expanded={insertMenuOpen}><Plus size={19} /></button>{insertMenuOpen && <div className="insert-menu" role="menu" aria-label="插入内容" onKeyDown={navigateMenu}>{insertActions.map((item) => { const Icon = item.icon; return <button type="button" role="menuitem" key={item.label} onClick={() => { item.run(); setInsertMenuOpen(false); }}><Icon size={18} /><span>{item.label}</span></button>; })}</div>}</div><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.surround("**", "**", "粗体文字")} aria-label="粗体" title="粗体"><Bold size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("*", "*", "斜体文字")} aria-label="斜体" title="斜体"><Italic size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("[", "](https://)", "链接文字")} aria-label="链接" title="链接"><Link size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("`", "`", "code")} aria-label="行内代码" title="行内代码"><Code2 size={18} /></button><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.prefixLine("- ")} aria-label="列表" title="无序列表"><List size={18} /></button><button type="button" onClick={() => editorRef.current?.prefixLine("- [ ] ")} aria-label="任务" title="任务列表"><ListChecks size={18} /></button></div>}
+          {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <section className="editor-pane" aria-label={viewMode === "live" ? "实时排版编辑器" : "Markdown 源码编辑器"}><Suspense fallback={<div className="editor-loading" aria-label="正在准备编辑器"><span /><span /><span /></div>}><MarkdownEditor key={activeDocument.id} ref={editorRef} value={activeDocument.content} onChange={updateActiveContent} dark={dark} focusMode={focusMode} livePreview={viewMode === "live"} onImageFile={handleImageFile} /></Suspense></section>}
+          {(viewMode === "preview" || viewMode === "split") && <section className="preview-pane" aria-label="阅读视图" onScroll={syncPreviewOutline} onDoubleClick={() => setViewMode("live")}>{activeDocument.content.trim() ? <Suspense fallback={<div className="preview-loading">正在排版…</div>}><MarkdownPreview content={activeDocument.content} onNavigate={navigateDocumentLink} assetUrls={assetUrls} /></Suspense> : <div className="empty-document"><div className="empty-caret" aria-hidden="true" /><h1>开始一篇文稿</h1><p>标题会自动成为文件的名字，也可以稍后修改。</p><button type="button" onClick={() => setViewMode("live")}><Pencil size={17} />开始写作</button></div>}</section>}
+          {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <div className="format-dock" role="toolbar" aria-label="Markdown 格式"><div className="popover-anchor insert-anchor" data-popover-root><button className={`dock-add${insertMenuOpen ? " active" : ""}`} type="button" onClick={() => setInsertMenuOpen((current) => !current)} aria-label="插入内容" aria-expanded={insertMenuOpen}><Plus size={19} /></button>{insertMenuOpen && <div className="insert-menu" role="menu" aria-label="插入内容" onKeyDown={navigateMenu}>{insertActions.map((item) => { const Icon = item.icon; return <button type="button" role="menuitem" key={item.label} onClick={() => { item.run(); setInsertMenuOpen(false); }}><Icon size={18} /><span>{item.label}</span></button>; })}</div>}</div><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.surround("**", "**", "粗体文字")} aria-label="粗体" title="粗体"><Bold size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("*", "*", "斜体文字")} aria-label="斜体" title="斜体"><Italic size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("[", "](https://)", "链接文字")} aria-label="链接" title="链接"><Link size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("`", "`", "code")} aria-label="行内代码" title="行内代码"><Code2 size={18} /></button><button type="button" onClick={() => imageInputRef.current?.click()} aria-label="插入本地图片" title="插入本地图片"><Image size={18} /></button><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.prefixLine("- ")} aria-label="列表" title="无序列表"><List size={18} /></button><button type="button" onClick={() => editorRef.current?.prefixLine("- [ ] ")} aria-label="任务" title="任务列表"><ListChecks size={18} /></button><input ref={imageInputRef} className="visually-hidden" type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleImageFile(file).then((path) => path && editorRef.current?.insert(`![${file.name.replace(/\.[^.]+$/, "") || "图片"}](${path})`)); event.currentTarget.value = ""; }} /></div>}
           <footer className="document-status" aria-label="文档统计"><span>{stats.words.toLocaleString("zh-CN")} 字词</span><span>{stats.characters.toLocaleString("zh-CN")} 字符</span><span>约 {stats.minutes} 分钟</span><span className="status-spacer" /><span>{viewMode === "live" ? "实时排版" : viewMode === "source" ? "Markdown" : viewMode === "preview" ? "阅读" : "对照"}</span></footer>
         </main>
       </section>
 
-      <aside className="inspector-rail" aria-label="文档检查器"><div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label="检查器页面" onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>大纲</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>文稿</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label="关闭检查器"><X size={17} /></button></div>{inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => navigateToOutline(item)}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>添加标题后，大纲会在这里自动生成。</p></div>}</nav> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>统计</span><dl><div><dt>字词</dt><dd>{stats.words.toLocaleString("zh-CN")}</dd></div><div><dt>字符</dt><dd>{stats.characters.toLocaleString("zh-CN")}</dd></div><div><dt>阅读</dt><dd>{stats.minutes} 分钟</dd></div></dl></section><section><span>文件</span><dl><div><dt>名称</dt><dd>{activeDocument.name}</dd></div><div><dt>来源</dt><dd>{activeDocument.source === "local" ? "本地文件" : activeDocument.source === "sample" ? "示例" : "恢复草稿"}</dd></div><div><dt>格式</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={cycleTheme}><SunMoon size={18} /><span><strong>外观</strong><small>{theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}</small></span><ChevronRight size={15} /></button></div>}</aside>
+      <aside className="inspector-rail" aria-label="文档检查器"><div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label="检查器页面" onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>大纲</button><button id="links-tab" role="tab" aria-selected={inspectorTab === "links"} aria-controls="links-panel" tabIndex={inspectorTab === "links" ? 0 : -1} className={inspectorTab === "links" ? "active" : ""} type="button" onClick={() => setInspectorTab("links")}>链接</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>文稿</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label="关闭检查器"><X size={17} /></button></div>{inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => navigateToOutline(item)}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>添加标题后，大纲会在这里自动生成。</p></div>}</nav> : inspectorTab === "links" ? <div id="links-panel" role="tabpanel" aria-labelledby="links-tab" className="links-panel"><section><span>引用本文 · {backlinks.length}</span>{backlinks.map((item) => <button type="button" key={item.id} onClick={() => selectDocument(item.id)}><Link2 size={14} /><span>{withoutExtension(item.name)}</span></button>)}{!backlinks.length && <p>还没有其他文稿链接到这里。</p>}</section><section><span>本文链接 · {outgoingLinks.length}</span>{outgoingLinks.map((item, index) => <button type="button" className={item.broken ? "broken" : ""} key={`${item.href}-${index}`} onClick={() => item.documentId && selectDocument(item.documentId)}><Link size={14} /><span><strong>{item.label}</strong><small>{item.broken ? `失效 · ${item.href}` : item.href}</small></span></button>)}{!outgoingLinks.length && <p>使用 `[标题](文件.md)` 建立文稿关系。</p>}</section></div> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>统计</span><dl><div><dt>字词</dt><dd>{stats.words.toLocaleString("zh-CN")}</dd></div><div><dt>字符</dt><dd>{stats.characters.toLocaleString("zh-CN")}</dd></div><div><dt>阅读</dt><dd>{stats.minutes} 分钟</dd></div></dl></section><section><span>文件</span><dl><div><dt>名称</dt><dd>{activeDocument.name}</dd></div><div><dt>来源</dt><dd>{activeDocument.source === "local" ? "本地文件" : activeDocument.source === "sample" ? "示例" : "恢复草稿"}</dd></div><div><dt>格式</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={cycleTheme}><SunMoon size={18} /><span><strong>外观</strong><small>{theme === "system" ? "跟随系统" : theme === "light" ? "浅色" : "深色"}</small></span><ChevronRight size={15} /></button><button className="theme-row" type="button" onClick={() => setHistoryOpen(true)}><Clock3 size={18} /><span><strong>版本记录</strong><small>{versions.filter((item) => item.documentId === activeDocument.id).length} 个本地版本</small></span><ChevronRight size={15} /></button></div>}</aside>
 
       {paletteOpen && <div className="palette-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPaletteOpen(false); }}><section ref={paletteRef} className="command-palette" role="dialog" aria-modal="true" aria-label="命令面板"><label className="palette-search"><Search size={18} /><input autoFocus value={paletteSearch} onChange={(event) => setPaletteSearch(event.target.value)} placeholder="搜索命令与操作" /><kbd>esc</kbd></label><div className="palette-results">{commands.map((item, index) => { const Icon = item.icon; return <button key={item.label} className={index === 0 ? "suggested" : ""} type="button" onClick={() => { setPaletteOpen(false); window.setTimeout(item.run, 0); }}><Icon size={18} /><span>{item.label}</span>{item.hint && <kbd>{item.hint}</kbd>}</button>; })}{!commands.length && <p>没有匹配的命令</p>}</div></section></div>}
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importFiles} />
+      <TemplateDialog open={templateOpen} templates={builtInTemplates} onClose={() => setTemplateOpen(false)} onCreate={createDocument} />
+      <HistoryDialog open={historyOpen} document={activeDocument} versions={versions.filter((item) => item.documentId === activeDocument.id)} onClose={() => setHistoryOpen(false)} onRestore={restoreVersion} onNameVersion={saveNamedVersion} />
+      <TrashDialog open={trashOpen} entries={trash} onClose={() => setTrashOpen(false)} onRestore={restoreTrashEntry} onDelete={deleteTrashEntry} />
       {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}
     </div>
   );

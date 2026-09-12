@@ -1,10 +1,12 @@
-import type { LibraryCategory, MarkdownDocument, ThemeMode, ViewMode } from "../types";
+import type { DocumentTemplate, LibraryCategory, MarkdownDocument, ThemeMode, TrashEntry, VersionSnapshot, ViewMode } from "../types";
 
 const DOCUMENTS_KEY = "patchmark-core.documents.v1";
 const ACTIVE_KEY = "patchmark-core.active-document.v1";
 const VIEW_KEY = "patchmark-core.view-mode.v1";
 const THEME_KEY = "patchmark-core.theme.v1";
 const CATEGORIES_KEY = "patchmark-core.categories.v1";
+const VERSIONS_KEY = "patchmark-core.versions.v1";
+const TRASH_KEY = "patchmark-core.trash.v1";
 
 export const welcomeDocument: MarkdownDocument = {
   id: "welcome-to-patchmark",
@@ -87,6 +89,30 @@ export function loadCategories(): LibraryCategory[] {
 export function saveCategories(categories: LibraryCategory[]): void {
   localStorage.setItem(CATEGORIES_KEY, JSON.stringify(categories));
 }
+
+export function loadVersions(): VersionSnapshot[] {
+  return safeParse<VersionSnapshot[]>(localStorage.getItem(VERSIONS_KEY), []);
+}
+
+export function saveVersions(versions: VersionSnapshot[]): void {
+  localStorage.setItem(VERSIONS_KEY, JSON.stringify(versions));
+}
+
+export function loadTrash(): TrashEntry[] {
+  return safeParse<TrashEntry[]>(localStorage.getItem(TRASH_KEY), []);
+}
+
+export function saveTrash(entries: TrashEntry[]): void {
+  localStorage.setItem(TRASH_KEY, JSON.stringify(entries));
+}
+
+export const builtInTemplates: DocumentTemplate[] = [
+  { id: "blank", name: "空白文稿", description: "从一个安静页面开始", content: "" },
+  { id: "meeting", name: "会议记录", description: "议题、结论和待办", content: "# 会议记录\n\n**日期：** \n**参与人：** \n\n## 议题\n\n- \n\n## 结论\n\n- \n\n## 待办\n\n- [ ] \n" },
+  { id: "project", name: "项目计划", description: "目标、里程碑和风险", content: "# 项目计划\n\n## 目标\n\n\n## 里程碑\n\n- [ ] 第一阶段\n- [ ] 第二阶段\n\n## 风险与决策\n\n" },
+  { id: "readme", name: "README", description: "适合开源项目说明", content: "# 项目名称\n\n一句话说明这个项目。\n\n## 特点\n\n- \n\n## 开始使用\n\n```bash\n\n```\n\n## License\n\nMIT\n" },
+  { id: "daily", name: "每日笔记", description: "聚焦今天和下一步", content: "# 今日笔记\n\n## 今天最重要的事\n\n- \n\n## 记录\n\n\n## 下一步\n\n- [ ] \n" },
+];
 
 export function loadActiveDocumentId(): string | null {
   return localStorage.getItem(ACTIVE_KEY);

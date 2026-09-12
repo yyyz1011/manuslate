@@ -1,8 +1,8 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting, syntaxTree } from "@codemirror/language";
-import { searchKeymap } from "@codemirror/search";
+import { openSearchPanel, searchKeymap } from "@codemirror/search";
 import { Compartment, EditorSelection, EditorState } from "@codemirror/state";
 import {
   drawSelection,
@@ -27,6 +27,7 @@ export interface MarkdownEditorHandle {
   surround: (before: string, after?: string, placeholderText?: string) => void;
   prefixLine: (prefix: string) => void;
   insert: (text: string) => void;
+  openSearch: () => void;
 }
 
 interface MarkdownEditorProps {
@@ -35,7 +36,21 @@ interface MarkdownEditorProps {
   dark: boolean;
   focusMode: boolean;
   livePreview: boolean;
+  onImageFile?: (file: File) => Promise<string | null>;
 }
+
+interface FloatingPosition { left: number; top: number }
+interface SlashState extends FloatingPosition { from: number; to: number; query: string }
+
+const slashActions = [
+  { key: "标题1 h1", label: "一级标题", detail: "大标题", text: "# " },
+  { key: "标题2 h2", label: "二级标题", detail: "章节标题", text: "## " },
+  { key: "任务 todo", label: "任务列表", detail: "可勾选事项", text: "- [ ] " },
+  { key: "引用 quote", label: "引用", detail: "突出一段话", text: "> " },
+  { key: "代码 code", label: "代码块", detail: "带语法高亮", text: "```\n\n```" },
+  { key: "表格 table", label: "表格", detail: "两列起步", text: "| 列 1 | 列 2 |\n| --- | --- |\n| 内容 | 内容 |" },
+  { key: "分割线 divider", label: "分割线", detail: "分隔章节", text: "---" },
+];
 
 const lightHighlight = HighlightStyle.define([
   { tag: tags.heading, color: "#155fb4", fontWeight: "650" },
@@ -375,14 +390,47 @@ function makeTheme(dark: boolean, livePreview: boolean) {
 }
 
 const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
-  ({ value, onChange, dark, focusMode, livePreview }, ref) => {
+  ({ value, onChange, dark, focusMode, livePreview, onImageFile }, ref) => {
     const hostRef = useRef<HTMLDivElement>(null);
+    const shellRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
     const onChangeRef = useRef(onChange);
     const themeCompartment = useRef(new Compartment());
     const highlightCompartment = useRef(new Compartment());
     const focusCompartment = useRef(new Compartment());
     const liveCompartment = useRef(new Compartment());
+    const [selectionToolbar, setSelectionToolbar] = useState<FloatingPosition | null>(null);
+    const [slash, setSlash] = useState<SlashState | null>(null);
+
+    const updateFloatingUI = (view: EditorView) => {
+      const shell = shellRef.current;
+      if (!shell || !view.hasFocus) { setSelectionToolbar(null); setSlash(null); return; }
+      const selection = view.state.selection.main;
+      const shellRect = shell.getBoundingClientRect();
+      if (!selection.empty) {
+        const start = view.coordsAtPos(selection.from); const end = view.coordsAtPos(selection.to);
+        if (start && end) setSelectionToolbar({ left: Math.min(shellRect.width - 130, Math.max(130, (start.left + end.right) / 2 - shellRect.left)), top: Math.max(8, start.top - shellRect.top - 48) });
+      } else setSelectionToolbar(null);
+      const line = view.state.doc.lineAt(selection.head);
+      const before = view.state.sliceDoc(line.from, selection.head);
+      const match = before.match(/^\/(.*)$/);
+      if (selection.empty && match && !match[1].includes(" ")) {
+        const coords = view.coordsAtPos(selection.head);
+        if (coords) setSlash({ from: line.from, to: line.to, query: match[1].toLocaleLowerCase(), left: Math.min(shellRect.width - 292, Math.max(12, coords.left - shellRect.left)), top: Math.min(shellRect.height - 300, coords.bottom - shellRect.top + 8) });
+      } else setSlash(null);
+    };
+
+    const insertImage = async (file: File) => {
+      const view = viewRef.current;
+      if (!view || !onImageFile) return;
+      const selection = view.state.selection.main;
+      const path = await onImageFile(file);
+      if (!path || !viewRef.current) return;
+      const alt = file.name.replace(/\.[^.]+$/, "") || "图片";
+      const markdown = `![${alt}](${path})`;
+      viewRef.current.dispatch({ changes: { from: selection.from, to: selection.to, insert: markdown }, selection: { anchor: selection.from + markdown.length }, scrollIntoView: true });
+      viewRef.current.focus();
+    };
 
     useEffect(() => {
       onChangeRef.current = onChange;
@@ -410,6 +458,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
           liveCompartment.current.of(livePreview ? livePreviewPlugin : []),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) onChangeRef.current(update.state.doc.toString());
+            if (update.docChanged || update.selectionSet || update.focusChanged || update.viewportChanged) updateFloatingUI(update.view);
           }),
         ],
       });
@@ -504,14 +553,19 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
         });
         view.focus();
       },
+      openSearch: () => {
+        const view = viewRef.current;
+        if (!view) return;
+        openSearchPanel(view); view.focus();
+      },
     }));
 
     return (
-      <div
-        ref={hostRef}
-        className={`markdown-editor${focusMode ? " is-focus-mode" : ""}${livePreview ? " is-live-preview" : " is-source"}`}
-        aria-label="Markdown 编辑器"
-      />
+      <div ref={shellRef} className="markdown-editor-shell" onPasteCapture={(event) => { const image = Array.from(event.clipboardData.files).find((file) => file.type.startsWith("image/")); if (image && onImageFile) { event.preventDefault(); void insertImage(image); } }} onDragOver={(event) => { if (Array.from(event.dataTransfer.items).some((item) => item.type.startsWith("image/"))) event.preventDefault(); }} onDropCapture={(event) => { const image = Array.from(event.dataTransfer.files).find((file) => file.type.startsWith("image/")); if (image && onImageFile) { event.preventDefault(); void insertImage(image); } }}>
+        <div ref={hostRef} className={`markdown-editor${focusMode ? " is-focus-mode" : ""}${livePreview ? " is-live-preview" : " is-source"}`} aria-label="Markdown 编辑器" />
+        {selectionToolbar && <div className="selection-toolbar" style={{ left: selectionToolbar.left, top: selectionToolbar.top }} role="toolbar" aria-label="所选文字格式"><button type="button" onMouseDown={(event) => { event.preventDefault(); viewRef.current && (() => { const view = viewRef.current!; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `**${text}**` }, selection: EditorSelection.range(s.from + 2, s.to + 2) }); view.focus(); })(); }}>B</button><button type="button" className="italic-control" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `*${text}*` }, selection: EditorSelection.range(s.from + 1, s.to + 1) }); view.focus(); }}>I</button><button type="button" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); const inserted = `[${text}](https://)`; view.dispatch({ changes: { from: s.from, to: s.to, insert: inserted }, selection: EditorSelection.range(s.from + text.length + 3, s.from + text.length + 11) }); view.focus(); }}>链接</button><button type="button" onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; const s = view.state.selection.main; const text = view.state.sliceDoc(s.from, s.to); view.dispatch({ changes: { from: s.from, to: s.to, insert: `\`${text}\`` }, selection: EditorSelection.range(s.from + 1, s.to + 1) }); view.focus(); }}>&lt;/&gt;</button></div>}
+        {slash && <div className="slash-menu" style={{ left: slash.left, top: slash.top }} role="menu" aria-label="快速插入"><span>快速插入</span>{slashActions.filter((action) => !slash.query || action.key.includes(slash.query) || action.label.toLocaleLowerCase().includes(slash.query)).map((action) => <button type="button" role="menuitem" key={action.label} onMouseDown={(event) => { event.preventDefault(); const view = viewRef.current; if (!view) return; view.dispatch({ changes: { from: slash.from, to: slash.to, insert: action.text }, selection: { anchor: slash.from + (action.text.includes("\n\n") ? action.text.indexOf("\n\n") + 1 : action.text.length) }, scrollIntoView: true }); setSlash(null); view.focus(); }}><strong>{action.label}</strong><small>{action.detail}</small></button>)}</div>}
+      </div>
     );
   },
 );
