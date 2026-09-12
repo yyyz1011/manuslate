@@ -32,7 +32,7 @@ The name combines **manuscript** and **slate**: a calm surface for turning struc
 ### Local library
 
 - File and folder import with preserved relative paths
-- Nested categories, pinned documents, drag-to-organize, and multi-select
+- Nested categories, pinned documents, drag-to-organize, multi-select, and recoverable batch removal for documents, folders, and categories
 - Scoped library search, backlinks, and broken-link checks
 - User-selected default folder for new documents
 

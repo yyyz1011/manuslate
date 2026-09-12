@@ -70,6 +70,18 @@ function safeMarkdownName(name: string): string {
   return /\.(md|markdown|mdown|txt)$/i.test(normalized) ? normalized : `${normalized}.md`;
 }
 
+function categoryAndDescendantIds(categories: LibraryCategory[], roots: Iterable<string>): Set<string> {
+  const ids = new Set(roots);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    categories.forEach((item) => {
+      if (item.parentId && ids.has(item.parentId) && !ids.has(item.id)) { ids.add(item.id); changed = true; }
+    });
+  }
+  return ids;
+}
+
 async function createUniqueFileHandle(directory: FileSystemDirectoryHandle, suggestedName: string): Promise<FileSystemFileHandle> {
   const fileName = safeMarkdownName(suggestedName);
   const extension = fileName.match(/\.[^.]+$/)?.[0] ?? ".md";
@@ -134,7 +146,12 @@ function App() {
   const [draftState, setDraftState] = useState<"saving" | "saved">("saved");
   const [activeOutlineId, setActiveOutlineId] = useState<string | null>(null);
   const [fileConflict, setFileConflict] = useState<FileConflict | null>(null);
-  const [pendingDelete, setPendingDelete] = useState<{ kind: "category" | "document"; id: string } | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<
+    { kind: "category"; id: string }
+    | { kind: "document"; id: string }
+    | { kind: "batch"; documentIds: string[]; categoryIds: string[]; selectedCount: number; folderCount: number }
+    | null
+  >(null);
   const [handleAccess, setHandleAccess] = useState<Record<string, "granted" | "prompt" | "denied" | "missing">>({});
   const [defaultDirectoryPath, setDefaultDirectoryPath] = useState<string | null>(() => desktopApp ? localStorage.getItem(NATIVE_DEFAULT_DIRECTORY_KEY) : null);
   const [defaultDirectoryName, setDefaultDirectoryName] = useState<string | null>(() => {
@@ -455,16 +472,18 @@ function App() {
     setPendingDelete({ kind: "document", id: documentId });
   }, []);
 
+  const deleteSelection = useCallback((selection: { documentIds: string[]; categoryIds: string[]; selectedCount: number; folderCount: number }) => {
+    setPendingDelete({ kind: "batch", ...selection });
+  }, []);
+
   const confirmPendingDelete = useCallback(() => {
     if (!pendingDelete) return;
     if (pendingDelete.kind === "category") {
-      const descendants = new Set<string>([pendingDelete.id]);
-      let changed = true;
-      while (changed) { changed = false; categories.forEach((item) => { if (item.parentId && descendants.has(item.parentId) && !descendants.has(item.id)) { descendants.add(item.id); changed = true; } }); }
+      const descendants = categoryAndDescendantIds(categories, [pendingDelete.id]);
       setCategories((current) => current.filter((item) => !descendants.has(item.id)));
       setDocuments((current) => current.map((item) => item.categoryId && descendants.has(item.categoryId) ? { ...item, categoryId: undefined } : item));
       notify(t("Category deleted; documents moved to Uncategorized.", "分类已删除，文稿已移到未分类"));
-    } else {
+    } else if (pendingDelete.kind === "document") {
       const target = documents.find((item) => item.id === pendingDelete.id);
       if (target) {
         const remaining = documents.filter((item) => item.id !== target.id);
@@ -482,6 +501,27 @@ function App() {
         }
         notify(target.source === "local" ? t("Moved to Recently Deleted; the local file remains on your computer.", "已移到最近删除，本地文件仍在电脑上") : t("Moved to Recently Deleted", "已移到最近删除"));
       }
+    } else {
+      const categoryIds = categoryAndDescendantIds(categories, pendingDelete.categoryIds);
+      const documentIds = new Set(pendingDelete.documentIds);
+      documents.forEach((item) => { if (item.categoryId && categoryIds.has(item.categoryId)) documentIds.add(item.id); });
+      const targets = documents.filter((item) => documentIds.has(item.id));
+      const remaining = documents.filter((item) => !documentIds.has(item.id));
+      let nextDocuments = remaining;
+      if (!remaining.length) {
+        const replacement = createUntitled(1, t("Untitled", "未命名"));
+        savedSnapshotsRef.current.set(replacement.id, replacement.content);
+        nextDocuments = [replacement];
+      }
+      const deletedAt = Date.now();
+      setCategories((current) => current.filter((item) => !categoryIds.has(item.id)));
+      setTrash((current) => [...targets.map((document) => ({ document, deletedAt })), ...current.filter((entry) => !documentIds.has(entry.document.id))]);
+      setDocuments(nextDocuments);
+      if (documentIds.has(activeId)) {
+        setActiveId(nextDocuments[0].id);
+        saveActiveDocumentId(nextDocuments[0].id);
+      }
+      notify(t(`${pendingDelete.selectedCount} items removed; ${targets.length} documents moved to Recently Deleted.`, `已删除 ${pendingDelete.selectedCount} 个所选项目，${targets.length} 篇文稿已移到最近删除`));
     }
     setPendingDelete(null);
   }, [activeId, categories, documents, notify, pendingDelete]);
@@ -938,6 +978,35 @@ function App() {
     "--manuscript-width": `${editorPreferences.manuscriptWidth}px`,
     "--manuscript-typeface": manuscriptTypeface,
   } as CSSProperties;
+  const pendingBatchDocumentCount = pendingDelete?.kind === "batch" ? (() => {
+    const categoryIds = categoryAndDescendantIds(categories, pendingDelete.categoryIds);
+    const ids = new Set(pendingDelete.documentIds);
+    documents.forEach((item) => { if (item.categoryId && categoryIds.has(item.categoryId)) ids.add(item.id); });
+    return ids.size;
+  })() : 0;
+  const deleteDialogTitle = pendingDelete?.kind === "category"
+    ? t(`Delete category “${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”?`, `删除分类“${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”？`)
+    : pendingDelete?.kind === "document"
+      ? t(`Move “${withoutExtension(documents.find((item) => item.id === pendingDelete.id)?.name ?? "Document")}” to Recently Deleted?`, `把“${withoutExtension(documents.find((item) => item.id === pendingDelete.id)?.name ?? "文稿")}”移到最近删除？`)
+      : pendingDelete?.kind === "batch"
+        ? t(`Delete ${pendingDelete.selectedCount} selected ${pendingDelete.selectedCount === 1 ? "item" : "items"}?`, `删除选中的 ${pendingDelete.selectedCount} 个项目？`)
+        : "";
+  const deleteDialogDescription = pendingDelete?.kind === "category"
+    ? t("The category and its subcategories will be removed. Their documents return to Uncategorized.", "分类和子分类会被移除，其中的文稿会回到未分类。")
+    : pendingDelete?.kind === "document"
+      ? documents.find((item) => item.id === pendingDelete.id)?.source === "local"
+        ? t("Only the Manuslate library record is removed. The original file stays on your computer.", "只移除 Manuslate 中的记录，电脑上的原文件不会被删除。")
+        : t("The document stays in Recently Deleted and can be restored later.", "文稿会保留在最近删除中，可以稍后恢复。")
+      : pendingDelete?.kind === "batch"
+        ? pendingDelete.folderCount > 0
+          ? t(`${pendingDelete.folderCount} selected ${pendingDelete.folderCount === 1 ? "folder or category" : "folders or categories"} will be removed with ${pendingDelete.folderCount === 1 ? "its" : "their"} contents. ${pendingBatchDocumentCount} ${pendingBatchDocumentCount === 1 ? "document moves" : "documents move"} to Recently Deleted; original local files stay on your computer.`, `${pendingDelete.folderCount} 个所选文件夹或分类会连同其中内容一起从资料库移除；${pendingBatchDocumentCount} 篇文稿进入最近删除，电脑上的本地原文件不会被删除。`)
+          : t(`${pendingBatchDocumentCount} ${pendingBatchDocumentCount === 1 ? "document moves" : "documents move"} to Recently Deleted. Original local files stay on your computer.`, `${pendingBatchDocumentCount} 篇文稿会移到最近删除，电脑上的本地原文件不会被删除。`)
+        : "";
+  const deleteDialogConfirmLabel = pendingDelete?.kind === "category"
+    ? t("Delete category", "删除分类")
+    : pendingDelete?.kind === "batch"
+      ? t("Delete selected", "删除所选项目")
+      : t("Move to Recently Deleted", "移到最近删除");
 
   return (
     <div style={appStyle} className={`app-shell${desktopApp ? " desktop-app" : ""}${sidebarOpen ? " has-sidebar" : ""}${inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
@@ -951,7 +1020,7 @@ function App() {
         <div className="library-heading" data-tauri-drag-region={desktopApp ? true : undefined} onMouseDown={startWindowDrag}><div className="library-title-row"><button className="product-brand brand-button" type="button" onClick={() => setAboutOpen(true)} aria-label={t("About Manuslate", "关于 Manuslate")} title={t("About Manuslate", "关于 Manuslate")}><img src="/manuslate-icon-v1-128.png" alt="" /><h1>Manuslate</h1></button><button className="icon-button compose-button" type="button" onClick={() => setTemplateOpen(true)} aria-label={t("New document", "新建文稿")} title={t("New document", "新建文稿")}><FilePlus2 size={18} /></button></div><p>{t("Local-first Markdown editor", "本地优先的 Markdown 编辑器")}</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">{t("Search documents", "搜索文稿")}</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder={t("Search", "搜索")} />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label={t("Clear search", "清除搜索")}><X size={13} /></button>}</label>
         <div className="search-scopes" role="group" aria-label={t("Search scope", "搜索范围")}>{([ ["all", t("All", "全部")], ["title", t("Title", "标题")], ["content", t("Body", "正文")], ["pinned", t("Pinned", "置顶")] ] as const).map(([value, label]) => <button type="button" className={searchFilter === value ? "active" : ""} key={value} onClick={() => setSearchFilter(value)}>{label}</button>)}</div>
-        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onTogglePinned={togglePinned} />
+        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onDeleteSelection={deleteSelection} onTogglePinned={togglePinned} />
         <div className="library-footer" role="toolbar" aria-label={t("Library tools", "资料库工具")}><button type="button" aria-label={t("Import files", "导入文件")} data-tooltip={t("Import · ⌘O", "导入文件 · ⌘O")} onClick={() => setImportOpen(true)}><Import size={18} /></button><button type="button" aria-label={t("Recently deleted", "最近删除")} data-tooltip={t("Recently deleted", "最近删除")} onClick={() => setTrashOpen(true)}><Trash2 size={17} />{trash.length > 0 && <b aria-label={t(`${trash.length} items`, `${trash.length} 个项目`)}>{trash.length}</b>}</button><button type="button" aria-label={t("Feedback", "反馈")} data-tooltip={t("Feedback on GitHub", "在 GitHub 反馈")} onClick={() => void openExternal(FEEDBACK_URL)}><MessageCircle size={17} /></button><button type="button" aria-label={t("Settings", "设置")} data-tooltip={t("Settings · ⌘,", "设置 · ⌘,")} onClick={() => setSettingsOpen(true)}><Settings size={17} /></button></div>
       </aside>
 
@@ -998,7 +1067,7 @@ function App() {
       <TrashDialog open={trashOpen} entries={trash} onClose={() => setTrashOpen(false)} onRestore={restoreTrashEntry} onDelete={deleteTrashEntry} />
       <SettingsDialog open={settingsOpen} preferences={editorPreferences} theme={theme} defaultDirectoryName={defaultDirectoryName} defaultDirectoryAccess={defaultDirectoryAccess} canChooseDirectory={desktopApp || Boolean(window.showDirectoryPicker)} onClose={() => setSettingsOpen(false)} onChange={setEditorPreferences} onThemeChange={setTheme} onReset={() => setEditorPreferences(defaultEditorPreferences)} onChooseDirectory={() => void chooseDefaultDocumentDirectory()} onClearDirectory={clearDefaultDocumentDirectory} />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} onOpenRepository={() => void openExternal(REPOSITORY_URL)} onFeedback={() => void openExternal(FEEDBACK_URL)} />
-      <ConfirmDialog open={Boolean(pendingDelete)} title={pendingDelete?.kind === "category" ? t(`Delete category “${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”?`, `删除分类“${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”？`) : t(`Move “${withoutExtension(documents.find((item) => item.id === pendingDelete?.id)?.name ?? "Document")}” to Recently Deleted?`, `把“${withoutExtension(documents.find((item) => item.id === pendingDelete?.id)?.name ?? "文稿")}”移到最近删除？`)} description={pendingDelete?.kind === "category" ? t("The category and its subcategories will be removed. Their documents return to Uncategorized.", "分类和子分类会被移除，其中的文稿会回到未分类。") : documents.find((item) => item.id === pendingDelete?.id)?.source === "local" ? t("Only the Manuslate library record is removed. The original file stays on your computer.", "只移除 Manuslate 中的记录，电脑上的原文件不会被删除。") : t("The document stays in Recently Deleted and can be restored later.", "文稿会保留在最近删除中，可以稍后恢复。")} confirmLabel={pendingDelete?.kind === "category" ? t("Delete category", "删除分类") : t("Move to Recently Deleted", "移到最近删除")} onClose={() => setPendingDelete(null)} onConfirm={confirmPendingDelete} />
+      <ConfirmDialog open={Boolean(pendingDelete)} title={deleteDialogTitle} description={deleteDialogDescription} confirmLabel={deleteDialogConfirmLabel} onClose={() => setPendingDelete(null)} onConfirm={confirmPendingDelete} />
       <ConflictDialog conflict={fileConflict} document={documents.find((item) => item.id === fileConflict?.documentId) ?? activeDocument} onClose={() => setFileConflict(null)} onUseDisk={useDiskConflict} onOverwrite={() => void overwriteDiskConflict()} />
       {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}
     </div>

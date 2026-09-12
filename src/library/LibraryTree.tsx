@@ -14,6 +14,7 @@ interface LibraryTreeProps {
   onDeleteCategory: (id: string) => void;
   onMoveDocument: (documentId: string, categoryId?: string) => void;
   onDeleteDocument: (documentId: string) => void;
+  onDeleteSelection: (selection: { documentIds: string[]; categoryIds: string[]; selectedCount: number; folderCount: number }) => void;
   onTogglePinned: (documentId: string) => void;
 }
 
@@ -67,7 +68,11 @@ function folderDocumentCount(folder: PathFolder): number {
   return folder.documents.length + folder.children.reduce((total, child) => total + folderDocumentCount(child), 0);
 }
 
-export default function LibraryTree({ documents, categories, activeId, searching, onSelect, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveDocument, onDeleteDocument, onTogglePinned }: LibraryTreeProps) {
+function folderDocumentIds(folder: PathFolder): string[] {
+  return [...folder.documents.map((item) => item.id), ...folder.children.flatMap(folderDocumentIds)];
+}
+
+export default function LibraryTree({ documents, categories, activeId, searching, onSelect, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveDocument, onDeleteDocument, onDeleteSelection, onTogglePinned }: LibraryTreeProps) {
   const { locale, t } = useI18n();
   const emptySnippet = t("No content yet", "还没有内容");
   const [expanded, setExpanded] = useState(() => new Set<string>(["pinned", "uncategorized", ...categories.map((item) => item.id)]));
@@ -79,8 +84,17 @@ export default function LibraryTree({ documents, categories, activeId, searching
   const [documentMenuId, setDocumentMenuId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [selectedFolders, setSelectedFolders] = useState<Map<string, string[]>>(new Map());
+  const [selectedCategories, setSelectedCategories] = useState<Set<string>>(new Set());
 
   useEffect(() => { setExpanded((current) => new Set([...current, ...categories.map((item) => item.id)])); }, [categories]);
+  useEffect(() => {
+    const documentIds = new Set(documents.map((item) => item.id));
+    const categoryIds = new Set(categories.map((item) => item.id));
+    setSelectedIds((current) => new Set([...current].filter((id) => documentIds.has(id))));
+    setSelectedFolders((current) => new Map([...current].map(([key, ids]) => [key, ids.filter((id) => documentIds.has(id))] as const).filter(([, ids]) => ids.length > 0)));
+    setSelectedCategories((current) => new Set([...current].filter((id) => categoryIds.has(id))));
+  }, [categories, documents]);
   useEffect(() => {
     const dismiss = (event: PointerEvent | KeyboardEvent) => {
       if (event instanceof KeyboardEvent ? event.key !== "Escape" : (event.target as Element | null)?.closest(".category-menu, .category-more, .document-more")) return;
@@ -97,6 +111,18 @@ export default function LibraryTree({ documents, categories, activeId, searching
   const rootCategories = categories.filter((item) => !item.parentId || !validCategories.has(item.parentId));
 
   const toggle = (id: string) => setExpanded((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const clearSelection = () => { setSelectedIds(new Set()); setSelectedFolders(new Map()); setSelectedCategories(new Set()); };
+  const toggleFolderSelection = (key: string, documentIds: string[]) => setSelectedFolders((current) => { const next = new Map(current); if (next.has(key)) next.delete(key); else next.set(key, documentIds); return next; });
+  const toggleCategorySelection = (id: string) => setSelectedCategories((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; });
+  const selectedDocumentIds = () => new Set([...selectedIds, ...[...selectedFolders.values()].flat()]);
+  const selectedCount = selectedIds.size + selectedFolders.size + selectedCategories.size;
+  const folderCount = selectedFolders.size + selectedCategories.size;
+  const batchBar = selectedCount > 0 && <div className="batch-bar" role="toolbar" aria-label={t("Selected library items", "已选资料库项目")}>
+    <strong>{t(`${selectedCount} selected`, `已选 ${selectedCount} 项`)}</strong>
+    <select aria-label={t("Move selected documents", "批量移动到分类")} defaultValue="" disabled={selectedCategories.size > 0} title={selectedCategories.size > 0 ? t("Categories cannot be moved in a batch", "分类不能批量移动") : undefined} onChange={(event) => { const target = event.currentTarget.value; selectedDocumentIds().forEach((id) => onMoveDocument(id, target === "uncategorized" ? undefined : target)); clearSelection(); }}><option value="" disabled>{t("Move to…", "移动到…")}</option><option value="uncategorized">{t("Uncategorized", "未分类")}</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select>
+    <button className="danger" type="button" aria-label={t("Delete selected items", "删除所选项目")} title={t("Delete selected items", "删除所选项目")} onClick={() => onDeleteSelection({ documentIds: [...selectedDocumentIds()], categoryIds: [...selectedCategories], selectedCount, folderCount })}><Trash2 size={14} /></button>
+    <button type="button" onClick={clearSelection} aria-label={t("Clear selection", "取消选择")} title={t("Clear selection", "取消选择")}><X size={14} /></button>
+  </div>;
   const commitCreate = () => {
     const name = createName.trim(); if (!name) { setCreatingParent(undefined); return; }
     onCreateCategory(name, creatingParent || undefined); setCreateName(""); setCreatingParent(undefined);
@@ -110,7 +136,7 @@ export default function LibraryTree({ documents, categories, activeId, searching
   const dropDocument = (event: React.DragEvent, categoryId?: string) => { event.preventDefault(); const documentId = event.dataTransfer.getData("application/x-manuslate-document"); if (documentId) onMoveDocument(documentId, categoryId); setDropTarget(null); };
   const selectRow = (event: React.MouseEvent, item: MarkdownDocument) => {
     if (event.metaKey || event.ctrlKey) setSelectedIds((current) => { const next = new Set(current); if (next.has(item.id)) next.delete(item.id); else next.add(item.id); return next; });
-    else { setSelectedIds(new Set()); onSelect(item.id); }
+    else { clearSelection(); onSelect(item.id); }
   };
 
   const renderDocument = (item: MarkdownDocument, shortcut = false) => {
@@ -137,10 +163,11 @@ export default function LibraryTree({ documents, categories, activeId, searching
   const renderPathFolder = (folder: PathFolder, categoryKey: string, depth = 0): React.ReactNode => {
     const key = `path:${categoryKey}:${folder.path}`;
     const isExpanded = expanded.has(key);
-    return <section className={`path-folder depth-${Math.min(depth, 3)}`} key={key}>
-      <button className="path-folder-toggle" type="button" onClick={() => toggle(key)} aria-expanded={isExpanded} title={folder.path}>
+    const isSelected = selectedFolders.has(key);
+    return <section className={`path-folder depth-${Math.min(depth, 3)}${isSelected ? " is-selected" : ""}`} key={key}>
+      <button className="path-folder-toggle" type="button" onClick={(event) => { if (event.metaKey || event.ctrlKey) toggleFolderSelection(key, folderDocumentIds(folder)); else toggle(key); }} aria-expanded={isExpanded} aria-pressed={isSelected} title={folder.path}>
         {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-        {isExpanded ? <FolderOpen size={15} /> : <Folder size={15} />}
+        {isSelected ? <Check size={15} /> : isExpanded ? <FolderOpen size={15} /> : <Folder size={15} />}
         <span>{folder.name}</span><small>{folderDocumentCount(folder)}</small>
       </button>
       {isExpanded && <div className="path-folder-contents">{folder.children.map((child) => renderPathFolder(child, categoryKey, depth + 1))}{folder.documents.map((item) => renderDocument(item))}</div>}
@@ -156,9 +183,10 @@ export default function LibraryTree({ documents, categories, activeId, searching
     const children = sorted.filter((item) => item.categoryId === category.id);
     const nested = categories.filter((item) => item.parentId === category.id);
     const isExpanded = expanded.has(category.id);
-    return <section className={`category-group depth-${Math.min(depth, 3)}${dropTarget === category.id ? " is-drop-target" : ""}`} style={{ "--tree-depth": depth } as React.CSSProperties} key={category.id} onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = "move"; setDropTarget(category.id); }} onDragLeave={() => setDropTarget(null)} onDrop={(event) => dropDocument(event, category.id)}>
+    const isSelected = selectedCategories.has(category.id);
+    return <section className={`category-group depth-${Math.min(depth, 3)}${dropTarget === category.id ? " is-drop-target" : ""}${isSelected ? " is-selected" : ""}`} style={{ "--tree-depth": depth } as React.CSSProperties} key={category.id} onDragOver={(event) => { event.preventDefault(); event.stopPropagation(); event.dataTransfer.dropEffect = "move"; setDropTarget(category.id); }} onDragLeave={() => setDropTarget(null)} onDrop={(event) => dropDocument(event, category.id)}>
       <div className="category-row" onContextMenu={(event) => { event.preventDefault(); setMenuId(category.id); setDocumentMenuId(null); }}>
-        {editingId === category.id ? <div className="category-rename"><Folder size={16} /><input autoFocus value={editName} aria-label={t("Rename category", "重命名分类")} onChange={(event) => setEditName(event.target.value)} onBlur={() => commitRename(category.id)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") { event.preventDefault(); setEditingId(null); } }} /></div> : <button className="category-toggle" type="button" onClick={() => toggle(category.id)} aria-expanded={isExpanded}>{isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<Folder size={16} /><span>{category.name}</span><small>{children.length + nested.length}</small></button>}
+        {editingId === category.id ? <div className="category-rename"><Folder size={16} /><input autoFocus value={editName} aria-label={t("Rename category", "重命名分类")} onChange={(event) => setEditName(event.target.value)} onBlur={() => commitRename(category.id)} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") { event.preventDefault(); setEditingId(null); } }} /></div> : <button className="category-toggle" type="button" onClick={(event) => { if (event.metaKey || event.ctrlKey) toggleCategorySelection(category.id); else toggle(category.id); }} aria-expanded={isExpanded} aria-pressed={isSelected}>{isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}{isSelected ? <Check size={16} /> : <Folder size={16} />}<span>{category.name}</span><small>{children.length + nested.length}</small></button>}
         <button className="category-more" type="button" aria-label={t(`${category.name} category actions`, `${category.name}分类操作`)} aria-expanded={menuId === category.id} onClick={() => setMenuId((current) => current === category.id ? null : category.id)}><MoreHorizontal size={15} /></button>
         {menuId === category.id && <div className="category-menu" role="menu" aria-label={t(`${category.name} category actions`, `${category.name}分类操作`)}><button type="button" role="menuitem" onClick={() => { setCreatingParent(category.id); setExpanded((current) => new Set(current).add(category.id)); setMenuId(null); }}><FolderPlus size={14} />{t("New subcategory", "新建子分类")}</button><button type="button" role="menuitem" onClick={() => { setEditingId(category.id); setEditName(category.name); setMenuId(null); }}><Pencil size={14} />{t("Rename category", "重命名分类")}</button><button className="danger" type="button" role="menuitem" onClick={() => { onDeleteCategory(category.id); setMenuId(null); }}><Trash2 size={14} />{t("Delete category", "删除分类")}</button></div>}
       </div>
@@ -166,10 +194,10 @@ export default function LibraryTree({ documents, categories, activeId, searching
     </section>;
   };
 
-  if (searching) return <div className="library-tree"><div className="tree-section-title"><span>{t("Filtered results", "筛选结果")}</span><span>{sorted.length}</span></div><div className="search-tree-results">{sorted.map((item) => renderDocument(item))}{!sorted.length && <div className="rail-empty">{t("No matching documents", "没有匹配的文稿")}</div>}</div></div>;
+  if (searching) return <div className="library-tree">{batchBar}<div className="tree-section-title"><span>{t("Filtered results", "筛选结果")}</span><span>{sorted.length}</span></div><div className="search-tree-results">{sorted.map((item) => renderDocument(item))}{!sorted.length && <div className="rail-empty">{t("No matching documents", "没有匹配的文稿")}</div>}</div></div>;
 
   return <div className="library-tree">
-    {selectedIds.size > 0 && <div className="batch-bar"><strong>{t(`${selectedIds.size} selected`, `已选 ${selectedIds.size}`)}</strong><select aria-label={t("Move selected documents", "批量移动到分类")} defaultValue="" onChange={(event) => { const target = event.currentTarget.value; selectedIds.forEach((id) => onMoveDocument(id, target === "uncategorized" ? undefined : target)); setSelectedIds(new Set()); }}><option value="" disabled>{t("Move to…", "移动到…")}</option><option value="uncategorized">{t("Uncategorized", "未分类")}</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select><button type="button" onClick={() => setSelectedIds(new Set())} aria-label={t("Clear selection", "取消选择")}><X size={14} /></button></div>}
+    {batchBar}
     {pinned.length > 0 && <section className="category-group pinned-group"><div className="category-row"><button className="category-toggle" type="button" onClick={() => toggle("pinned")} aria-expanded={expanded.has("pinned")}>{expanded.has("pinned") ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<Pin size={15} /><span>{t("Pinned", "置顶")}</span><small>{pinned.length}</small></button></div>{expanded.has("pinned") && <div className="category-documents">{pinned.map((item) => renderDocument(item, true))}</div>}</section>}
     <div className="tree-section-title"><span>{t("Knowledge tree", "知识树")}</span><button type="button" onClick={() => { setCreatingParent(null); setMenuId(null); }} aria-label={t("New category", "新建分类")} title={t("New category", "新建分类")}><FolderPlus size={15} /></button></div><p className="tree-hint">{t("Drag to organize · ⌘ click to multi-select", "拖动归类 · ⌘ 点击多选")}</p>
     {creatingParent === null && <div className="category-editor"><Folder size={15} /><input autoFocus value={createName} onChange={(event) => setCreateName(event.target.value)} onBlur={commitCreate} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") setCreatingParent(undefined); }} placeholder={t("Category name", "分类名称")} aria-label={t("Category name", "分类名称")} /></div>}
