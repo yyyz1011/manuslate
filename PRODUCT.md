@@ -29,10 +29,11 @@ The product is used for focused drafting, technical notes, README files, long-fo
 ## Capabilities and Constraints
 
 - Core first: in-place live preview, source editing, rendered reading, split view, local open/save, autosaved recovery, outline, scoped full-text search, keyboard shortcuts, focus mode, word count, and light/dark appearance.
-- Desktop import accepts files or folders through a staged drag-and-drop dialog. Imported folders become local library categories, while documents can be regrouped by drag or an accessible move menu.
+- Desktop import accepts files or folders through a staged drag-and-drop dialog. Imported folders preserve their relative paths and nested folder tree while remaining regroupable through user categories.
 - Rich Markdown includes GFM, task lists, tables, footnotes, fenced code, and KaTeX mathematics without introducing a proprietary document format.
 - Contextual authoring includes slash insertion, a selection toolbar, and image paste/drop into a user-chosen local asset directory while keeping relative Markdown paths.
-- Local knowledge management includes nested categories, pinned shortcuts, multi-select organization, relative document links, backlinks, and broken-link checks.
+- Local knowledge management includes nested categories, source folder paths, pinned shortcuts, multi-select organization, document-relative links, duplicate-target detection, backlinks, and broken-link checks.
+- Local file trust includes IndexedDB-backed handle recovery, visible permission state, external-change polling, and a diff-first conflict decision before overwrite.
 - Recovery includes capped automatic versions, named checkpoints, line comparison, restore-before-overwrite protection, and a local trash flow.
 - New documents may start from built-in plain-Markdown templates; templates never change the document format.
 - Export begins with Markdown, rich copy, standalone HTML, and the system print/PDF path.

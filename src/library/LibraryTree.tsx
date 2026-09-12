@@ -1,4 +1,4 @@
-import { Check, ChevronDown, ChevronRight, FileText, Folder, FolderPlus, Inbox, MoreHorizontal, Pencil, Pin, Trash2, X } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, FileText, Folder, FolderOpen, FolderPlus, Inbox, MoreHorizontal, Pencil, Pin, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import type { LibraryCategory, MarkdownDocument } from "../types";
 
@@ -24,6 +24,46 @@ function relativeTime(timestamp: number): string {
   if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分钟前`;
   if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小时前`;
   return new Intl.DateTimeFormat("zh-CN", { month: "short", day: "numeric" }).format(timestamp);
+}
+
+interface PathFolder {
+  name: string;
+  path: string;
+  documents: MarkdownDocument[];
+  children: PathFolder[];
+}
+
+function buildPathTree(documents: MarkdownDocument[]): { root: MarkdownDocument[]; folders: PathFolder[] } {
+  const root: MarkdownDocument[] = [];
+  const folders = new Map<string, PathFolder>();
+
+  for (const document of documents) {
+    const parts = (document.path || "").split("/").filter(Boolean);
+    const directoryParts = parts.length > 1 ? parts.slice(1, -1) : [];
+    if (!directoryParts.length) { root.push(document); continue; }
+
+    let parent: PathFolder | undefined;
+    directoryParts.forEach((name, index) => {
+      const path = directoryParts.slice(0, index + 1).join("/");
+      let folder = folders.get(path);
+      if (!folder) {
+        folder = { name, path, documents: [], children: [] };
+        folders.set(path, folder);
+        if (parent) parent.children.push(folder);
+      }
+      parent = folder;
+    });
+    parent?.documents.push(document);
+  }
+
+  const topLevel = [...folders.values()].filter((folder) => !folder.path.includes("/"));
+  const sortFolders = (items: PathFolder[]) => items.sort((a, b) => a.name.localeCompare(b.name, "zh-CN")).forEach((item) => sortFolders(item.children));
+  sortFolders(topLevel);
+  return { root, folders: topLevel };
+}
+
+function folderDocumentCount(folder: PathFolder): number {
+  return folder.documents.length + folder.children.reduce((total, child) => total + folderDocumentCount(child), 0);
 }
 
 export default function LibraryTree({ documents, categories, activeId, searching, onSelect, onCreateCategory, onRenameCategory, onDeleteCategory, onMoveDocument, onDeleteDocument, onTogglePinned }: LibraryTreeProps) {
@@ -78,7 +118,7 @@ export default function LibraryTree({ documents, categories, activeId, searching
       onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("application/x-patchmark-document", item.id); }}>
       <button className={`tree-document${item.id === activeId ? " active" : ""}`} type="button" onClick={(event) => selectRow(event, item)}>
         {selectedIds.has(item.id) ? <Check size={15} aria-hidden="true" /> : item.pinned ? <Pin size={14} aria-hidden="true" /> : <FileText size={15} aria-hidden="true" />}
-        <span><strong>{withoutExtension(item.name)}</strong><small>{snippet(item.content)}</small></span><time>{relativeTime(item.updatedAt)}</time>
+        <span><strong title={item.path || item.name}>{withoutExtension(item.name)}</strong><small>{item.path ? `${item.path.split("/").slice(0, -1).join("/")} · ${snippet(item.content)}` : snippet(item.content)}</small></span><time>{relativeTime(item.updatedAt)}</time>
       </button>
       <button className="document-more" type="button" aria-label={`${withoutExtension(item.name)}文稿操作`} aria-expanded={documentMenuId === menuKey} onClick={() => { setDocumentMenuId((current) => current === menuKey ? null : menuKey); setMenuId(null); }}><MoreHorizontal size={14} /></button>
       {documentMenuId === menuKey && <div className="category-menu document-menu" role="menu" aria-label={`${withoutExtension(item.name)}文稿操作`}>
@@ -91,6 +131,24 @@ export default function LibraryTree({ documents, categories, activeId, searching
     );
   };
 
+  const renderPathFolder = (folder: PathFolder, categoryKey: string, depth = 0): React.ReactNode => {
+    const key = `path:${categoryKey}:${folder.path}`;
+    const isExpanded = expanded.has(key);
+    return <section className={`path-folder depth-${Math.min(depth, 3)}`} key={key}>
+      <button className="path-folder-toggle" type="button" onClick={() => toggle(key)} aria-expanded={isExpanded} title={folder.path}>
+        {isExpanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+        {isExpanded ? <FolderOpen size={15} /> : <Folder size={15} />}
+        <span>{folder.name}</span><small>{folderDocumentCount(folder)}</small>
+      </button>
+      {isExpanded && <div className="path-folder-contents">{folder.children.map((child) => renderPathFolder(child, categoryKey, depth + 1))}{folder.documents.map((item) => renderDocument(item))}</div>}
+    </section>;
+  };
+
+  const renderDocumentsWithPaths = (items: MarkdownDocument[], categoryKey: string) => {
+    const tree = buildPathTree(items);
+    return <>{tree.folders.map((folder) => renderPathFolder(folder, categoryKey))}{tree.root.map((item) => renderDocument(item))}</>;
+  };
+
   const renderCategory = (category: LibraryCategory, depth = 0): React.ReactNode => {
     const children = sorted.filter((item) => item.categoryId === category.id);
     const nested = categories.filter((item) => item.parentId === category.id);
@@ -101,7 +159,7 @@ export default function LibraryTree({ documents, categories, activeId, searching
         <button className="category-more" type="button" aria-label={`${category.name}分类操作`} aria-expanded={menuId === category.id} onClick={() => setMenuId((current) => current === category.id ? null : category.id)}><MoreHorizontal size={15} /></button>
         {menuId === category.id && <div className="category-menu" role="menu" aria-label={`${category.name}分类操作`}><button type="button" role="menuitem" onClick={() => { setCreatingParent(category.id); setExpanded((current) => new Set(current).add(category.id)); setMenuId(null); }}><FolderPlus size={14} />新建子分类</button><button type="button" role="menuitem" onClick={() => { setEditingId(category.id); setEditName(category.name); setMenuId(null); }}><Pencil size={14} />重命名分类</button><button className="danger" type="button" role="menuitem" onClick={() => { onDeleteCategory(category.id); setMenuId(null); }}><Trash2 size={14} />删除分类</button></div>}
       </div>
-      {isExpanded && <div className="category-documents">{creatingParent === category.id && <div className="category-editor nested-editor"><Folder size={15} /><input autoFocus value={createName} onChange={(event) => setCreateName(event.target.value)} onBlur={commitCreate} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") setCreatingParent(undefined); }} placeholder="子分类名称" /></div>}{nested.map((item) => renderCategory(item, depth + 1))}{children.map((item) => renderDocument(item))}{!children.length && !nested.length && creatingParent !== category.id && <div className="category-empty">把相近的文稿拖到这里</div>}</div>}
+      {isExpanded && <div className="category-documents">{creatingParent === category.id && <div className="category-editor nested-editor"><Folder size={15} /><input autoFocus value={createName} onChange={(event) => setCreateName(event.target.value)} onBlur={commitCreate} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") setCreatingParent(undefined); }} placeholder="子分类名称" /></div>}{nested.map((item) => renderCategory(item, depth + 1))}{renderDocumentsWithPaths(children, category.id)}{!children.length && !nested.length && creatingParent !== category.id && <div className="category-empty">把相近的文稿拖到这里</div>}</div>}
     </section>;
   };
 
@@ -113,6 +171,6 @@ export default function LibraryTree({ documents, categories, activeId, searching
     <div className="tree-section-title"><span>知识树</span><button type="button" onClick={() => { setCreatingParent(null); setMenuId(null); }} aria-label="新建分类" title="新建分类"><FolderPlus size={15} /></button></div><p className="tree-hint">拖动归类 · ⌘ 点击多选</p>
     {creatingParent === null && <div className="category-editor"><Folder size={15} /><input autoFocus value={createName} onChange={(event) => setCreateName(event.target.value)} onBlur={commitCreate} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") setCreatingParent(undefined); }} placeholder="分类名称" aria-label="分类名称" /></div>}
     {rootCategories.map((category) => renderCategory(category))}
-    {(uncategorized.length > 0 || categories.length === 0) && <section className={`category-group uncategorized${dropTarget === "uncategorized" ? " is-drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget("uncategorized"); }} onDragLeave={() => setDropTarget(null)} onDrop={(event) => dropDocument(event)}><div className="category-row" onContextMenu={(event) => { event.preventDefault(); setMenuId("uncategorized"); setDocumentMenuId(null); }}>{editingId === "uncategorized" ? <div className="category-rename"><Folder size={16} /><input autoFocus value={editName} aria-label="重命名未分类" onChange={(event) => setEditName(event.target.value)} onBlur={() => commitRename("uncategorized")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") setEditingId(null); }} /></div> : <button className="category-toggle" type="button" onClick={() => toggle("uncategorized")} aria-expanded={expanded.has("uncategorized")}>{expanded.has("uncategorized") ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<Inbox size={16} /><span>未分类</span><small>{uncategorized.length}</small></button>}{menuId === "uncategorized" && <div className="category-menu uncategorized-menu" role="menu"><span>整理未分类</span>{categories.map((category) => <button type="button" key={category.id} disabled={!uncategorized.length} onClick={() => { uncategorized.forEach((item) => onMoveDocument(item.id, category.id)); setMenuId(null); }}><Folder size={14} />全部移到“{category.name}”</button>)}<button type="button" onClick={() => { setEditingId("uncategorized"); setEditName("未分类"); setMenuId(null); }}><Pencil size={14} />重命名为分类</button></div>}</div>{expanded.has("uncategorized") && <div className="category-documents">{uncategorized.map((item) => renderDocument(item))}</div>}</section>}
+    {(uncategorized.length > 0 || categories.length === 0) && <section className={`category-group uncategorized${dropTarget === "uncategorized" ? " is-drop-target" : ""}`} onDragOver={(event) => { event.preventDefault(); event.dataTransfer.dropEffect = "move"; setDropTarget("uncategorized"); }} onDragLeave={() => setDropTarget(null)} onDrop={(event) => dropDocument(event)}><div className="category-row" onContextMenu={(event) => { event.preventDefault(); setMenuId("uncategorized"); setDocumentMenuId(null); }}>{editingId === "uncategorized" ? <div className="category-rename"><Folder size={16} /><input autoFocus value={editName} aria-label="重命名未分类" onChange={(event) => setEditName(event.target.value)} onBlur={() => commitRename("uncategorized")} onKeyDown={(event) => { if (event.key === "Enter") event.currentTarget.blur(); if (event.key === "Escape") setEditingId(null); }} /></div> : <button className="category-toggle" type="button" onClick={() => toggle("uncategorized")} aria-expanded={expanded.has("uncategorized")}>{expanded.has("uncategorized") ? <ChevronDown size={14} /> : <ChevronRight size={14} />}<Inbox size={16} /><span>未分类</span><small>{uncategorized.length}</small></button>}{menuId === "uncategorized" && <div className="category-menu uncategorized-menu" role="menu"><span>整理未分类</span>{categories.map((category) => <button type="button" key={category.id} disabled={!uncategorized.length} onClick={() => { uncategorized.forEach((item) => onMoveDocument(item.id, category.id)); setMenuId(null); }}><Folder size={14} />全部移到“{category.name}”</button>)}<button type="button" onClick={() => { setEditingId("uncategorized"); setEditName("未分类"); setMenuId(null); }}><Pencil size={14} />重命名为分类</button></div>}</div>{expanded.has("uncategorized") && <div className="category-documents">{renderDocumentsWithPaths(uncategorized, "uncategorized")}</div>}</section>}
   </div>;
 }

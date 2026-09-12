@@ -10,12 +10,16 @@ interface FileSystemFileHandle {
   name: string;
   getFile(): Promise<File>;
   createWritable(): Promise<FileSystemWritableFileStream>;
+  queryPermission?(options?: { mode?: "read" | "readwrite" }): Promise<PermissionState>;
+  requestPermission?(options?: { mode?: "read" | "readwrite" }): Promise<PermissionState>;
 }
 
 interface FileSystemDirectoryHandle {
   kind: "directory";
   name: string;
   getFileHandle(name: string, options?: { create?: boolean }): Promise<FileSystemFileHandle>;
+  queryPermission?(options?: { mode?: "read" | "readwrite" }): Promise<PermissionState>;
+  requestPermission?(options?: { mode?: "read" | "readwrite" }): Promise<PermissionState>;
 }
 
 interface Window {

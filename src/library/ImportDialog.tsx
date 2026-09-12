@@ -98,6 +98,11 @@ export default function ImportDialog({ open, onClose, onImport }: ImportDialogPr
   const fileInputRef = useRef<HTMLInputElement>(null);
   const folderInputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLElement>(null);
+  const closeRef = useRef(onClose);
+  const workingRef = useRef(working);
+
+  useEffect(() => { closeRef.current = onClose; }, [onClose]);
+  useEffect(() => { workingRef.current = working; }, [working]);
 
   useEffect(() => {
     if (!open) return;
@@ -107,8 +112,9 @@ export default function ImportDialog({ open, onClose, onImport }: ImportDialogPr
 
   useEffect(() => {
     if (!open) return;
+    const returnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !working) onClose();
+      if (event.key === "Escape" && !workingRef.current) closeRef.current();
       if (event.key !== "Tab" || !dialogRef.current) return;
       const focusable = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'));
       const first = focusable[0]; const last = focusable.at(-1);
@@ -116,8 +122,8 @@ export default function ImportDialog({ open, onClose, onImport }: ImportDialogPr
       if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     };
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [onClose, open, working]);
+    return () => { document.removeEventListener("keydown", onKeyDown); returnFocus?.focus(); };
+  }, [open]);
 
   const appendFiles = (next: ImportCandidate[]) => {
     const markdown = next.filter(({ file }) => isMarkdown(file));

@@ -27,6 +27,6 @@ export function getWordStats(content: string): { words: number; characters: numb
   return {
     words,
     characters: content.replace(/\s/g, "").length,
-    minutes: Math.max(1, Math.ceil(words / 300)),
+    minutes: words === 0 ? 0 : Math.max(1, Math.ceil(words / 300)),
   };
 }

@@ -10,7 +10,15 @@ export interface MarkdownDocument {
   source: "local" | "draft" | "sample";
   categoryId?: string;
   path?: string;
+  diskModifiedAt?: number;
+  diskContent?: string;
   pinned?: boolean;
+}
+
+export interface FileConflict {
+  documentId: string;
+  diskContent: string;
+  diskModifiedAt: number;
 }
 export interface LibraryCategory {
   id: string;

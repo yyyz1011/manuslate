@@ -280,6 +280,12 @@ button:focus-visible, input:focus-visible {
 .category-menu > span { display: block; padding: 5px 8px 4px; color: var(--tertiary); font-size: 9px; font-weight: 650; }
 .menu-separator { height: 1px; margin: 5px 5px; background: var(--line); }
 .category-documents { padding: 0 0 4px 19px; }
+.path-folder { position: relative; }
+.path-folder-toggle { display: grid; grid-template-columns: 14px 17px minmax(0, 1fr) auto; align-items: center; gap: 4px; width: 100%; height: 32px; padding: 0 8px 0 4px; border: 0; border-radius: 8px; background: transparent; color: var(--secondary); text-align: left; cursor: pointer; }
+.path-folder-toggle:hover { background: var(--fill); color: var(--ink); }
+.path-folder-toggle span { overflow: hidden; color: var(--ink-soft); font-size: 11px; font-weight: 620; text-overflow: ellipsis; white-space: nowrap; }
+.path-folder-toggle small { color: var(--tertiary); font-size: 9px; font-variant-numeric: tabular-nums; }
+.path-folder-contents { margin-left: 12px; padding-left: 7px; border-left: 1px solid var(--line); }
 .category-group[style*="--tree-depth"] { margin-left: calc(min(var(--tree-depth), 3) * 8px); }
 .category-group[style*="--tree-depth: 0"] { margin-left: 0; }
 .category-group .category-group .category-toggle { border-left: 1px solid var(--line); border-radius: 0 9px 9px 0; }
@@ -558,6 +564,19 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
 .markdown-editor.is-live-preview .cm-live-heading,
 .markdown-editor.is-live-preview .cm-live-heading span { color: var(--ink) !important; }
 .markdown-editor.is-live-preview .cm-formatting-hidden { display: none; }
+.cm-live-block { box-sizing: border-box; width: 100%; padding: 9px 0 13px; color: var(--ink-soft); cursor: text; font: 15px/1.62 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif; }
+.cm-live-block > :first-child { margin-top: 0; }
+.cm-live-block > :last-child { margin-bottom: 0; }
+.cm-live-block pre { box-sizing: border-box; max-width: 100%; overflow-x: auto; margin: 0; padding: 15px 17px; border: 1px solid var(--line); border-radius: 10px; background: var(--ground); color: var(--ink-soft); font: 13px/1.6 "SFMono-Regular", "SF Mono", ui-monospace, Menlo, monospace; }
+.cm-live-block pre code { font: inherit; }
+.cm-live-block table { display: table; width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 14px; }
+.cm-live-block th, .cm-live-block td { padding: 8px 10px; border: 1px solid var(--line); overflow-wrap: anywhere; text-align: left; }
+.cm-live-block th { background: var(--fill); color: var(--ink); font-weight: 680; }
+.cm-live-block-image { text-align: center; }
+.cm-live-block img { display: block; max-width: 100%; max-height: 520px; margin: 0 auto; border-radius: 11px; object-fit: contain; }
+.cm-live-block-math { overflow-x: auto; padding-top: 16px; padding-bottom: 16px; text-align: center; }
+.cm-live-block-math .katex-display { margin: 0; }
+.cm-live-block:focus-within, .cm-live-block:hover { outline: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); outline-offset: 3px; border-radius: 8px; }
 .markdown-editor.is-source .cm-content { font-size: 15px; }
 .preview-pane { scroll-behavior: smooth; }
 
@@ -702,6 +721,8 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
 .links-panel button strong { color: var(--ink); font-size: 11px; }
 .links-panel button small { margin-top: 2px; color: var(--tertiary); font-size: 9px; }
 .links-panel button.broken, .links-panel button.broken strong { color: var(--danger); }
+.links-panel button.ambiguous, .links-panel button.ambiguous strong { color: var(--secondary); }
+.links-panel button.ambiguous small { text-decoration: underline dotted; text-underline-offset: 3px; }
 
 .sheet-backdrop { position: fixed; z-index: 115; inset: 0; display: flex; align-items: center; justify-content: center; padding: 24px; background: rgba(10,12,16,.28); backdrop-filter: blur(5px); animation: backdrop-in 160ms ease both; }
 .workspace-dialog { width: min(620px, calc(100vw - 36px)); max-height: min(720px, calc(100vh - 48px)); overflow: hidden; border: 1px solid var(--line-strong); border-radius: 18px; background: var(--elevated); box-shadow: 0 32px 88px rgba(20,24,32,.27), 0 8px 28px rgba(20,24,32,.12); backdrop-filter: saturate(180%) blur(30px); animation: import-in 220ms var(--ease-out) both; }
@@ -742,6 +763,18 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
 .trash-list time { margin-top: 3px; color: var(--tertiary); font-size: 9px; }
 .trash-list button { display: flex; align-items: center; gap: 4px; height: 30px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--fill); color: var(--ink-soft); font-size: 10px; cursor: pointer; }
 .trash-list button.danger { color: var(--danger); }
+.dialog-mark.warning { background: color-mix(in srgb, var(--danger) 13%, transparent); color: var(--danger); }
+.conflict-dialog { width: min(760px, calc(100vw - 36px)); }
+.conflict-summary { display: flex; align-items: center; justify-content: center; gap: 12px; height: 46px; border-bottom: 1px solid var(--line); color: var(--secondary); font-size: 11px; }
+.conflict-summary span { display: flex; align-items: center; gap: 5px; }
+.conflict-diff { max-height: min(390px, 46vh); margin: 0; overflow: auto; padding: 13px 0; background: var(--paper); color: var(--secondary); font: 11px/1.65 "SFMono-Regular", ui-monospace, monospace; }
+.conflict-diff span { display: block; min-height: 18px; padding: 0 17px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.conflict-diff .diff-add { background: rgba(52,199,89,.13); color: color-mix(in srgb, #1c8a3c 84%, var(--ink)); }
+.conflict-diff .diff-remove { background: rgba(255,59,48,.11); color: color-mix(in srgb, #cc2c23 82%, var(--ink)); }
+.conflict-actions { display: flex; justify-content: flex-end; gap: 8px; padding: 12px 14px; border-top: 1px solid var(--line); }
+.conflict-actions button { display: flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 0; border-radius: 9px; background: var(--fill); color: var(--ink-soft); font-size: 11px; font-weight: 640; cursor: pointer; }
+.conflict-actions button.primary { background: var(--accent); color: white; }
+.conflict-actions button.danger-primary { background: var(--danger); color: white; }
 
 .palette-backdrop { position: fixed; z-index: 100; inset: 0; display: flex; align-items: flex-start; justify-content: center; padding-top: min(18vh, 150px); background: rgba(0, 0, 0, 0.18); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); animation: backdrop-in 150ms ease both; }
 .command-palette { width: min(560px, calc(100vw - 30px)); overflow: hidden; border: 1px solid var(--line-strong); border-radius: 16px; background: var(--elevated); box-shadow: var(--shadow-float); -webkit-backdrop-filter: saturate(180%) blur(28px); backdrop-filter: saturate(180%) blur(28px); animation: palette-in 220ms var(--ease-out) both; }

@@ -3,7 +3,7 @@ import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirro
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting, syntaxTree } from "@codemirror/language";
 import { openSearchPanel, searchKeymap } from "@codemirror/search";
-import { Compartment, EditorSelection, EditorState } from "@codemirror/state";
+import { Compartment, EditorSelection, EditorState, StateField } from "@codemirror/state";
 import {
   drawSelection,
   dropCursor,
@@ -20,6 +20,7 @@ import {
   type ViewUpdate,
 } from "@codemirror/view";
 import { tags } from "@lezer/highlight";
+import { renderMarkdown } from "../lib/markdown";
 
 export interface MarkdownEditorHandle {
   focus: () => void;
@@ -37,6 +38,7 @@ interface MarkdownEditorProps {
   focusMode: boolean;
   livePreview: boolean;
   onImageFile?: (file: File) => Promise<string | null>;
+  assetUrls?: Record<string, string>;
 }
 
 interface FloatingPosition { left: number; top: number }
@@ -90,6 +92,105 @@ class LiveTokenWidget extends WidgetType {
   ignoreEvent() { return true; }
 }
 
+class LiveBlockWidget extends WidgetType {
+  constructor(
+    private readonly markdownSource: string,
+    private readonly className: string,
+    private readonly sourcePosition: number,
+    private readonly assetUrls: Record<string, string>,
+  ) { super(); }
+
+  eq(other: LiveBlockWidget) {
+    return other.markdownSource === this.markdownSource
+      && other.className === this.className
+      && other.sourcePosition === this.sourcePosition
+      && other.assetUrls === this.assetUrls;
+  }
+
+  toDOM(view: EditorView) {
+    const block = document.createElement("div");
+    block.className = `cm-live-block ${this.className}`;
+    block.innerHTML = renderMarkdown(this.markdownSource);
+    block.querySelectorAll<HTMLImageElement>("img[src]").forEach((image) => {
+      const original = image.getAttribute("src");
+      if (original && this.assetUrls[original]) image.src = this.assetUrls[original];
+    });
+    block.setAttribute("role", "button");
+    block.setAttribute("tabindex", "-1");
+    block.setAttribute("aria-label", "点击编辑 Markdown 源码");
+    block.addEventListener("mousedown", (event) => {
+      event.preventDefault();
+      view.dispatch({ selection: EditorSelection.cursor(this.sourcePosition), scrollIntoView: true });
+      view.focus();
+    });
+    return block;
+  }
+
+  ignoreEvent() { return false; }
+}
+
+function liveBlockDecorations(state: EditorState, assetUrls: Record<string, string>) {
+  const ranges: ReturnType<Decoration["range"]>[] = [];
+  const blockedLines = new Set<number>();
+  const editableLines = new Set<number>();
+  const activeLine = state.doc.lineAt(state.selection.main.head).number;
+  const lineCount = state.doc.lines;
+
+  const addBlock = (start: number, end: number, className: string) => {
+    if (activeLine >= start && activeLine <= end) {
+      for (let line = start; line <= end; line += 1) editableLines.add(line);
+      return;
+    }
+    const first = state.doc.line(start);
+    const last = state.doc.line(end);
+    const source = state.sliceDoc(first.from, last.to);
+    ranges.push(Decoration.replace({ widget: new LiveBlockWidget(source, className, first.from, assetUrls), block: true }).range(first.from, last.to));
+    for (let line = start; line <= end; line += 1) blockedLines.add(line);
+  };
+
+  for (let number = 1; number <= lineCount; number += 1) {
+    const line = state.doc.line(number);
+    const trimmed = line.text.trim();
+
+    const fence = trimmed.match(/^(`{3,}|~{3,})/);
+    if (fence) {
+      let end = number;
+      while (end < lineCount) {
+        end += 1;
+        if (state.doc.line(end).text.trim().startsWith(fence[1])) break;
+      }
+      addBlock(number, end, "cm-live-block-code");
+      number = end;
+      continue;
+    }
+
+    if (trimmed === "$$") {
+      let end = number;
+      while (end < lineCount) {
+        end += 1;
+        if (state.doc.line(end).text.trim() === "$$") break;
+      }
+      if (end > number) {
+        addBlock(number, end, "cm-live-block-math");
+        number = end;
+        continue;
+      }
+    }
+
+    const nextLine = number < lineCount ? state.doc.line(number + 1).text : "";
+    if (/^\s*\|.*\|\s*$/.test(line.text) && /^\s*\|?\s*:?-{3,}/.test(nextLine)) {
+      let end = number + 1;
+      while (end < lineCount && /^\s*\|.*\|\s*$/.test(state.doc.line(end + 1).text)) end += 1;
+      addBlock(number, end, "cm-live-block-table");
+      number = end;
+      continue;
+    }
+
+    if (/^\s*!\[[^\]]*\]\([^)]+\)\s*$/.test(line.text)) addBlock(number, number, "cm-live-block-image");
+  }
+  return { ranges, blockedLines, editableLines };
+}
+
 function paragraphDecorations(view: EditorView): DecorationSet {
   const current = view.state.doc.lineAt(view.state.selection.main.head);
   let start = current.number;
@@ -106,19 +207,21 @@ function paragraphDecorations(view: EditorView): DecorationSet {
   return Decoration.set(ranges);
 }
 
-function liveDecorations(view: EditorView): DecorationSet {
-  const ranges: ReturnType<Decoration["range"]>[] = [];
-  const active = view.state.doc.lineAt(view.state.selection.main.head);
+function liveDecorations(state: EditorState, assetUrls: Record<string, string>): DecorationSet {
+  const blocks = liveBlockDecorations(state, assetUrls);
+  const ranges: ReturnType<Decoration["range"]>[] = [...blocks.ranges];
+  const active = state.doc.lineAt(state.selection.main.head);
   const hiddenMarks = new Set(["HeaderMark", "EmphasisMark", "CodeMark", "CodeInfo", "QuoteMark"]);
   const decoratedLines = new Set<number>();
 
-  for (const visible of view.visibleRanges) {
-    syntaxTree(view.state).iterate({
+  for (const visible of [{ from: 0, to: state.doc.length }]) {
+    syntaxTree(state).iterate({
       from: visible.from,
       to: visible.to,
       enter(node) {
-        const line = view.state.doc.lineAt(node.from);
-        const isActiveLine = active.number === line.number;
+        const line = state.doc.lineAt(node.from);
+        if (blocks.blockedLines.has(line.number)) return false;
+        const isActiveLine = active.number === line.number || blocks.editableLines.has(line.number);
 
         if (/^ATXHeading[1-6]$/.test(node.name)) {
           const level = node.name.slice(-1);
@@ -126,19 +229,19 @@ function liveDecorations(view: EditorView): DecorationSet {
         }
 
         if (node.name === "FencedCode") {
-          for (let n = line.number; n <= view.state.doc.lineAt(node.to).number; n += 1) {
-            ranges.push(Decoration.line({ class: "cm-live-codeblock" }).range(view.state.doc.line(n).from));
+          for (let n = line.number; n <= state.doc.lineAt(node.to).number; n += 1) {
+            ranges.push(Decoration.line({ class: "cm-live-codeblock" }).range(state.doc.line(n).from));
           }
         }
 
         if (node.name === "Blockquote") {
-          for (let n = line.number; n <= view.state.doc.lineAt(node.to).number; n += 1) {
-            ranges.push(Decoration.line({ class: "cm-live-quote" }).range(view.state.doc.line(n).from));
+          for (let n = line.number; n <= state.doc.lineAt(node.to).number; n += 1) {
+            ranges.push(Decoration.line({ class: "cm-live-quote" }).range(state.doc.line(n).from));
           }
         }
 
         const parent = node.node.parent;
-        const parentText = parent ? view.state.sliceDoc(parent.from, parent.to) : "";
+        const parentText = parent ? state.sliceDoc(parent.from, parent.to) : "";
         const hiddenLinkPart = parent?.name === "Link"
           && !parentText.startsWith("[^")
           && (node.name === "LinkMark" || node.name === "URL");
@@ -148,31 +251,32 @@ function liveDecorations(view: EditorView): DecorationSet {
         }
 
         if (!isActiveLine && node.name === "ListMark") {
-          const marker = view.state.sliceDoc(node.from, node.to);
+          const marker = state.sliceDoc(node.from, node.to);
           const isTask = /^\s*[-+*]\s+\[[ xX]\]/.test(line.text);
           const label = isTask ? "" : /^\s*\d/.test(marker) ? marker.trim() : "•";
           ranges.push(Decoration.replace(label ? { widget: new LiveTokenWidget(label, "cm-live-list-token") } : {}).range(node.from, node.to));
         }
 
         if (!isActiveLine && node.name === "TaskMarker") {
-          const checked = /[xX]/.test(view.state.sliceDoc(node.from, node.to));
+          const checked = /[xX]/.test(state.sliceDoc(node.from, node.to));
           ranges.push(Decoration.replace({ widget: new LiveTokenWidget(checked ? "☑" : "☐", `cm-live-task${checked ? " is-checked" : ""}`) }).range(node.from, node.to));
         }
       },
     });
 
-    const firstLine = view.state.doc.lineAt(visible.from).number;
-    const lastLine = view.state.doc.lineAt(visible.to).number;
+    const firstLine = state.doc.lineAt(visible.from).number;
+    const lastLine = state.doc.lineAt(visible.to).number;
     let inMathBlock = false;
     for (let number = 1; number <= lastLine; number += 1) {
-      const line = view.state.doc.line(number);
+      const line = state.doc.line(number);
+      if (blocks.blockedLines.has(number)) continue;
       const trimmed = line.text.trim();
       if (trimmed === "$$") {
         if (number >= firstLine && number !== active.number) ranges.push(Decoration.replace({}).range(line.from, line.to));
         inMathBlock = !inMathBlock;
         continue;
       }
-      if (number < firstLine || number === active.number) continue;
+      if (number < firstLine || number === active.number || blocks.editableLines.has(number)) continue;
 
       if (inMathBlock) ranges.push(Decoration.line({ class: "cm-live-math" }).range(line.from));
 
@@ -210,22 +314,13 @@ function liveDecorations(view: EditorView): DecorationSet {
   return Decoration.set(ranges, true);
 }
 
-const livePreviewPlugin = ViewPlugin.fromClass(
-  class {
-    decorations: DecorationSet;
-
-    constructor(view: EditorView) {
-      this.decorations = liveDecorations(view);
-    }
-
-    update(update: ViewUpdate) {
-      if (update.docChanged || update.selectionSet || update.viewportChanged) {
-        this.decorations = liveDecorations(update.view);
-      }
-    }
+const makeLivePreviewExtension = (assetUrls: Record<string, string>) => StateField.define<DecorationSet>({
+  create(state) { return liveDecorations(state, assetUrls); },
+  update(decorations, transaction) {
+    return transaction.docChanged || transaction.selection ? liveDecorations(transaction.state, assetUrls) : decorations;
   },
-  { decorations: (plugin) => plugin.decorations },
-);
+  provide: (field) => EditorView.decorations.from(field),
+});
 
 const paragraphFocus = ViewPlugin.fromClass(
   class {
@@ -390,7 +485,7 @@ function makeTheme(dark: boolean, livePreview: boolean) {
 }
 
 const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
-  ({ value, onChange, dark, focusMode, livePreview, onImageFile }, ref) => {
+  ({ value, onChange, dark, focusMode, livePreview, onImageFile, assetUrls = {} }, ref) => {
     const hostRef = useRef<HTMLDivElement>(null);
     const shellRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
@@ -455,7 +550,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
           themeCompartment.current.of(makeTheme(dark, livePreview)),
           highlightCompartment.current.of(syntaxHighlighting(dark ? darkHighlight : lightHighlight)),
           focusCompartment.current.of(focusMode ? paragraphFocus : []),
-          liveCompartment.current.of(livePreview ? livePreviewPlugin : []),
+          liveCompartment.current.of(livePreview ? makeLivePreviewExtension(assetUrls) : []),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) onChangeRef.current(update.state.doc.toString());
             if (update.docChanged || update.selectionSet || update.focusChanged || update.viewportChanged) updateFloatingUI(update.view);
@@ -485,8 +580,8 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
     useEffect(() => {
       const view = viewRef.current;
       if (!view) return;
-      view.dispatch({ effects: liveCompartment.current.reconfigure(livePreview ? livePreviewPlugin : []) });
-    }, [livePreview]);
+      view.dispatch({ effects: liveCompartment.current.reconfigure(livePreview ? makeLivePreviewExtension(assetUrls) : []) });
+    }, [assetUrls, livePreview]);
 
     useEffect(() => {
       const view = viewRef.current;
