@@ -1,26 +1,61 @@
 # Manuslate
 
-![Manuslate app icon](public/manuslate-icon-v1-128.png)
+[简体中文](README.zh-CN.md) · [Website](https://yyyz1011.github.io/manuslate/) · [Issues](https://github.com/yyyz1011/manuslate/issues)
 
-A refined, open-source, local-first Markdown editor and document library for desktop. Manuslate opens directly into the document, keeps files portable, and puts advanced tools one deliberate click away.
+<p align="center">
+  <img src="public/manuslate-icon-v1-128.png" width="96" height="96" alt="Manuslate app icon" />
+</p>
 
-> The name combines **manuscript** and **slate**: a calm surface for turning structured text into finished work.
+<p align="center"><strong>A refined, open-source, local-first Markdown editor and document library for desktop.</strong></p>
 
-## Highlights
+Manuslate opens directly into the document. It combines live Markdown writing, a structured library for local files, and visible save behavior without requiring an account or introducing a proprietary document format.
 
-- Live Markdown editing, source, reading, and split views
-- GFM, tables, tasks, footnotes, math, links, images, and fenced code
+![Manuslate showing its document library, outline, and live Markdown editor](site/assets/manuslate-window.png)
+
+## Why Manuslate
+
+- **The document is the home screen.** Open the app and begin reading or writing without passing through a dashboard.
+- **Markdown stays portable.** Manuslate works with ordinary `.md` files and keeps relative paths intact when folders are imported.
+- **Local state stays visible.** Recovery drafts, file permissions, disk writes, outside changes, and conflicts have explicit states.
+
+The name combines **manuscript** and **slate**: a calm surface for turning structured text into finished work.
+
+## Current capabilities
+
+### Writing and reading
+
+- Live typesetting, source, reading, and split views
+- GFM, task lists, tables, footnotes, KaTeX math, links, images, and fenced code
+- In-document outline, find and replace, command palette, focus mode, and word count
+- Configurable document size, source size, line height, typeface, and page width
+
+### Local library
+
 - File and folder import with preserved relative paths
-- Nested categories, pinned documents, drag-to-organize, backlinks, and broken-link checks
-- Local files with explicit save state, external-change detection, and conflict comparison
-- Recovery drafts, automatic and named versions, and Recently Deleted
-- In-document outline, scoped library search, find/replace, command palette, and focus mode
-- Markdown, rich-text, standalone HTML, and system print/PDF output
-- Configurable typography, page width, default document folder, and light/dark appearance
-- English and Simplified Chinese interface; English is the default
-- No account, proprietary document format, or cloud dependency
+- Nested categories, pinned documents, drag-to-organize, and multi-select
+- Scoped library search, backlinks, and broken-link checks
+- User-selected default folder for new documents
 
-## Run locally
+### File trust and recovery
+
+- Recovery drafts and explicit save state
+- External-change detection with conflict comparison
+- Automatic versions, named checkpoints, and local Recently Deleted
+- Markdown, rich-text, standalone HTML, and system print/PDF output
+
+### Interface
+
+- Light, dark, and system appearance
+- English and Simplified Chinese; English is the default on a new installation
+- Keyboard-first desktop interaction and native macOS packaging through Tauri
+
+## Download
+
+Download the current Apple silicon preview from [GitHub Releases](https://github.com/yyyz1011/manuslate/releases/latest).
+
+Manuslate is early-stage software. Back up important work and report unexpected behavior through [GitHub Issues](https://github.com/yyyz1011/manuslate/issues).
+
+## Run the web build locally
 
 ```bash
 npm install
@@ -29,11 +64,16 @@ npm run dev
 
 Open <http://127.0.0.1:4173/>.
 
-## Build
+## Build the desktop app
+
+Requirements:
+
+- Node.js 20 or newer
+- Rust stable
+- The [Tauri v2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your platform
 
 ```bash
-npm run build
-npm run preview
+npm install
 
 # Native development window
 npm run app:dev
@@ -45,18 +85,22 @@ npm run app:build
 npm run app:dmg
 ```
 
-Native artifacts are written to `src-tauri/target/release/bundle/`. The desktop app reads and writes only files or folders chosen by the user. Its remembered folder access and recovery metadata stay on the current device.
+Native artifacts are written to `src-tauri/target/release/bundle/`.
 
-## 中文
+## Privacy and storage
 
-Manuslate 是一款开源免费、本地优先的桌面 Markdown 编辑器与文稿资料库。启动后直接进入文稿，支持实时排版、源码、阅读与分栏视图，以及文件夹导入、分类、双链、版本恢复、本地图片、搜索替换和多种导出。设置中可切换简体中文；默认界面语言为英文。
+Manuslate has no required account and no cloud dependency. The desktop app reads or writes only files and folders selected by the user. Recovery metadata, preferences, document organization, and remembered folder access remain on the current device.
 
-当前里程碑先把 Markdown 核心和本地资料管理做好。AI、账户、云同步、移动端和多人协作不在当前范围内。
+Some browser capabilities depend on File System Access API support. The native app provides the intended desktop file workflow.
 
-## Feedback
+## Project status
 
-Use [GitHub Issues](https://github.com/yyyz1011/manuslate/issues) for bugs and feature requests.
+Version `0.1.0` is an early desktop preview. The current packaged download targets Apple silicon Macs. The core milestone focuses on excellent Markdown editing and local document management; AI, cloud sync, mobile clients, and multiplayer collaboration are not part of this release.
+
+## Contributing
+
+Bug reports and focused feature proposals are welcome in [Issues](https://github.com/yyyz1011/manuslate/issues). Please include the operating system, Manuslate version, reproduction steps, and whether the document was a recovery draft or a local file.
 
 ## License
 
-MIT
+[MIT](LICENSE)
