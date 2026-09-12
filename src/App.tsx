@@ -1,7 +1,7 @@
 import {
   Bold, BookOpen, Check, ChevronDown, ChevronRight, Code2, Columns2, Copy, Download, Eye,
   Archive, Clock3, FileCode2, FilePlus2, FileSearch, Focus, Heading1, Heading2, Image, Info, Italic, Link, Link2, List,
-  Import, ListChecks, ListOrdered, Menu, MoreHorizontal, PanelLeftClose, PanelLeftOpen, PanelRight, Pencil, Plus, Printer, Quote,
+  Import, ListChecks, ListOrdered, Menu, MoreHorizontal, PanelLeftOpen, PanelRight, Pencil, Plus, Printer, Quote,
   Save, Search, Settings, Settings as Settings2, Share, Sparkles, SunMoon, Table2, TextCursorInput, Trash2, X,
 } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
@@ -931,7 +931,7 @@ function App() {
       {sidebarOpen && <button className="mobile-scrim" aria-label="关闭文稿列表" onClick={() => setSidebarOpen(false)} />}
 
       <aside className="library-rail" aria-label="文稿列表">
-        {desktopApp && <div className="sidebar-windowbar" data-tauri-drag-region onMouseDown={startWindowDrag}><button className="icon-button" type="button" onClick={() => setSidebarOpen(false)} aria-label="隐藏文稿列表" title="隐藏文稿列表"><PanelLeftClose size={16} /></button></div>}
+        {desktopApp && <div className="sidebar-windowbar" data-tauri-drag-region onMouseDown={startWindowDrag}><button className="icon-button" type="button" onClick={() => setSidebarOpen(false)} aria-label="隐藏文稿列表" title="隐藏文稿列表"><img className="sidebar-toggle-glyph" src="/sidebar-collapse-v2.png" alt="" /></button></div>}
         <div className="library-heading" data-tauri-drag-region={desktopApp ? true : undefined} onMouseDown={startWindowDrag}><div className="library-title-row"><div className="product-brand"><img src="/patchmark-icon-64.png" alt="" /><h1>PatchMark</h1></div><button className="icon-button compose-button" type="button" onClick={() => setTemplateOpen(true)} aria-label="新建文稿" title="新建文稿"><FilePlus2 size={18} /></button></div><p>本地优先的 Markdown 编辑器</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">搜索文稿</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder="搜索" />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label="清除搜索"><X size={13} /></button>}</label>
         <div className="search-scopes" role="group" aria-label="搜索范围">{([ ["all", "全部"], ["title", "标题"], ["content", "正文"], ["pinned", "置顶"] ] as const).map(([value, label]) => <button type="button" className={searchFilter === value ? "active" : ""} key={value} onClick={() => setSearchFilter(value)}>{label}</button>)}</div>

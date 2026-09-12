@@ -120,7 +120,9 @@ button:focus-visible, input:focus-visible {
   border-right: 1px solid var(--line);
 }
 .sidebar-windowbar { display: flex; height: var(--header-height); flex: 0 0 var(--header-height); align-items: center; padding: 0 8px 0 88px; border-bottom: 1px solid var(--line); background: var(--chrome); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
-.sidebar-windowbar .icon-button { width: 30px; height: 30px; border-radius: 9px; }
+.sidebar-windowbar .icon-button { width: 30px; height: 30px; border-radius: 9px; transform: translateY(-3px); }
+.sidebar-windowbar .icon-button:active { transform: translateY(-3px) scale(.91); }
+.sidebar-toggle-glyph { display: block; width: 18px; height: 18px; object-fit: contain; }
 .library-heading { padding: 18px 14px 14px 18px; }
 .library-title-row { display: flex; height: 40px; align-items: center; justify-content: space-between; }
 .product-brand { display: flex; min-width: 0; height: 40px; align-items: center; gap: 10px; }
