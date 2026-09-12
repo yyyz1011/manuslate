@@ -365,7 +365,7 @@ button:focus-visible, input:focus-visible {
 .library-footer button:hover { background: var(--fill); }
 kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-variant-numeric: tabular-nums; }
 
-.workspace { min-width: 0; height: 100%; overflow: hidden; background: var(--paper); }
+.workspace { container: workspace / inline-size; min-width: 0; height: 100%; overflow: hidden; background: var(--paper); }
 .titlebar {
   position: relative;
   z-index: 30;
@@ -513,6 +513,9 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
 .document-toc .toc-level-3 { padding-left: 21px; }
 .document-toc .toc-level-4, .document-toc .toc-level-5, .document-toc .toc-level-6 { padding-left: 28px; }
 .mode-split .document-toc { display: none; }
+@container workspace (max-width: 860px) {
+  .document-toc { display: none; }
+}
 .editor-pane, .preview-pane { position: relative; min-width: 0; height: 100%; overflow: auto; background: var(--paper); }
 .mode-split .editor-pane { border-right: 1px solid var(--line); }
 .markdown-editor { width: 100%; height: 100%; }
