@@ -2,7 +2,10 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { markdown, markdownLanguage } from "@codemirror/lang-markdown";
 import { HighlightStyle, syntaxHighlighting, syntaxTree } from "@codemirror/language";
-import { openSearchPanel, searchKeymap } from "@codemirror/search";
+import {
+  closeSearchPanel, findNext, findPrevious, getSearchQuery, openSearchPanel, replaceAll, replaceNext,
+  search, searchKeymap, SearchQuery, setSearchQuery,
+} from "@codemirror/search";
 import { Compartment, EditorSelection, EditorState, StateField } from "@codemirror/state";
 import {
   drawSelection,
@@ -16,6 +19,7 @@ import {
   rectangularSelection,
   ViewPlugin,
   WidgetType,
+  type Panel,
   type DecorationSet,
   type ViewUpdate,
 } from "@codemirror/view";
@@ -45,6 +49,232 @@ interface MarkdownEditorProps {
 
 interface FloatingPosition { left: number; top: number }
 interface SlashState extends FloatingPosition { from: number; to: number; query: string }
+
+function searchIcon(paths: string[], size = 16) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("width", String(size));
+  svg.setAttribute("height", String(size));
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("fill", "none");
+  svg.setAttribute("stroke", "currentColor");
+  svg.setAttribute("stroke-width", "1.8");
+  svg.setAttribute("stroke-linecap", "round");
+  svg.setAttribute("stroke-linejoin", "round");
+  paths.forEach((value) => {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", value);
+    svg.append(path);
+  });
+  return svg;
+}
+
+function searchButton(label: string, paths: string[], onClick: () => void) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "pm-search-icon-button";
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  button.append(searchIcon(paths));
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+class PatchMarkSearchPanel implements Panel {
+  readonly dom: HTMLElement;
+  readonly top = true;
+  private query: SearchQuery;
+  private searchField: HTMLInputElement;
+  private replaceField: HTMLInputElement;
+  private count: HTMLElement;
+  private replaceRow: HTMLElement;
+  private options: HTMLElement;
+  private expandButton: HTMLButtonElement;
+  private caseField: HTMLInputElement;
+  private wordField: HTMLInputElement;
+  private regexpField: HTMLInputElement;
+
+  constructor(private readonly view: EditorView) {
+    this.query = getSearchQuery(view.state);
+    this.dom = document.createElement("div");
+    this.dom.className = "pm-search-panel";
+
+    const searchRow = document.createElement("div");
+    searchRow.className = "pm-search-row";
+
+    this.expandButton = searchButton("展开替换", ["m9 18 6-6-6-6"], () => this.toggleReplace()) as HTMLButtonElement;
+    this.expandButton.classList.add("pm-search-expand");
+    this.expandButton.setAttribute("aria-expanded", "false");
+
+    const fieldWrap = document.createElement("label");
+    fieldWrap.className = "pm-search-field";
+    fieldWrap.append(searchIcon(["m21 21-4.35-4.35", "M19 11a8 8 0 1 1-16 0 8 8 0 0 1 16 0Z"], 15));
+    this.searchField = document.createElement("input");
+    this.searchField.value = this.query.search;
+    this.searchField.placeholder = "查找文稿";
+    this.searchField.setAttribute("aria-label", "查找文稿");
+    this.searchField.setAttribute("main-field", "true");
+    this.searchField.autocomplete = "off";
+    this.searchField.spellcheck = false;
+    this.searchField.addEventListener("input", () => this.commit());
+    fieldWrap.append(this.searchField);
+    this.count = document.createElement("span");
+    this.count.className = "pm-search-count";
+    this.count.setAttribute("aria-live", "polite");
+    fieldWrap.append(this.count);
+
+    const previous = searchButton("上一个", ["m18 15-6-6-6 6"], () => this.navigate(findPrevious));
+    const next = searchButton("下一个", ["m6 9 6 6 6-6"], () => this.navigate(findNext));
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "pm-search-icon-button pm-search-more";
+    more.setAttribute("aria-label", "匹配选项");
+    more.setAttribute("aria-expanded", "false");
+    more.title = "匹配选项";
+    more.textContent = "•••";
+    more.addEventListener("click", () => {
+      const open = Boolean(this.options.hidden);
+      this.options.hidden = !open;
+      more.setAttribute("aria-expanded", String(open));
+    });
+    const close = searchButton("关闭查找", ["M18 6 6 18", "m6 6 12 12"], () => closeSearchPanel(this.view));
+    searchRow.append(this.expandButton, fieldWrap, previous, next, more, close);
+
+    this.replaceRow = document.createElement("div");
+    this.replaceRow.className = "pm-replace-row";
+    this.replaceRow.hidden = true;
+    const replaceWrap = document.createElement("label");
+    replaceWrap.className = "pm-search-field pm-replace-field";
+    this.replaceField = document.createElement("input");
+    this.replaceField.value = this.query.replace;
+    this.replaceField.placeholder = "替换为";
+    this.replaceField.setAttribute("aria-label", "替换为");
+    this.replaceField.autocomplete = "off";
+    this.replaceField.spellcheck = false;
+    this.replaceField.addEventListener("input", () => this.commit());
+    replaceWrap.append(this.replaceField);
+    const replaceOne = document.createElement("button");
+    replaceOne.type = "button";
+    replaceOne.textContent = "替换";
+    replaceOne.addEventListener("click", () => this.replace(false));
+    const replaceEvery = document.createElement("button");
+    replaceEvery.type = "button";
+    replaceEvery.textContent = "全部替换";
+    replaceEvery.addEventListener("click", () => this.replace(true));
+    this.replaceRow.append(replaceWrap, replaceOne, replaceEvery);
+
+    this.options = document.createElement("div");
+    this.options.className = "pm-search-options";
+    this.options.hidden = true;
+    this.caseField = this.option("区分大小写", this.query.caseSensitive);
+    this.wordField = this.option("全词匹配", this.query.wholeWord);
+    this.regexpField = this.option("正则表达式", this.query.regexp);
+
+    this.dom.append(searchRow, this.replaceRow, this.options);
+    this.dom.addEventListener("keydown", (event) => this.keydown(event));
+    this.updateCount();
+  }
+
+  private option(label: string, checked: boolean) {
+    const wrapper = document.createElement("label");
+    const field = document.createElement("input");
+    field.type = "checkbox";
+    field.checked = checked;
+    field.addEventListener("change", () => this.commit());
+    const indicator = document.createElement("span");
+    const text = document.createElement("span");
+    text.textContent = label;
+    wrapper.append(field, indicator, text);
+    this.options?.append(wrapper);
+    return field;
+  }
+
+  private toggleReplace() {
+    const open = Boolean(this.replaceRow.hidden);
+    this.replaceRow.hidden = !open;
+    this.dom.classList.toggle("is-replacing", open);
+    this.expandButton.classList.toggle("is-open", open);
+    this.expandButton.setAttribute("aria-expanded", String(open));
+    this.expandButton.setAttribute("aria-label", open ? "收起替换" : "展开替换");
+    if (open) this.replaceField.focus();
+  }
+
+  private commit() {
+    const next = new SearchQuery({
+      search: this.searchField.value,
+      replace: this.replaceField.value,
+      caseSensitive: this.caseField.checked,
+      wholeWord: this.wordField.checked,
+      regexp: this.regexpField.checked,
+    });
+    if (!next.eq(this.query)) {
+      this.query = next;
+      this.view.dispatch({ effects: setSearchQuery.of(next) });
+    }
+    this.updateCount();
+  }
+
+  private navigate(command: typeof findNext) {
+    command(this.view);
+    window.requestAnimationFrame(() => { this.updateCount(); this.searchField.focus(); });
+  }
+
+  private replace(all: boolean) {
+    (all ? replaceAll : replaceNext)(this.view);
+    window.requestAnimationFrame(() => { this.updateCount(); this.replaceField.focus(); });
+  }
+
+  private updateCount() {
+    if (!this.query.search || !this.query.valid) {
+      this.count.textContent = this.query.search && !this.query.valid ? "表达式有误" : "0 / 0";
+      this.dom.classList.toggle("has-error", Boolean(this.query.search && !this.query.valid));
+      return;
+    }
+    const matches: Array<{ from: number; to: number }> = [];
+    const cursor = this.query.getCursor(this.view.state, 0, this.view.state.doc.length);
+    for (let result = cursor.next(); !result.done; result = cursor.next()) matches.push(result.value);
+    const selection = this.view.state.selection.main;
+    let current = matches.findIndex((match) => match.from === selection.from && match.to === selection.to);
+    if (current < 0) current = matches.findIndex((match) => match.from >= selection.head);
+    if (current < 0 && matches.length) current = 0;
+    this.count.textContent = matches.length ? `${current + 1} / ${matches.length}` : "0 / 0";
+    this.dom.classList.remove("has-error");
+  }
+
+  private keydown(event: KeyboardEvent) {
+    if (event.key === "Escape") {
+      if (!this.options.hidden) this.options.hidden = true;
+      else closeSearchPanel(this.view);
+      event.preventDefault();
+    } else if (event.key === "Enter" && event.target === this.searchField) {
+      event.preventDefault();
+      this.navigate(event.shiftKey ? findPrevious : findNext);
+    } else if (event.key === "Enter" && event.target === this.replaceField) {
+      event.preventDefault();
+      this.replace(false);
+    }
+  }
+
+  update(update: ViewUpdate) {
+    const next = getSearchQuery(update.state);
+    const queryChanged = !next.eq(this.query);
+    if (queryChanged) {
+      this.query = next;
+      this.searchField.value = next.search;
+      this.replaceField.value = next.replace;
+      this.caseField.checked = next.caseSensitive;
+      this.wordField.checked = next.wholeWord;
+      this.regexpField.checked = next.regexp;
+    }
+    if (update.docChanged || update.selectionSet || queryChanged) this.updateCount();
+  }
+
+  mount() { this.searchField.select(); }
+}
+
+function createPatchMarkSearchPanel(view: EditorView) {
+  return new PatchMarkSearchPanel(view);
+}
 
 const slashActions = [
   { key: "标题1 h1", label: "一级标题", detail: "大标题", text: "# " },
@@ -460,27 +690,12 @@ function makeTheme(dark: boolean, livePreview: boolean, preferences: EditorPrefe
         fontStyle: "normal",
       },
       ".cm-panels": {
-        backgroundColor: dark ? "#24272c" : "#ffffff",
         color: dark ? "#e8eaed" : "#202329",
-        borderColor: dark ? "#353940" : "#dfe3e8",
+        backgroundColor: "transparent",
+        borderColor: "transparent",
       },
-      ".cm-search": {
-        padding: "10px 12px",
-      },
-      ".cm-search input": {
-        border: `1px solid ${dark ? "#454a53" : "#cfd5dc"}`,
-        borderRadius: "8px",
-        background: dark ? "#191b1f" : "#f8f9fa",
-        color: "inherit",
-        padding: "5px 8px",
-      },
-      ".cm-search button": {
-        border: "0",
-        borderRadius: "7px",
-        background: dark ? "#393d44" : "#e9edf1",
-        color: "inherit",
-        padding: "5px 9px",
-      },
+      ".cm-searchMatch": { backgroundColor: dark ? "rgba(10,132,255,.28)" : "rgba(10,132,255,.17)", borderRadius: "3px" },
+      ".cm-searchMatch-selected": { backgroundColor: dark ? "rgba(255,179,64,.46)" : "rgba(255,159,10,.28)", outline: `1px solid ${dark ? "rgba(255,190,92,.65)" : "rgba(218,125,0,.42)"}` },
       ".cm-tooltip": {
         border: `1px solid ${dark ? "#3d4148" : "#dfe3e8"}`,
         backgroundColor: dark ? "#25282d" : "#ffffff",
@@ -551,6 +766,7 @@ const MarkdownEditor = forwardRef<MarkdownEditorHandle, MarkdownEditorProps>(
           highlightActiveLine(),
           EditorView.lineWrapping,
           markdown({ base: markdownLanguage }),
+          search({ top: true, createPanel: createPatchMarkSearchPanel }),
           keymap.of([...defaultKeymap, ...historyKeymap, ...searchKeymap, indentWithTab]),
           placeholder("从这里开始写…"),
           themeCompartment.current.of(makeTheme(dark, livePreview, preferences)),
