@@ -99,7 +99,7 @@ button:focus-visible, input:focus-visible {
   background: var(--ground);
   transition: grid-template-columns 420ms var(--ease-out);
 }
-.app-shell.desktop-app { --header-height: 48px; }
+.app-shell.desktop-app { --header-height: 40px; }
 .app-shell.has-sidebar { grid-template-columns: 286px minmax(0, 1fr) 0; }
 .app-shell.has-inspector { grid-template-columns: 0 minmax(0, 1fr) 286px; }
 .app-shell.has-sidebar.has-inspector { grid-template-columns: 286px minmax(0, 1fr) 286px; }
@@ -119,6 +119,8 @@ button:focus-visible, input:focus-visible {
   flex-direction: column;
   border-right: 1px solid var(--line);
 }
+.sidebar-windowbar { display: flex; height: var(--header-height); flex: 0 0 var(--header-height); align-items: center; padding: 0 8px 0 88px; border-bottom: 1px solid var(--line); background: var(--chrome); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
+.sidebar-windowbar .icon-button { width: 30px; height: 30px; border-radius: 9px; }
 .library-heading { padding: 18px 14px 14px 18px; }
 .library-title-row { display: flex; height: 40px; align-items: center; justify-content: space-between; }
 .product-brand { display: flex; min-width: 0; height: 40px; align-items: center; gap: 10px; }
@@ -134,13 +136,13 @@ button:focus-visible, input:focus-visible {
 .compose-button { width: 36px; height: 36px; transform: translateY(1px); }
 .compose-button:active { transform: translateY(1px) scale(0.91); }
 .library-heading p { margin: 3px 0 0; color: var(--secondary); font-size: 11px; }
-.desktop-app .library-heading { height: var(--header-height); padding: 0 8px 0 82px; border-bottom: 1px solid var(--line); background: var(--chrome); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
-.desktop-app .library-title-row { height: var(--header-height); }
-.desktop-app .product-brand { gap: 6px; height: var(--header-height); }
-.desktop-app .product-brand img { width: 24px; height: 24px; transform: none; }
-.desktop-app .library-heading h1 { font-size: 15px; font-weight: 700; line-height: 20px; letter-spacing: -.018em; }
+.desktop-app .library-heading { height: 56px; padding: 8px 10px 8px 16px; background: var(--sidebar); }
+.desktop-app .library-title-row { height: 40px; }
+.desktop-app .product-brand { gap: 8px; height: 40px; }
+.desktop-app .product-brand img { width: 30px; height: 30px; transform: none; }
+.desktop-app .library-heading h1 { font-size: 20px; font-weight: 720; line-height: 26px; letter-spacing: -.025em; }
 .desktop-app .library-heading p { display: none; }
-.desktop-app .compose-button { width: 30px; height: 30px; border-radius: 9px; }
+.desktop-app .compose-button { width: 32px; height: 32px; border-radius: 9px; }
 
 .icon-button {
   display: inline-grid;
@@ -439,8 +441,8 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
   backdrop-filter: saturate(180%) blur(22px);
 }
 .desktop-app:not(.has-sidebar) .titlebar { padding-left: 86px; }
-.desktop-app .titlebar .icon-button { width: 34px; height: 34px; border-radius: 9px; }
-.desktop-app .titlebar .view-button { height: 34px; }
+.desktop-app .titlebar .icon-button { width: 30px; height: 30px; border-radius: 9px; }
+.desktop-app .titlebar .view-button { height: 30px; }
 .titlebar-left, .titlebar-actions { display: flex; align-items: center; min-width: 0; }
 .titlebar-actions { justify-content: flex-end; gap: 3px; }
 .document-title-block { display: flex; min-width: 0; max-width: 360px; align-items: center; flex-direction: column; }

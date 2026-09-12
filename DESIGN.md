@@ -174,7 +174,7 @@ The visual system uses system typography, paper white, grouped gray rails, hairl
 
 - A first-party desktop document window for macOS and Windows PC.
 - One continuous `760px` manuscript plane with syntax revealed only on the current line.
-- A `286px` grouped library, centered `48px` native toolbar (`62px` in the browser preview), and optional `286px` inspector.
+- A `286px` grouped library, a `40px` native window strip with a separate sidebar brand row (`62px` combined toolbar in the browser preview), and an optional `286px` inspector.
 - System sans throughout rendered content and interface chrome; mono only for explicit source mode and code.
 - Quiet blue for state, paper white for the manuscript, grouped gray for supporting rails.
 - Contextual material popovers and format dock, controlled by keyboard and mouse.
@@ -238,7 +238,7 @@ The palette follows desktop system materials: paper and grouped neutrals carry s
 
 ## Layout
 
-At a `1440px` desktop window, the shell is a three-column document workspace: a collapsible `286px` library, a flexible center workspace containing a `760px` manuscript, and an optional `286px` inspector. The centered `48px` native toolbar keeps the document title physically central while actions stay at the window edges; the browser preview retains a roomier `62px` toolbar. A `28px` status strip provides quiet document state without becoming a second toolbar.
+At a `1440px` desktop window, the shell is a three-column document workspace: a collapsible `286px` library, a flexible center workspace containing a `760px` manuscript, and an optional `286px` inspector. On macOS, a compact `40px` native window strip carries the traffic lights and sidebar toggle while the PatchMark brand occupies its own quiet row below; the centered document title and actions share that top strip in the workspace. The browser preview retains a roomier combined `62px` toolbar. A `28px` status strip provides quiet document state without becoming a second toolbar.
 
 The manuscript uses `42px` desktop gutters and generous top/bottom breathing room. At `1180px`, the library tightens to `252px` and the inspector overlays rather than shrinking the manuscript. At `900px`, both rails become desktop-window overlays and split view resolves to reading. The `520px` rules are emergency clipping protection for an unusually narrow resized desktop window, not a phone layout or a separate product surface.
 
