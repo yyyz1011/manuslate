@@ -33,6 +33,7 @@ The product is used for focused drafting, technical notes, README files, long-fo
 - Rich Markdown includes GFM, task lists, tables, footnotes, fenced code, and KaTeX mathematics without introducing a proprietary document format.
 - Contextual authoring includes slash insertion, a selection toolbar, and image paste/drop into a user-chosen local asset directory while keeping relative Markdown paths.
 - Local knowledge management includes nested categories, source folder paths, pinned shortcuts, an explicit multi-select mode, recoverable batch removal for documents/folders/categories, document-relative links, duplicate-target detection, backlinks, and broken-link checks.
+- Ungrouped documents render directly at the library root until a user-created group exists. An empty library remains empty across restarts instead of silently creating a replacement draft.
 - Local file trust includes IndexedDB-backed handle recovery, visible permission state, external-change polling, and a diff-first conflict decision before overwrite.
 - Recovery includes capped automatic versions, named checkpoints, line comparison, restore-before-overwrite protection, and a local trash flow.
 - New documents may start from built-in plain-Markdown templates; templates never change the document format.

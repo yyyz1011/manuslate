@@ -74,17 +74,17 @@ function safeParse<T>(value: string | null, fallback: T): T {
 }
 
 export function loadDocuments(): MarkdownDocument[] {
-  const saved = safeParse<MarkdownDocument[]>(localStorage.getItem(DOCUMENTS_KEY), []);
-  return saved.length
-    ? saved.map((document) => {
-        const untouchedLegacyWelcome = document.id === welcomeDocument.id
-          && document.content.includes("## 这一版先做好什么")
-          && document.content.includes("双击正文，或点击顶部的「编辑」开始书写。");
-        return document.id === welcomeDocument.id && (document.source === "sample" || untouchedLegacyWelcome)
-          ? welcomeDocument
-          : document;
-      })
-    : [welcomeDocument];
+  const stored = localStorage.getItem(DOCUMENTS_KEY);
+  if (stored === null) return [welcomeDocument];
+  const saved = safeParse<MarkdownDocument[]>(stored, []);
+  return saved.map((document) => {
+    const untouchedLegacyWelcome = document.id === welcomeDocument.id
+      && document.content.includes("## 这一版先做好什么")
+      && document.content.includes("双击正文，或点击顶部的「编辑」开始书写。");
+    return document.id === welcomeDocument.id && (document.source === "sample" || untouchedLegacyWelcome)
+      ? welcomeDocument
+      : document;
+  });
 }
 
 export function saveDocuments(documents: MarkdownDocument[]): void {

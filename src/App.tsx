@@ -1,6 +1,6 @@
 import {
   Bold, BookOpen, Check, ChevronDown, ChevronRight, Code2, Columns2, Copy, Download, Eye,
-  Archive, Clock3, FileCode2, FilePlus2, FileSearch, Focus, Heading1, Heading2, Image, Info, Italic, Link, Link2, List,
+  Archive, Clock3, FileCode2, FilePlus2, FileSearch, FileText, Focus, Heading1, Heading2, Image, Info, Italic, Link, Link2, List,
   Import, ListChecks, ListOrdered, Menu, MessageCircle, MoreHorizontal, PanelLeftOpen, PanelRight, Pencil, Plus, Printer, Quote,
   Save, Search, Settings, Settings as Settings2, Share, Sparkles, SunMoon, Table2, TextCursorInput, Trash2, X,
 } from "lucide-react";
@@ -115,7 +115,7 @@ function App() {
   const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
   const [activeId, setActiveId] = useState(() => {
     const stored = loadActiveDocumentId();
-    return initialDocuments.some((item) => item.id === stored) ? stored! : initialDocuments[0].id;
+    return initialDocuments.some((item) => item.id === stored) ? stored! : initialDocuments[0]?.id ?? "";
   });
   const [viewMode, setViewModeState] = useState<ViewMode>(loadViewMode);
   const [theme, setThemeState] = useState<ThemeMode>(loadTheme);
@@ -445,14 +445,14 @@ function App() {
   const chooseDesktopFolder = useCallback(async () => nativeFilesToCandidates(await chooseNativeMarkdownDirectory()), [nativeFilesToCandidates]);
 
   const createCategory = useCallback((name: string, parentId?: string) => {
-    if (categories.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify(t("A category with this name already exists.", "已经有同名分类")); return; }
+    if (categories.some((item) => item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify(t("A group with this name already exists.", "已经有同名分组")); return; }
     const id = uniqueId();
     setCategories((current) => [...current, { id, name, createdAt: Date.now(), parentId }]);
     return id;
   }, [categories, notify]);
 
   const renameCategory = useCallback((id: string, name: string) => {
-    if (categories.some((item) => item.id !== id && item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify(t("A category with this name already exists.", "已经有同名分类")); return; }
+    if (categories.some((item) => item.id !== id && item.name.toLocaleLowerCase() === name.toLocaleLowerCase())) { notify(t("A group with this name already exists.", "已经有同名分组")); return; }
     setCategories((current) => current.map((item) => item.id === id ? { ...item, name } : item));
   }, [categories, notify]);
 
@@ -482,22 +482,17 @@ function App() {
       const descendants = categoryAndDescendantIds(categories, [pendingDelete.id]);
       setCategories((current) => current.filter((item) => !descendants.has(item.id)));
       setDocuments((current) => current.map((item) => item.categoryId && descendants.has(item.categoryId) ? { ...item, categoryId: undefined } : item));
-      notify(t("Category deleted; documents moved to Uncategorized.", "分类已删除，文稿已移到未分类"));
+      notify(t("Group deleted; its documents remain in the library without a group.", "分组已删除，其中的文稿仍保留在资料库中，但不再属于任何分组"));
     } else if (pendingDelete.kind === "document") {
       const target = documents.find((item) => item.id === pendingDelete.id);
       if (target) {
         const remaining = documents.filter((item) => item.id !== target.id);
-        let nextDocuments = remaining;
-        if (!remaining.length) {
-          const replacement = createUntitled(1, t("Untitled", "未命名"));
-          savedSnapshotsRef.current.set(replacement.id, replacement.content);
-          nextDocuments = [replacement];
-        }
         setTrash((current) => [{ document: target, deletedAt: Date.now() }, ...current.filter((entry) => entry.document.id !== target.id)]);
-        setDocuments(nextDocuments);
+        setDocuments(remaining);
         if (activeId === target.id) {
-          setActiveId(nextDocuments[0].id);
-          saveActiveDocumentId(nextDocuments[0].id);
+          const nextActiveId = remaining[0]?.id ?? "";
+          setActiveId(nextActiveId);
+          saveActiveDocumentId(nextActiveId);
         }
         notify(target.source === "local" ? t("Moved to Recently Deleted; the local file remains on your computer.", "已移到最近删除，本地文件仍在电脑上") : t("Moved to Recently Deleted", "已移到最近删除"));
       }
@@ -507,19 +502,14 @@ function App() {
       documents.forEach((item) => { if (item.categoryId && categoryIds.has(item.categoryId)) documentIds.add(item.id); });
       const targets = documents.filter((item) => documentIds.has(item.id));
       const remaining = documents.filter((item) => !documentIds.has(item.id));
-      let nextDocuments = remaining;
-      if (!remaining.length) {
-        const replacement = createUntitled(1, t("Untitled", "未命名"));
-        savedSnapshotsRef.current.set(replacement.id, replacement.content);
-        nextDocuments = [replacement];
-      }
       const deletedAt = Date.now();
       setCategories((current) => current.filter((item) => !categoryIds.has(item.id)));
       setTrash((current) => [...targets.map((document) => ({ document, deletedAt })), ...current.filter((entry) => !documentIds.has(entry.document.id))]);
-      setDocuments(nextDocuments);
+      setDocuments(remaining);
       if (documentIds.has(activeId)) {
-        setActiveId(nextDocuments[0].id);
-        saveActiveDocumentId(nextDocuments[0].id);
+        const nextActiveId = remaining[0]?.id ?? "";
+        setActiveId(nextActiveId);
+        saveActiveDocumentId(nextActiveId);
       }
       notify(t(`${pendingDelete.selectedCount} items removed; ${targets.length} documents moved to Recently Deleted.`, `已删除 ${pendingDelete.selectedCount} 个所选项目，${targets.length} 篇文稿已移到最近删除`));
     }
@@ -889,7 +879,7 @@ function App() {
   }, [documents, trash]);
   useEffect(() => {
     setActiveOutlineId((current) => outline.some((item) => item.id === current) ? current : outline[0]?.id ?? null);
-  }, [activeDocument.id, outline]);
+  }, [activeDocument?.id, outline]);
 
   useEffect(() => {
     if (!paletteOpen) return;
@@ -918,7 +908,7 @@ function App() {
       else if (event.key === "2") { event.preventDefault(); setViewMode("preview"); }
       else if (event.key === "3") { event.preventDefault(); setViewMode("source"); }
       else if (event.key === "4") { event.preventDefault(); setViewMode("split"); }
-      else if (event.key === "Backspace") { event.preventDefault(); setPendingDelete({ kind: "document", id: activeId }); }
+      else if (event.key === "Backspace" && activeId) { event.preventDefault(); setPendingDelete({ kind: "document", id: activeId }); }
       else if (event.shiftKey && event.key.toLowerCase() === "f") { event.preventDefault(); setViewMode("live"); setFocusMode((current) => !current); }
     };
     window.addEventListener("keydown", onKeyDown); return () => window.removeEventListener("keydown", onKeyDown);
@@ -943,7 +933,7 @@ function App() {
     { label: t("Save current version", "保存当前版本"), hint: "", icon: Clock3, run: saveNamedVersion },
     { label: t("View version history", "查看版本记录"), hint: "", icon: Archive, run: () => setHistoryOpen(true) },
     { label: t("Recently deleted", "最近删除"), hint: "", icon: Trash2, run: () => setTrashOpen(true) },
-    { label: t("Move current document to trash", "把当前文稿移到最近删除"), hint: "⌘⌫", icon: Trash2, run: () => setPendingDelete({ kind: "document", id: activeId }) },
+    ...(activeDocument ? [{ label: t("Move current document to trash", "把当前文稿移到最近删除"), hint: "⌘⌫", icon: Trash2, run: () => setPendingDelete({ kind: "document" as const, id: activeId }) }] : []),
     { label: t("Live editing", "实时排版"), hint: "⌘1", icon: TextCursorInput, run: () => setViewMode("live") },
     { label: t("Reading view", "阅读视图"), hint: "⌘2", icon: Eye, run: () => setViewMode("preview") },
     { label: t("Markdown source", "Markdown 源码"), hint: "⌘3", icon: FileCode2, run: () => setViewMode("source") },
@@ -966,8 +956,6 @@ function App() {
     { label: t("Math block", "数学公式"), icon: Sparkles, run: () => editorRef.current?.insert("$$\nE = mc^2\n$$") },
   ];
 
-  if (!activeDocument) return null;
-
   const manuscriptTypeface = editorPreferences.typeface === "serif"
     ? '"Songti SC", "STSong", "Noto Serif CJK SC", Georgia, serif'
     : '-apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif';
@@ -985,31 +973,31 @@ function App() {
     return ids.size;
   })() : 0;
   const deleteDialogTitle = pendingDelete?.kind === "category"
-    ? t(`Delete category “${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”?`, `删除分类“${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”？`)
+    ? t(`Delete group “${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”?`, `删除分组“${categories.find((item) => item.id === pendingDelete.id)?.name ?? ""}”？`)
     : pendingDelete?.kind === "document"
       ? t(`Move “${withoutExtension(documents.find((item) => item.id === pendingDelete.id)?.name ?? "Document")}” to Recently Deleted?`, `把“${withoutExtension(documents.find((item) => item.id === pendingDelete.id)?.name ?? "文稿")}”移到最近删除？`)
       : pendingDelete?.kind === "batch"
         ? t(`Delete ${pendingDelete.selectedCount} selected ${pendingDelete.selectedCount === 1 ? "item" : "items"}?`, `删除选中的 ${pendingDelete.selectedCount} 个项目？`)
         : "";
   const deleteDialogDescription = pendingDelete?.kind === "category"
-    ? t("The category and its subcategories will be removed. Their documents return to Uncategorized.", "分类和子分类会被移除，其中的文稿会回到未分类。")
+    ? t("The group and its subgroups will be removed. Their documents remain in the library without a group.", "分组和子分组会被移除，其中的文稿仍保留在资料库中，但不再属于任何分组。")
     : pendingDelete?.kind === "document"
       ? documents.find((item) => item.id === pendingDelete.id)?.source === "local"
         ? t("Only the Manuslate library record is removed. The original file stays on your computer.", "只移除 Manuslate 中的记录，电脑上的原文件不会被删除。")
         : t("The document stays in Recently Deleted and can be restored later.", "文稿会保留在最近删除中，可以稍后恢复。")
       : pendingDelete?.kind === "batch"
         ? pendingDelete.folderCount > 0
-          ? t(`${pendingDelete.folderCount} selected ${pendingDelete.folderCount === 1 ? "folder or category" : "folders or categories"} will be removed with ${pendingDelete.folderCount === 1 ? "its" : "their"} contents. ${pendingBatchDocumentCount} ${pendingBatchDocumentCount === 1 ? "document moves" : "documents move"} to Recently Deleted; original local files stay on your computer.`, `${pendingDelete.folderCount} 个所选文件夹或分类会连同其中内容一起从资料库移除；${pendingBatchDocumentCount} 篇文稿进入最近删除，电脑上的本地原文件不会被删除。`)
+          ? t(`${pendingDelete.folderCount} selected ${pendingDelete.folderCount === 1 ? "folder or group" : "folders or groups"} will be removed with ${pendingDelete.folderCount === 1 ? "its" : "their"} contents. ${pendingBatchDocumentCount} ${pendingBatchDocumentCount === 1 ? "document moves" : "documents move"} to Recently Deleted; original local files stay on your computer.`, `${pendingDelete.folderCount} 个所选文件夹或分组会连同其中内容一起从资料库移除；${pendingBatchDocumentCount} 篇文稿进入最近删除，电脑上的本地原文件不会被删除。`)
           : t(`${pendingBatchDocumentCount} ${pendingBatchDocumentCount === 1 ? "document moves" : "documents move"} to Recently Deleted. Original local files stay on your computer.`, `${pendingBatchDocumentCount} 篇文稿会移到最近删除，电脑上的本地原文件不会被删除。`)
         : "";
   const deleteDialogConfirmLabel = pendingDelete?.kind === "category"
-    ? t("Delete category", "删除分类")
+    ? t("Delete group", "删除分组")
     : pendingDelete?.kind === "batch"
       ? t("Delete selected", "删除所选项目")
       : t("Move to Recently Deleted", "移到最近删除");
 
   return (
-    <div style={appStyle} className={`app-shell${desktopApp ? " desktop-app" : ""}${sidebarOpen ? " has-sidebar" : ""}${inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
+    <div style={appStyle} className={`app-shell${desktopApp ? " desktop-app" : ""}${sidebarOpen ? " has-sidebar" : ""}${activeDocument && inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
       if ((event.target as HTMLElement).closest("[data-popover-root]")) return;
       dismissMenus();
     }}>
@@ -1020,11 +1008,11 @@ function App() {
         <div className="library-heading" data-tauri-drag-region={desktopApp ? true : undefined} onMouseDown={startWindowDrag}><div className="library-title-row"><button className="product-brand brand-button" type="button" onClick={() => setAboutOpen(true)} aria-label={t("About Manuslate", "关于 Manuslate")} title={t("About Manuslate", "关于 Manuslate")}><img src="/manuslate-icon-v1-128.png" alt="" /><h1>Manuslate</h1></button><button className="icon-button compose-button" type="button" onClick={() => setTemplateOpen(true)} aria-label={t("New document", "新建文稿")} title={t("New document", "新建文稿")}><FilePlus2 size={18} /></button></div><p>{t("Local-first Markdown editor", "本地优先的 Markdown 编辑器")}</p></div>
         <label className="library-search"><Search size={15} aria-hidden="true" /><span className="visually-hidden">{t("Search documents", "搜索文稿")}</span><input value={documentSearch} onChange={(event) => setDocumentSearch(event.target.value)} placeholder={t("Search", "搜索")} />{documentSearch && <button type="button" onClick={() => setDocumentSearch("")} aria-label={t("Clear search", "清除搜索")}><X size={13} /></button>}</label>
         <div className="search-scopes" role="group" aria-label={t("Search scope", "搜索范围")}>{([ ["all", t("All", "全部")], ["title", t("Title", "标题")], ["content", t("Body", "正文")], ["pinned", t("Pinned", "置顶")] ] as const).map(([value, label]) => <button type="button" className={searchFilter === value ? "active" : ""} key={value} onClick={() => setSearchFilter(value)}>{label}</button>)}</div>
-        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument.id} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onDeleteSelection={deleteSelection} onTogglePinned={togglePinned} />
+        <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument?.id ?? ""} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onDeleteSelection={deleteSelection} onTogglePinned={togglePinned} />
         <div className="library-footer" role="toolbar" aria-label={t("Library tools", "资料库工具")}><button type="button" aria-label={t("Import files", "导入文件")} data-tooltip={t("Import · ⌘O", "导入文件 · ⌘O")} onClick={() => setImportOpen(true)}><Import size={18} /></button><button type="button" aria-label={t("Recently deleted", "最近删除")} data-tooltip={t("Recently deleted", "最近删除")} onClick={() => setTrashOpen(true)}><Trash2 size={17} />{trash.length > 0 && <b aria-label={t(`${trash.length} items`, `${trash.length} 个项目`)}>{trash.length}</b>}</button><button type="button" aria-label={t("Feedback", "反馈")} data-tooltip={t("Feedback on GitHub", "在 GitHub 反馈")} onClick={() => void openExternal(FEEDBACK_URL)}><MessageCircle size={17} /></button><button type="button" aria-label={t("Settings", "设置")} data-tooltip={t("Settings · ⌘,", "设置 · ⌘,")} onClick={() => setSettingsOpen(true)}><Settings size={17} /></button></div>
       </aside>
 
-      <section className="workspace">
+      {activeDocument ? <section className="workspace">
         <header className="titlebar" data-tauri-drag-region={desktopApp ? true : undefined} onMouseDown={startWindowDrag}>
           <div className="titlebar-left">{(!desktopApp || !sidebarOpen) && <button className="icon-button" type="button" onClick={() => setSidebarOpen((current) => !current)} aria-label={sidebarOpen ? t("Hide document library", "隐藏文稿列表") : t("Show document library", "显示文稿列表")} title={t("Document library", "文稿列表")}>{desktopApp ? <PanelLeftOpen size={16} /> : <Menu size={20} />}</button>}</div>
           <div className="document-title-block">
@@ -1053,9 +1041,21 @@ function App() {
           {(viewMode === "live" || viewMode === "source" || viewMode === "split") && <div className="format-dock" role="toolbar" aria-label={t("Markdown formatting", "Markdown 格式")}><div className="popover-anchor insert-anchor" data-popover-root><button className={`dock-add${insertMenuOpen ? " active" : ""}`} type="button" onClick={() => setInsertMenuOpen((current) => !current)} aria-label={t("Insert", "插入内容")} aria-expanded={insertMenuOpen}><Plus size={19} /></button>{insertMenuOpen && <div className="insert-menu" role="menu" aria-label={t("Insert", "插入内容")} onKeyDown={navigateMenu}>{insertActions.map((item) => { const Icon = item.icon; return <button type="button" role="menuitem" key={item.label} onClick={() => { item.run(); setInsertMenuOpen(false); }}><Icon size={18} /><span>{item.label}</span></button>; })}</div>}</div><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.surround("**", "**", t("bold text", "粗体文字"))} aria-label={t("Bold", "粗体")} title={t("Bold", "粗体")}><Bold size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("*", "*", t("italic text", "斜体文字"))} aria-label={t("Italic", "斜体")} title={t("Italic", "斜体")}><Italic size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("[", "](https://)", t("link text", "链接文字"))} aria-label={t("Link", "链接")} title={t("Link", "链接")}><Link size={18} /></button><button type="button" onClick={() => editorRef.current?.surround("`", "`", "code")} aria-label={t("Inline code", "行内代码")} title={t("Inline code", "行内代码")}><Code2 size={18} /></button><button type="button" onClick={() => imageInputRef.current?.click()} aria-label={t("Insert local image", "插入本地图片")} title={t("Insert local image", "插入本地图片")}><Image size={18} /></button><span className="dock-divider" /><button type="button" onClick={() => editorRef.current?.prefixLine("- ")} aria-label={t("Bulleted list", "列表")} title={t("Bulleted list", "无序列表")}><List size={18} /></button><button type="button" onClick={() => editorRef.current?.prefixLine("- [ ] ")} aria-label={t("Task list", "任务")} title={t("Task list", "任务列表")}><ListChecks size={18} /></button><input ref={imageInputRef} className="visually-hidden" type="file" accept="image/*" onChange={(event) => { const file = event.target.files?.[0]; if (file) void handleImageFile(file).then((path) => path && editorRef.current?.insert(`![${file.name.replace(/\.[^.]+$/, "") || t("image", "图片")}](${path})`)); event.currentTarget.value = ""; }} /></div>}
           <footer className="document-status" aria-label={t("Document statistics", "文档统计")}><span>{stats.words.toLocaleString(locale)} {t("words", "字词")}</span><span>{stats.characters.toLocaleString(locale)} {t("characters", "字符")}</span><span>{t(`about ${stats.minutes} min`, `约 ${stats.minutes} 分钟`)}</span><span className="status-spacer" /><span>{viewMode === "live" ? t("Live", "实时排版") : viewMode === "source" ? "Markdown" : viewMode === "preview" ? t("Reading", "阅读") : t("Split", "对照")}</span></footer>
         </main>
-      </section>
+      </section> : <section className="workspace empty-workspace">
+        <header className="titlebar" data-tauri-drag-region={desktopApp ? true : undefined} onMouseDown={startWindowDrag}>
+          <div className="titlebar-left">{(!desktopApp || !sidebarOpen) && <button className="icon-button" type="button" onClick={() => setSidebarOpen((current) => !current)} aria-label={sidebarOpen ? t("Hide document library", "隐藏文稿列表") : t("Show document library", "显示文稿列表")} title={t("Document library", "文稿列表")}>{desktopApp ? <PanelLeftOpen size={16} /> : <Menu size={20} />}</button>}</div>
+        </header>
+        <main className="library-empty-stage">
+          <div className="library-empty-card">
+            <span className="library-empty-mark"><FileText size={22} /></span>
+            <h2>{t("Your library is empty", "资料库是空的")}</h2>
+            <p>{t("Create a document, import Markdown, or make a group when you need one.", "新建文稿、导入 Markdown；需要整理时再创建分组。")}</p>
+            <div><button className="primary" type="button" onClick={() => setTemplateOpen(true)}><FilePlus2 size={16} />{t("New document", "新建文稿")}</button><button type="button" onClick={() => setImportOpen(true)}><Import size={16} />{t("Import Markdown", "导入 Markdown")}</button></div>
+          </div>
+        </main>
+      </section>}
 
-      {inspectorOpen && <aside className="inspector-rail" aria-label={t("Document inspector", "文档检查器")}>
+      {activeDocument && inspectorOpen && <aside className="inspector-rail" aria-label={t("Document inspector", "文档检查器")}>
         <div className="inspector-header"><div className="inspector-tabs" role="tablist" aria-label={t("Inspector pages", "检查器页面")} onKeyDown={navigateInspectorTabs}><button id="outline-tab" role="tab" aria-selected={inspectorTab === "outline"} aria-controls="outline-panel" tabIndex={inspectorTab === "outline" ? 0 : -1} className={inspectorTab === "outline" ? "active" : ""} type="button" onClick={() => setInspectorTab("outline")}>{t("Outline", "大纲")}</button><button id="links-tab" role="tab" aria-selected={inspectorTab === "links"} aria-controls="links-panel" tabIndex={inspectorTab === "links" ? 0 : -1} className={inspectorTab === "links" ? "active" : ""} type="button" onClick={() => setInspectorTab("links")}>{t("Links", "链接")}</button><button id="info-tab" role="tab" aria-selected={inspectorTab === "info"} aria-controls="info-panel" tabIndex={inspectorTab === "info" ? 0 : -1} className={inspectorTab === "info" ? "active" : ""} type="button" onClick={() => setInspectorTab("info")}>{t("Document", "文稿")}</button></div><button className="icon-button" type="button" onClick={() => setInspectorOpen(false)} aria-label={t("Close inspector", "关闭检查器")}><X size={17} /></button></div>
         {inspectorTab === "outline" ? <nav id="outline-panel" role="tabpanel" aria-labelledby="outline-tab" className="outline-nav">{outline.map((item, index) => <button type="button" key={`${item.id}-${index}`} className={`outline-level-${item.level}`} onClick={() => navigateToOutline(item)}>{item.text}</button>)}{!outline.length && <div className="inspector-empty"><Info size={20} /><p>{t("Add headings to generate an outline.", "添加标题后，大纲会在这里自动生成。")}</p></div>}</nav> : inspectorTab === "links" ? <div id="links-panel" role="tabpanel" aria-labelledby="links-tab" className="links-panel"><section><span>{t("Backlinks", "引用本文")} · {backlinks.length}</span>{backlinks.map((item) => <button type="button" key={item.id} onClick={() => selectDocument(item.id)}><Link2 size={14} /><span>{withoutExtension(item.name)}</span></button>)}{!backlinks.length && <p>{t("No other documents link here yet.", "还没有其他文稿链接到这里。")}</p>}</section><section><span>{t("Links in this document", "本文链接")} · {outgoingLinks.length}</span>{outgoingLinks.map((item, index) => <button type="button" className={item.ambiguous ? "ambiguous" : item.broken ? "broken" : ""} key={`${item.href}-${index}`} title={item.candidates?.join("\n")} onClick={() => navigateDocumentLink(item.href)}><Link size={14} /><span><strong>{item.label}</strong><small>{item.ambiguous ? t(`Ambiguous · ${item.candidates?.length ?? 0} matching files`, `目标不唯一 · ${item.candidates?.length ?? 0} 个同名文件`) : item.broken ? t(`Broken · ${item.href}`, `失效 · ${item.href}`) : item.href}</small></span></button>)}{!outgoingLinks.length && <p>{t("Use `[Title](file.md)` to connect documents.", "使用 `[标题](文件.md)` 建立文稿关系。")}</p>}</section></div> : <div id="info-panel" role="tabpanel" aria-labelledby="info-tab" className="document-info"><section><span>{t("Statistics", "统计")}</span><dl><div><dt>{t("Words", "字词")}</dt><dd>{stats.words.toLocaleString(locale)}</dd></div><div><dt>{t("Characters", "字符")}</dt><dd>{stats.characters.toLocaleString(locale)}</dd></div><div><dt>{t("Reading", "阅读")}</dt><dd>{t(`${stats.minutes} min`, `${stats.minutes} 分钟`)}</dd></div></dl></section><section><span>{t("File", "文件")}</span><dl><div><dt>{t("Name", "名称")}</dt><dd>{activeDocument.name}</dd></div>{activeDocument.path && <div><dt>{t("Path", "路径")}</dt><dd>{activeDocument.path}</dd></div>}<div><dt>{t("Source", "来源")}</dt><dd>{activeDocument.source === "local" ? t("Local file", "本地文件") : activeDocument.source === "sample" ? t("Sample", "示例") : t("Recovery draft", "恢复草稿")}</dd></div>{activeDocument.source === "local" && <div><dt>{t("Connection", "连接")}</dt><dd>{activeHandleAccess === "granted" ? t("Read/write; watching external changes", "可读写并监测外部修改") : activeHandleAccess === "prompt" ? t("Authorization required on save", "保存时需要授权") : activeHandleAccess === "denied" ? t("Permission denied", "权限已关闭") : t("Reconnect required", "需要重新定位")}</dd></div>}<div><dt>{t("Format", "格式")}</dt><dd>Markdown · UTF-8</dd></div></dl></section><button className="theme-row" type="button" onClick={() => setSettingsOpen(true)}><Settings2 size={18} /><span><strong>{t("Editor settings", "编辑器设置")}</strong><small>{editorPreferences.manuscriptFontSize} px · {theme === "system" ? t("System", "跟随系统") : theme === "light" ? t("Light", "浅色") : t("Dark", "深色")}</small></span><ChevronRight size={15} /></button><button className="theme-row" type="button" onClick={() => setHistoryOpen(true)}><Clock3 size={18} /><span><strong>{t("Version history", "版本记录")}</strong><small>{t(`${versions.filter((item) => item.documentId === activeDocument.id).length} local versions`, `${versions.filter((item) => item.documentId === activeDocument.id).length} 个本地版本`)}</small></span><ChevronRight size={15} /></button></div>}
       </aside>}
@@ -1063,12 +1063,12 @@ function App() {
       {paletteOpen && <div className="palette-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setPaletteOpen(false); }}><section ref={paletteRef} className="command-palette" role="dialog" aria-modal="true" aria-label={t("Command palette", "命令面板")} onKeyDown={(event) => { if (event.key === "ArrowDown") { event.preventDefault(); setPaletteIndex((current) => commands.length ? (current + 1) % commands.length : 0); } else if (event.key === "ArrowUp") { event.preventDefault(); setPaletteIndex((current) => commands.length ? (current - 1 + commands.length) % commands.length : 0); } else if (event.key === "Enter" && commands[paletteIndex]) { event.preventDefault(); const command = commands[paletteIndex]; setPaletteOpen(false); window.setTimeout(command.run, 0); } }}><label className="palette-search"><Search size={18} /><input autoFocus value={paletteSearch} onChange={(event) => { setPaletteSearch(event.target.value); setPaletteIndex(0); }} placeholder={t("Search commands and actions", "搜索命令与操作")} aria-activedescendant={commands[paletteIndex] ? `palette-command-${paletteIndex}` : undefined} /><kbd>esc</kbd></label><div className="palette-results" role="listbox" aria-label={t("Command results", "命令结果")}>{commands.map((item, index) => { const Icon = item.icon; return <button id={`palette-command-${index}`} role="option" aria-selected={index === paletteIndex} key={item.label} className={index === paletteIndex ? "suggested" : ""} type="button" onMouseEnter={() => setPaletteIndex(index)} onClick={() => { setPaletteOpen(false); window.setTimeout(item.run, 0); }}><Icon size={18} /><span>{item.label}</span>{item.hint && <kbd>{item.hint}</kbd>}</button>; })}{!commands.length && <p>{t("No matching commands", "没有匹配的命令")}</p>}</div></section></div>}
       <ImportDialog open={importOpen} onClose={() => setImportOpen(false)} onImport={importFiles} onChooseNativeFiles={desktopApp ? chooseDesktopFiles : undefined} onChooseNativeFolder={desktopApp ? chooseDesktopFolder : undefined} />
       <TemplateDialog open={templateOpen} templates={builtInTemplates} onClose={() => setTemplateOpen(false)} onCreate={createDocument} />
-      <HistoryDialog open={historyOpen} document={activeDocument} versions={versions.filter((item) => item.documentId === activeDocument.id)} onClose={() => setHistoryOpen(false)} onRestore={restoreVersion} onNameVersion={saveNamedVersion} />
+      {activeDocument && <HistoryDialog open={historyOpen} document={activeDocument} versions={versions.filter((item) => item.documentId === activeDocument.id)} onClose={() => setHistoryOpen(false)} onRestore={restoreVersion} onNameVersion={saveNamedVersion} />}
       <TrashDialog open={trashOpen} entries={trash} onClose={() => setTrashOpen(false)} onRestore={restoreTrashEntry} onDelete={deleteTrashEntry} />
       <SettingsDialog open={settingsOpen} preferences={editorPreferences} theme={theme} defaultDirectoryName={defaultDirectoryName} defaultDirectoryAccess={defaultDirectoryAccess} canChooseDirectory={desktopApp || Boolean(window.showDirectoryPicker)} onClose={() => setSettingsOpen(false)} onChange={setEditorPreferences} onThemeChange={setTheme} onReset={() => setEditorPreferences(defaultEditorPreferences)} onChooseDirectory={() => void chooseDefaultDocumentDirectory()} onClearDirectory={clearDefaultDocumentDirectory} />
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} onOpenRepository={() => void openExternal(REPOSITORY_URL)} onFeedback={() => void openExternal(FEEDBACK_URL)} />
       <ConfirmDialog open={Boolean(pendingDelete)} title={deleteDialogTitle} description={deleteDialogDescription} confirmLabel={deleteDialogConfirmLabel} onClose={() => setPendingDelete(null)} onConfirm={confirmPendingDelete} />
-      <ConflictDialog conflict={fileConflict} document={documents.find((item) => item.id === fileConflict?.documentId) ?? activeDocument} onClose={() => setFileConflict(null)} onUseDisk={useDiskConflict} onOverwrite={() => void overwriteDiskConflict()} />
+      {activeDocument && <ConflictDialog conflict={fileConflict} document={documents.find((item) => item.id === fileConflict?.documentId) ?? activeDocument} onClose={() => setFileConflict(null)} onUseDisk={useDiskConflict} onOverwrite={() => void overwriteDiskConflict()} />}
       {toast && <div className="toast" role="status"><Check size={16} />{toast}</div>}
     </div>
   );
