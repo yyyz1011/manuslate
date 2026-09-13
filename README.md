@@ -25,7 +25,7 @@ The name combines **manuscript** and **slate**: a calm surface for turning struc
 ### Writing and reading
 
 - Live typesetting, source, reading, and split views
-- GFM, task lists, tables, footnotes, KaTeX math, links, images, and fenced code
+- GFM, task lists, tables, footnotes, KaTeX math, links, images, fenced code, and tolerant Chinese-style compact headings
 - In-document outline, find and replace, command palette, focus mode, and word count
 - Configurable document size, source size, line height, typeface, and page width
 

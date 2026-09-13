@@ -1,6 +1,7 @@
 import { Check, ChevronDown, ChevronRight, Circle, CircleCheck, FileText, Folder, FolderOpen, FolderPlus, Inbox, ListChecks, MoreHorizontal, Pencil, Pin, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "../i18n";
+import { parseMarkdownHeading } from "../lib/document";
 import type { LibraryCategory, MarkdownDocument } from "../types";
 
 interface LibraryTreeProps {
@@ -19,7 +20,12 @@ interface LibraryTreeProps {
 }
 
 function withoutExtension(name: string): string { return name.replace(/\.(md|markdown|mdown|txt)$/i, ""); }
-function snippet(content: string, emptyLabel: string): string { return content.split("\n").map((line) => line.replace(/^#{1,6}\s+/, "").replace(/[*_`>[\]()!-]/g, " ").trim()).find(Boolean) || emptyLabel; }
+function snippet(content: string, emptyLabel: string): string {
+  return content.split("\n").map((line) => {
+    const heading = parseMarkdownHeading(line);
+    return heading?.text ?? line.replace(/^#{1,6}\s+/, "").replace(/[*_`>[\]()!-]/g, " ").trim();
+  }).find(Boolean) || emptyLabel;
+}
 function relativeTime(timestamp: number, locale: string, justNow: string, minutesAgo: (count: number) => string, hoursAgo: (count: number) => string): string {
   const diff = Date.now() - timestamp;
   if (diff < 60_000) return justNow;

@@ -26,6 +26,7 @@ import {
 import { tags } from "@lezer/highlight";
 import { useI18n } from "../i18n";
 import { renderMarkdown } from "../lib/markdown";
+import { parseMarkdownHeading } from "../lib/document";
 import type { EditorPreferences } from "../types";
 
 export interface MarkdownEditorHandle {
@@ -516,6 +517,14 @@ function liveDecorations(state: EditorState, assetUrls: Record<string, string>):
       if (number < firstLine || number === active.number || blocks.editableLines.has(number)) continue;
 
       if (inMathBlock) ranges.push(Decoration.line({ class: "cm-live-math" }).range(line.from));
+
+      const compatibleHeading = parseMarkdownHeading(line.text);
+      if (compatibleHeading?.compatibility) {
+        ranges.push(Decoration.line({ class: `cm-live-heading cm-live-h${compatibleHeading.level}` }).range(line.from));
+        const markerFrom = line.from + compatibleHeading.markerStart;
+        const markerTo = line.from + compatibleHeading.markerEnd;
+        if (markerTo > markerFrom) ranges.push(Decoration.replace({}).range(markerFrom, markerTo));
+      }
 
       const isTable = /^\s*\|.*\|\s*$/.test(line.text);
       if (isTable && !decoratedLines.has(number)) {
