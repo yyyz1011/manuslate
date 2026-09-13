@@ -92,6 +92,8 @@ button:focus-visible, input:focus-visible {
 }
 
 .app-shell {
+  --sidebar-width: 286px;
+  position: relative;
   display: grid;
   grid-template-columns: 0 minmax(0, 1fr) 0;
   width: 100%;
@@ -100,9 +102,10 @@ button:focus-visible, input:focus-visible {
   transition: grid-template-columns 420ms var(--ease-out);
 }
 .app-shell.desktop-app { --header-height: 40px; }
-.app-shell.has-sidebar { grid-template-columns: 286px minmax(0, 1fr) 0; }
+.app-shell.has-sidebar { grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 0; }
 .app-shell.has-inspector { grid-template-columns: 0 minmax(0, 1fr) 286px; }
-.app-shell.has-sidebar.has-inspector { grid-template-columns: 286px minmax(0, 1fr) 286px; }
+.app-shell.has-sidebar.has-inspector { grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 286px; }
+.app-shell.is-resizing-sidebar { transition: none; }
 
 .library-rail, .inspector-rail {
   min-width: 0;
@@ -119,6 +122,43 @@ button:focus-visible, input:focus-visible {
   flex-direction: column;
   border-right: 1px solid var(--line);
 }
+.sidebar-resize-handle {
+  position: absolute;
+  z-index: 82;
+  top: 0;
+  bottom: 0;
+  left: var(--sidebar-width);
+  width: 9px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  cursor: col-resize;
+  transform: translateX(-50%);
+  touch-action: none;
+}
+.sidebar-resize-handle::after {
+  position: absolute;
+  top: 50%;
+  bottom: 50%;
+  left: 4px;
+  width: 1px;
+  border-radius: 1px;
+  background: var(--accent);
+  content: "";
+  opacity: 0;
+  transition: top 180ms var(--ease-out), bottom 180ms var(--ease-out), opacity 120ms ease, width 120ms ease;
+}
+.sidebar-resize-handle:hover::after,
+.sidebar-resize-handle:focus-visible::after,
+.is-resizing-sidebar .sidebar-resize-handle::after {
+  top: 18%;
+  bottom: 18%;
+  width: 2px;
+  opacity: .72;
+}
+html.resizing-sidebar,
+html.resizing-sidebar * { cursor: col-resize !important; user-select: none !important; }
 .sidebar-windowbar { display: flex; height: var(--header-height); flex: 0 0 var(--header-height); align-items: center; padding: 0 8px 0 88px; border-bottom: 1px solid var(--line); background: var(--chrome); -webkit-backdrop-filter: saturate(180%) blur(22px); backdrop-filter: saturate(180%) blur(22px); }
 .sidebar-windowbar .icon-button { width: 30px; height: 30px; border-radius: 9px; transform: translateY(-3px); }
 .sidebar-windowbar .icon-button:active { transform: translateY(-3px) scale(.91); }
@@ -1076,8 +1116,8 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
 @keyframes caret-blink { 0%, 52% { opacity: 1; } 53%, 100% { opacity: 0; } }
 
 @media (max-width: 1180px) {
-  .app-shell.has-sidebar.has-inspector { grid-template-columns: 252px minmax(0, 1fr) 0; }
-  .app-shell.has-sidebar { grid-template-columns: 252px minmax(0, 1fr) 0; }
+  .app-shell.has-sidebar.has-inspector { grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 0; }
+  .app-shell.has-sidebar { grid-template-columns: var(--sidebar-width) minmax(0, 1fr) 0; }
   .app-shell.has-inspector { grid-template-columns: 0 minmax(0, 1fr) 0; }
   .inspector-rail {
     position: fixed;
@@ -1100,6 +1140,7 @@ kbd { color: var(--tertiary); font-family: inherit; font-size: 10px; font-varian
   .app-shell, .app-shell.has-sidebar, .app-shell.has-inspector, .app-shell.has-sidebar.has-inspector { display: block; }
   .library-rail { position: fixed; z-index: 70; inset: 0 auto 0 0; width: min(320px, calc(100vw - 38px)); border-right-color: var(--line-strong); box-shadow: 18px 0 48px rgba(0, 0, 0, 0.22); opacity: 1; pointer-events: auto; transform: translateX(-105%); transition: transform 350ms var(--ease-out); }
   .has-sidebar .library-rail { transform: translateX(0); }
+  .sidebar-resize-handle { display: none; }
   .mobile-scrim { position: fixed; z-index: 60; inset: 0; display: block; border: 0; background: rgba(0, 0, 0, 0.22); animation: backdrop-in 150ms ease both; }
   .inspector-rail { width: min(300px, calc(100vw - 38px)); }
   .has-inspector .inspector-rail { transform: translateX(0); }

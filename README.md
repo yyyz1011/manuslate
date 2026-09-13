@@ -35,6 +35,7 @@ The name combines **manuscript** and **slate**: a calm surface for turning struc
 - Nested categories, pinned documents, and drag-to-organize
 - A visible selection mode (or ⌘/Ctrl-click) with recoverable batch removal for documents, imported folders, and categories
 - Ungrouped documents stay at the library root until groups exist; deleting the last document leaves a real empty library
+- Drag the library edge to resize it; Manuslate remembers the width, and a double-click restores the default
 - Scoped library search, backlinks, and broken-link checks
 - User-selected default folder for new documents
 

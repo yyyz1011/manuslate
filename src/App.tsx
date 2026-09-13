@@ -42,6 +42,23 @@ const markdownFileTypes = [{
 
 const REPOSITORY_URL = "https://github.com/yyyz1011/manuslate";
 const FEEDBACK_URL = `${REPOSITORY_URL}/issues/new`;
+const SIDEBAR_WIDTH_KEY = "manuslate.sidebar-width.v1";
+const DEFAULT_SIDEBAR_WIDTH = 286;
+const MIN_SIDEBAR_WIDTH = 236;
+const MAX_SIDEBAR_WIDTH = 520;
+const MIN_WORKSPACE_WIDTH = 420;
+
+function clampSidebarWidth(width: number, inspectorOpen = false): number {
+  const inspectorWidth = inspectorOpen && window.innerWidth > 1180 ? 286 : 0;
+  const availableWidth = window.innerWidth - inspectorWidth - MIN_WORKSPACE_WIDTH;
+  const maximum = Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, availableWidth));
+  return Math.round(Math.min(maximum, Math.max(MIN_SIDEBAR_WIDTH, width)));
+}
+
+function loadSidebarWidth(): number {
+  const stored = Number.parseFloat(localStorage.getItem(SIDEBAR_WIDTH_KEY) ?? "");
+  return clampSidebarWidth(Number.isFinite(stored) ? stored : DEFAULT_SIDEBAR_WIDTH);
+}
 
 function uniqueId(): string {
   return globalThis.crypto?.randomUUID?.() ?? `document-${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -123,6 +140,8 @@ function App() {
   const [systemDark, setSystemDark] = useState(() => window.matchMedia("(prefers-color-scheme: dark)").matches);
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 900);
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 900);
+  const [sidebarWidth, setSidebarWidth] = useState(loadSidebarWidth);
+  const [resizingSidebar, setResizingSidebar] = useState(false);
   const [inspectorOpen, setInspectorOpen] = useState(false);
   const [inspectorTab, setInspectorTab] = useState<"outline" | "links" | "info">("outline");
   const [focusMode, setFocusMode] = useState(false);
@@ -170,6 +189,7 @@ function App() {
   const autoVersionRef = useRef(new Map<string, { content: string; at: number }>());
   const documentsRef = useRef(documents);
   const activeIdRef = useRef(activeId);
+  const sidebarResizeCleanupRef = useRef<(() => void) | null>(null);
 
   const activeDocument = documents.find((item) => item.id === activeId) ?? documents[0];
   const outline = useMemo(() => getOutline(activeDocument?.content ?? ""), [activeDocument?.content]);
@@ -253,6 +273,49 @@ function App() {
     event.preventDefault();
     void getCurrentWindow().startDragging();
   }, []);
+
+  const startSidebarResize = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (isCompact || event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    sidebarResizeCleanupRef.current?.();
+
+    const startX = event.clientX;
+    const startWidth = sidebarWidth;
+    setResizingSidebar(true);
+    document.documentElement.classList.add("resizing-sidebar");
+
+    const onPointerMove = (moveEvent: PointerEvent) => {
+      setSidebarWidth(clampSidebarWidth(startWidth + moveEvent.clientX - startX, inspectorOpen));
+    };
+    const cleanup = () => {
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", onPointerUp);
+      window.removeEventListener("pointercancel", onPointerUp);
+      window.removeEventListener("blur", onPointerUp);
+      document.documentElement.classList.remove("resizing-sidebar");
+      sidebarResizeCleanupRef.current = null;
+      setResizingSidebar(false);
+    };
+    const onPointerUp = () => cleanup();
+
+    sidebarResizeCleanupRef.current = cleanup;
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+    window.addEventListener("pointercancel", onPointerUp);
+    window.addEventListener("blur", onPointerUp);
+  }, [inspectorOpen, isCompact, sidebarWidth]);
+
+  const resizeSidebarWithKeyboard = useCallback((event: React.KeyboardEvent<HTMLDivElement>) => {
+    let nextWidth = sidebarWidth;
+    if (event.key === "ArrowLeft") nextWidth -= event.shiftKey ? 32 : 12;
+    else if (event.key === "ArrowRight") nextWidth += event.shiftKey ? 32 : 12;
+    else if (event.key === "Home") nextWidth = MIN_SIDEBAR_WIDTH;
+    else if (event.key === "End") nextWidth = MAX_SIDEBAR_WIDTH;
+    else return;
+    event.preventDefault();
+    setSidebarWidth(clampSidebarWidth(nextWidth, inspectorOpen));
+  }, [inspectorOpen, sidebarWidth]);
 
   const navigateMenu = useCallback((event: React.KeyboardEvent<HTMLElement>) => {
     const items = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
@@ -765,9 +828,15 @@ function App() {
     media.addEventListener("change", listener); return () => media.removeEventListener("change", listener);
   }, []);
   useEffect(() => {
-    const onResize = () => setIsCompact(window.innerWidth < 900);
+    const onResize = () => {
+      setIsCompact(window.innerWidth < 900);
+      setSidebarWidth((current) => clampSidebarWidth(current, inspectorOpen));
+    };
+    onResize();
     window.addEventListener("resize", onResize); return () => window.removeEventListener("resize", onResize);
-  }, []);
+  }, [inspectorOpen]);
+  useEffect(() => { localStorage.setItem(SIDEBAR_WIDTH_KEY, String(sidebarWidth)); }, [sidebarWidth]);
+  useEffect(() => () => sidebarResizeCleanupRef.current?.(), []);
   useEffect(() => { if (isCompact && viewMode === "split") setViewMode("preview"); }, [isCompact, setViewMode, viewMode]);
   useEffect(() => { documentsRef.current = documents; }, [documents]);
   useEffect(() => { activeIdRef.current = activeId; }, [activeId]);
@@ -965,6 +1034,7 @@ function App() {
     "--manuscript-line-height": editorPreferences.lineHeight,
     "--manuscript-width": `${editorPreferences.manuscriptWidth}px`,
     "--manuscript-typeface": manuscriptTypeface,
+    "--sidebar-width": `${sidebarWidth}px`,
   } as CSSProperties;
   const pendingBatchDocumentCount = pendingDelete?.kind === "batch" ? (() => {
     const categoryIds = categoryAndDescendantIds(categories, pendingDelete.categoryIds);
@@ -997,7 +1067,7 @@ function App() {
       : t("Move to Recently Deleted", "移到最近删除");
 
   return (
-    <div style={appStyle} className={`app-shell${desktopApp ? " desktop-app" : ""}${sidebarOpen ? " has-sidebar" : ""}${activeDocument && inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
+    <div style={appStyle} className={`app-shell${desktopApp ? " desktop-app" : ""}${sidebarOpen ? " has-sidebar" : ""}${resizingSidebar ? " is-resizing-sidebar" : ""}${activeDocument && inspectorOpen ? " has-inspector" : ""}`} onMouseDown={(event) => {
       if ((event.target as HTMLElement).closest("[data-popover-root]")) return;
       dismissMenus();
     }}>
@@ -1011,6 +1081,21 @@ function App() {
         <LibraryTree documents={filteredDocuments} categories={categories} activeId={activeDocument?.id ?? ""} searching={Boolean(documentSearch.trim()) || searchFilter !== "all"} onSelect={selectDocument} onCreateCategory={createCategory} onRenameCategory={renameCategory} onDeleteCategory={deleteCategory} onMoveDocument={moveDocument} onDeleteDocument={deleteDocument} onDeleteSelection={deleteSelection} onTogglePinned={togglePinned} />
         <div className="library-footer" role="toolbar" aria-label={t("Library tools", "资料库工具")}><button type="button" aria-label={t("Import files", "导入文件")} data-tooltip={t("Import · ⌘O", "导入文件 · ⌘O")} onClick={() => setImportOpen(true)}><Import size={18} /></button><button type="button" aria-label={t("Recently deleted", "最近删除")} data-tooltip={t("Recently deleted", "最近删除")} onClick={() => setTrashOpen(true)}><Trash2 size={17} />{trash.length > 0 && <b aria-label={t(`${trash.length} items`, `${trash.length} 个项目`)}>{trash.length}</b>}</button><button type="button" aria-label={t("Feedback", "反馈")} data-tooltip={t("Feedback on GitHub", "在 GitHub 反馈")} onClick={() => void openExternal(FEEDBACK_URL)}><MessageCircle size={17} /></button><button type="button" aria-label={t("Settings", "设置")} data-tooltip={t("Settings · ⌘,", "设置 · ⌘,")} onClick={() => setSettingsOpen(true)}><Settings size={17} /></button></div>
       </aside>
+
+      {sidebarOpen && !isCompact && <div
+        className="sidebar-resize-handle"
+        role="separator"
+        aria-label={t("Resize document library", "调整文稿列表宽度")}
+        aria-orientation="vertical"
+        aria-valuemin={MIN_SIDEBAR_WIDTH}
+        aria-valuemax={clampSidebarWidth(MAX_SIDEBAR_WIDTH, inspectorOpen)}
+        aria-valuenow={sidebarWidth}
+        tabIndex={0}
+        title={t("Drag to resize · double-click to reset", "拖动调整宽度 · 双击恢复默认")}
+        onPointerDown={startSidebarResize}
+        onKeyDown={resizeSidebarWithKeyboard}
+        onDoubleClick={() => setSidebarWidth(clampSidebarWidth(DEFAULT_SIDEBAR_WIDTH, inspectorOpen))}
+      />}
 
       {activeDocument ? <section className="workspace">
         <header className="titlebar" data-tauri-drag-region={desktopApp ? true : undefined} onMouseDown={startWindowDrag}>
