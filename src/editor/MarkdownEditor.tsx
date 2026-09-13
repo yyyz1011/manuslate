@@ -6,7 +6,7 @@ import {
   closeSearchPanel, findNext, findPrevious, getSearchQuery, openSearchPanel, replaceAll, replaceNext,
   search, searchKeymap, SearchQuery, setSearchQuery,
 } from "@codemirror/search";
-import { Compartment, EditorSelection, EditorState, StateField } from "@codemirror/state";
+import { Compartment, EditorSelection, EditorState } from "@codemirror/state";
 import {
   drawSelection,
   dropCursor,
@@ -367,11 +367,11 @@ class LiveBlockWidget extends WidgetType {
   ignoreEvent() { return false; }
 }
 
-function liveBlockDecorations(state: EditorState, assetUrls: Record<string, string>) {
+function liveBlockDecorations(state: EditorState, assetUrls: Record<string, string>, editorFocused: boolean) {
   const ranges: ReturnType<Decoration["range"]>[] = [];
   const blockedLines = new Set<number>();
   const editableLines = new Set<number>();
-  const activeLine = state.doc.lineAt(state.selection.main.head).number;
+  const activeLine = editorFocused ? state.doc.lineAt(state.selection.main.head).number : -1;
   const lineCount = state.doc.lines;
 
   const addBlock = (start: number, end: number, className: string) => {
@@ -445,10 +445,10 @@ function paragraphDecorations(view: EditorView): DecorationSet {
   return Decoration.set(ranges);
 }
 
-function liveDecorations(state: EditorState, assetUrls: Record<string, string>): DecorationSet {
-  const blocks = liveBlockDecorations(state, assetUrls);
+function liveDecorations(state: EditorState, assetUrls: Record<string, string>, editorFocused: boolean): DecorationSet {
+  const blocks = liveBlockDecorations(state, assetUrls, editorFocused);
   const ranges: ReturnType<Decoration["range"]>[] = [...blocks.ranges];
-  const active = state.doc.lineAt(state.selection.main.head);
+  const activeLine = editorFocused ? state.doc.lineAt(state.selection.main.head).number : -1;
   const hiddenMarks = new Set(["HeaderMark", "EmphasisMark", "CodeMark", "CodeInfo", "QuoteMark"]);
   const decoratedLines = new Set<number>();
 
@@ -459,7 +459,7 @@ function liveDecorations(state: EditorState, assetUrls: Record<string, string>):
       enter(node) {
         const line = state.doc.lineAt(node.from);
         if (blocks.blockedLines.has(line.number)) return false;
-        const isActiveLine = active.number === line.number || blocks.editableLines.has(line.number);
+        const isActiveLine = activeLine === line.number || blocks.editableLines.has(line.number);
 
         if (/^ATXHeading[1-6]$/.test(node.name)) {
           const level = node.name.slice(-1);
@@ -510,11 +510,11 @@ function liveDecorations(state: EditorState, assetUrls: Record<string, string>):
       if (blocks.blockedLines.has(number)) continue;
       const trimmed = line.text.trim();
       if (trimmed === "$$") {
-        if (number >= firstLine && number !== active.number) ranges.push(Decoration.replace({}).range(line.from, line.to));
+        if (number >= firstLine && number !== activeLine) ranges.push(Decoration.replace({}).range(line.from, line.to));
         inMathBlock = !inMathBlock;
         continue;
       }
-      if (number < firstLine || number === active.number || blocks.editableLines.has(number)) continue;
+      if (number < firstLine || number === activeLine || blocks.editableLines.has(number)) continue;
 
       if (inMathBlock) ranges.push(Decoration.line({ class: "cm-live-math" }).range(line.from));
 
@@ -560,13 +560,22 @@ function liveDecorations(state: EditorState, assetUrls: Record<string, string>):
   return Decoration.set(ranges, true);
 }
 
-const makeLivePreviewExtension = (assetUrls: Record<string, string>) => StateField.define<DecorationSet>({
-  create(state) { return liveDecorations(state, assetUrls); },
-  update(decorations, transaction) {
-    return transaction.docChanged || transaction.selection ? liveDecorations(transaction.state, assetUrls) : decorations;
+const makeLivePreviewExtension = (assetUrls: Record<string, string>) => ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+
+    constructor(view: EditorView) {
+      this.decorations = liveDecorations(view.state, assetUrls, view.hasFocus);
+    }
+
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.selectionSet || update.focusChanged) {
+        this.decorations = liveDecorations(update.state, assetUrls, update.view.hasFocus);
+      }
+    }
   },
-  provide: (field) => EditorView.decorations.from(field),
-});
+  { decorations: (plugin) => plugin.decorations },
+);
 
 const paragraphFocus = ViewPlugin.fromClass(
   class {
